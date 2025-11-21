@@ -77,13 +77,52 @@ const App = () => {
         closeDocument(id);
     };
 
+    // Track the current drag operation ID
+    const dragIdRef = useRef(null);
+
     const handleDragStart = (e, doc) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify(doc));
+        const dragId = Date.now().toString();
+        dragIdRef.current = dragId;
+
+        // Ensure filePath is included in the dragged data
+        const dragData = {
+            ...doc,
+            filePath: doc.filePath || null, // Explicitly include, even if null
+            dragId
+        };
+        e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
         e.dataTransfer.effectAllowed = 'move';
     };
 
-    const handleDragEnd = (e, doc) => {
-        // Check if dropped outside the window
+    const closeTabOrWindow = (id) => {
+        if (documents.length === 1 && documents[0].id === id) {
+            if (window.electronAPI && window.electronAPI.closeWindow) {
+                window.electronAPI.closeWindow();
+            } else {
+                closeDocument(id);
+            }
+        } else {
+            closeDocument(id);
+        }
+    };
+
+    const handleDragEnd = async (e, doc) => {
+        const currentDragId = dragIdRef.current;
+
+        // Check if the tab was dropped and handled by ANY window (including this one)
+        let handled = false;
+        if (window.electronAPI && window.electronAPI.checkTabDropped) {
+            handled = await window.electronAPI.checkTabDropped(currentDragId);
+        }
+
+        if (handled) {
+            // The tab was successfully dropped into a window.
+            // We should close it here to "move" it.
+            closeTabOrWindow(doc.id);
+            return;
+        }
+
+        // If NOT handled, check if dropped outside to create a new window
         if (e.screenX < window.screenX ||
             e.screenX > window.screenX + window.outerWidth ||
             e.screenY < window.screenY ||
@@ -95,9 +134,12 @@ const App = () => {
                     content: doc.content
                 });
                 // Close the tab in current window
-                closeDocument(doc.id);
+                closeTabOrWindow(doc.id);
             }
         }
+
+        // Reset drag ID
+        dragIdRef.current = null;
     };
 
     // Handle file drops onto the app window
@@ -105,12 +147,63 @@ const App = () => {
         e.preventDefault();
         e.stopPropagation();
         // Allow dropping files
-        e.dataTransfer.dropEffect = 'copy';
+        e.dataTransfer.dropEffect = 'copy'; // Default to copy for files
+
+        // If it's our own tab, we might want 'move'
+        if (e.dataTransfer.types.includes('text/plain')) {
+            e.dataTransfer.dropEffect = 'move';
+        }
     }, []);
 
     const handleFileDrop = useCallback((e) => {
         e.preventDefault();
         e.stopPropagation();
+
+        // Check for internal tab drop
+        const textData = e.dataTransfer.getData('text/plain');
+        if (textData) {
+            try {
+                const doc = JSON.parse(textData);
+
+                if (doc.id && doc.content && doc.filePath) {
+                    // It's a tab!
+
+                    // Notify main process that this tab was dropped/handled
+                    // BUT only if it's not a self-drop (optional optimization, but safer to just notify)
+                    // Actually, if we notify on self-drop, handleDragEnd will close it.
+                    // We need to prevent closing on self-drop.
+
+                    // Check if this is a self-drop
+                    if (dragIdRef.current === doc.dragId) {
+                        // Self-drop! Do NOT notify main process.
+                        // handleDragEnd will see handled=false.
+                        // It will check "outside". It is NOT outside.
+                        // So it will do nothing. Tab stays. Perfect.
+                    } else {
+                        if (window.electronAPI && window.electronAPI.notifyTabDropped) {
+                            window.electronAPI.notifyTabDropped(doc.dragId);
+                        }
+                    }
+
+                    // Check if we already have this doc (by path)
+                    const existing = findDocumentByPath(doc.filePath);
+                    if (existing) {
+                        setActiveTabId(existing.id);
+                    } else {
+                        // Add it
+                        addDocument({
+                            id: doc.id, // Keep ID or generate new? keeping ID might be good for tracking
+                            name: doc.name,
+                            content: doc.content,
+                            filePath: doc.filePath
+                        });
+                    }
+                    return; // Handled
+                }
+            } catch (err) {
+                // Not JSON or not our tab, ignore
+            }
+        }
 
         const files = Array.from(e.dataTransfer.files);
         const markdownFiles = files.filter(file =>

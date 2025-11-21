@@ -127,6 +127,34 @@ const openFile = (filepath, targetWindow = mainWindow) => {
   });
 };
 
+
+
+const droppedTabs = new Set();
+
+ipcMain.handle('tab-dropped', (event, dragId) => {
+  droppedTabs.add(dragId);
+  // Auto-cleanup after 5 seconds to prevent memory leaks
+  setTimeout(() => {
+    droppedTabs.delete(dragId);
+  }, 5000);
+  return true;
+});
+
+ipcMain.handle('check-tab-dropped', (event, dragId) => {
+  const wasDropped = droppedTabs.has(dragId);
+  // Optional: remove immediately if checked? 
+  // Better to keep it briefly in case of race conditions or multiple checks, 
+  // but usually one check is enough. Let's keep it for the timeout duration to be safe.
+  return wasDropped;
+});
+
+ipcMain.handle('close-window', (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.close();
+  }
+});
+
 ipcMain.handle('create-window-for-tab', (event, { filePath, content }) => {
   const win = createWindow();
   win.once('ready-to-show', () => {

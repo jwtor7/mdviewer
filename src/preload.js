@@ -8,4 +8,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         return () => ipcRenderer.removeListener('file-open', handler);
     },
     createWindowForTab: (data) => ipcRenderer.invoke('create-window-for-tab', data),
+    notifyTabDropped: (dragId) => ipcRenderer.invoke('tab-dropped', dragId),
+    checkTabDropped: (dragId) => ipcRenderer.invoke('check-tab-dropped', dragId),
+    closeWindow: () => ipcRenderer.invoke('close-window'),
 });

@@ -1,7 +1,7 @@
 # Markdown Viewer
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.4.2-blue)
+![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -282,8 +282,14 @@ mdviewer/
 
 ### [1.4.2] - 2025-11-21
 - **New Features**:
-  - Added application version display to the status bar
-  - Updated prototypes to display prototype version
+  - **v1.4.3**
+    - Added tab reconnection: Drag tabs back into the main window to reconnect them.
+    - Improved window management: Windows now close automatically when the last tab is dragged out.
+    - Fixed "Untitled" window issue during drag-and-drop.
+  - **v1.4.2**
+    - Added version display in status bar.
+    - Enabled offline-capable prototyping workflow.
+    - Updated prototypes to display prototype version
 
 ### [1.4.1] - 2025-11-21
 - **Bug Fixes**:
