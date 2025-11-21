@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Split View Prototype</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react-markdown@9.0.1/react-markdown.min.js"></script>
+    <!-- Note: react-markdown UMD build might be tricky, let's use a simple custom renderer for the prototype to avoid complex dependency chains in a single file -->
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .editor {
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        // Simple Markdown Renderer for prototype (replacing full react-markdown for simplicity in standalone)
+        const SimplePreview = ({ content }) => {
+            // Very basic parsing for demo purposes
+            const html = content
+                .replace(/^# (.*$)/gim, '<h1 class="text-3xl font-bold mb-4 border-b border-gray-600 pb-2">$1</h1>')
+                .replace(/^## (.*$)/gim, '<h2 class="text-2xl font-bold mb-3 border-b border-gray-700 pb-1">$1</h2>')
+                .replace(/^### (.*$)/gim, '<h3 class="text-xl font-bold mb-2">$1</h3>')
+                .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+                .replace(/\*(.*)\*/gim, '<em>$1</em>')
+                .replace(/\n/gim, '<br />');
+
+            return <div className="prose prose-invert max-w-none p-4" dangerouslySetInnerHTML={{ __html: html }} />;
+        };
+
+        function App() {
+            const [content, setContent] = useState("# Hello World\n\nThis is a **Split View** prototype.\n\nType on the left, see changes on the right!");
+            const [isSplit, setIsSplit] = useState(true);
+
+            return (
+                <div className="h-screen flex flex-col">
+                    <header className="bg-gray-800 p-4 border-b border-gray-700 flex justify-between items-center">
+                        <h1 className="text-xl font-semibold">Markdown Split View</h1>
+                        <button
+                            onClick={() => setIsSplit(!isSplit)}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white transition-colors"
+                        >
+                            {isSplit ? 'Switch to Single View' : 'Switch to Split View'}
+                        </button>
+                    </header>
+
+                    <div className="flex-1 flex overflow-hidden">
+                        {/* Editor Pane */}
+                        <div className={`${isSplit ? 'w-1/2 border-r border-gray-700' : 'w-full'} flex flex-col`}>
+                            <div className="bg-gray-900 px-4 py-2 text-xs text-gray-400 uppercase tracking-wider">Editor</div>
+                            <textarea
+                                className="flex-1 w-full h-full bg-[#1e1e1e] text-[#d4d4d4] p-4 resize-none focus:outline-none editor text-lg"
+                                value={content}
+                                onChange={(e) => setContent(e.target.value)}
+                                spellCheck="false"
+                            />
+                        </div>
+
+                        {/* Preview Pane */}
+                        {isSplit && (
+                            <div className="w-1/2 flex flex-col bg-[#252526]">
+                                <div className="bg-gray-900 px-4 py-2 text-xs text-gray-400 uppercase tracking-wider">Preview</div>
+                                <div className="flex-1 overflow-auto">
+                                    <SimplePreview content={content} />
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>

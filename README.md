@@ -1,7 +1,7 @@
 # Markdown Viewer
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.4.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.1-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -221,7 +221,16 @@ npm run make
 
 # 5. Clean up production build when done
 rm -rf out/
+# 5. Clean up production build when done
+rm -rf out/
 ```
+
+### Prototyping Workflow
+For rapid feature iteration without full builds:
+1.  Create a standalone HTML file in `prototypes/` (e.g., `prototypes/new-feature.html`).
+2.  Use React/Babel via CDN for zero-build testing.
+3.  Verify logic and UI in the browser before porting to the Electron app.
+
 
 ## 🏗️ Architecture
 
@@ -270,6 +279,11 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [1.4.1] - 2025-11-21
+- **Bug Fixes**:
+  - Fixed Markdown preview rendering issues (missing styles for headers, lists, blockquotes, etc.)
+  - Improved CSS styling for preview elements to match dark theme
 
 ### [1.4.0] - 2025-11-21
 - **Critical Bug Fixes**:
