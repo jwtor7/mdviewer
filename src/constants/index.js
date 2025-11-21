@@ -9,12 +9,6 @@ export const EDITOR_CONFIG = {
   PADDING: '20px',
 };
 
-export const FORMATTING = {
-  BOLD_OFFSET: 4,
-  ITALIC_OFFSET: 2,
-  LIST_OFFSET: 3,
-};
-
 export const CALCULATIONS = {
   TOKEN_ESTIMATE_DIVISOR: 4,
   FOCUS_RESTORE_DELAY: 0,
@@ -36,12 +30,6 @@ export const THEME_MODES = {
 export const VIEW_MODES = {
   PREVIEW: 'preview',
   CODE: 'code',
-};
-
-export const DIVIDER_STYLES = {
-  WIDTH: '1px',
-  HEIGHT: '20px',
-  MARGIN: '0 5px',
 };
 
 export const ERROR_DISPLAY_DURATION = 5000;

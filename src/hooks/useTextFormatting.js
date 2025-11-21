@@ -1,8 +1,8 @@
-import { FORMATTING, CALCULATIONS } from '../constants/index.js';
+import { CALCULATIONS, VIEW_MODES } from '../constants/index.js';
 
 export const useTextFormatting = (content, setContent, textareaRef, viewMode) => {
   const handleFormat = (type) => {
-    if (viewMode === 'preview') return;
+    if (viewMode === VIEW_MODES.PREVIEW) return;
     if (!textareaRef.current) return;
 
     const textarea = textareaRef.current;

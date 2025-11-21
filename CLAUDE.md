@@ -110,3 +110,119 @@ DevTools are commented out in production. Uncomment `mainWindow.webContents.open
 
 ### React Version
 Uses React 19.2.0 with modern hooks (useState, useEffect, useRef, forwardRef).
+
+## Testing & Development Workflow
+
+### Development Server
+
+**Starting the dev server:**
+```bash
+npm start
+```
+
+This launches Electron with Vite's HMR (hot module replacement):
+- **Renderer changes** (React components, hooks, CSS) → Auto-reload instantly
+- **Main/preload changes** (main.js, preload.js) → Requires manual restart
+
+**Stopping the dev server:**
+```bash
+# Press Ctrl+C in the terminal
+# If that doesn't work (process detached):
+pkill -f Electron
+```
+
+### Testing File Opening
+
+#### Development Mode (npm start)
+
+The dev server does NOT register macOS file associations. To test file opening:
+
+**Method 1: File → Open Menu**
+1. Start: `npm start`
+2. Click **File → Open** in menu bar (or `Cmd+O`)
+3. Select `.md` file(s)
+4. Test multiple files to verify no duplicate tabs
+
+**Method 2: Drag and Drop**
+1. Start: `npm start`
+2. Drag `.md` files from Finder onto app window
+3. Drop to open
+4. Test with multiple files
+
+**Why these methods?**
+- Dev server isn't a registered .app bundle
+- macOS doesn't route file-open events to non-registered apps
+- File → Open and drag-and-drop work in all modes
+
+#### Production Mode (npm run make)
+
+To test actual macOS file associations (double-clicking .md files):
+
+```bash
+# Build production app
+npm run make
+
+# App location:
+# /Users/true/dev/mdviewer/out/mdviewer-darwin-arm64/mdviewer.app
+
+# Now test by double-clicking .md files in Finder
+```
+
+**⚠️ Important:**
+- Production builds register with macOS via `LSHandlerRank: 'Owner'` in `forge.config.js`
+- This makes mdviewer the default app for `.md` files
+- To reset: Delete `out/` directory and set different default app via Finder
+
+### Testing Checklist
+
+**File Opening Fixes (Priority):**
+- [ ] First file open: No "Untitled" default document shows
+- [ ] Same file opened twice: No duplicate tabs
+- [ ] Different files: Each opens once only
+- [ ] Drag-and-drop multiple files: All open without duplicates
+- [ ] File → Open: Works identically to drag-and-drop
+
+**Regression Tests:**
+- [ ] Theme switching (System/Light/Dark)
+- [ ] View mode toggle (Preview/Code)
+- [ ] Text formatting (Bold/Italic/List)
+- [ ] Copy to clipboard (both modes)
+- [ ] Tab closing and switching
+- [ ] Status bar statistics
+- [ ] Keyboard shortcuts (Cmd+O/B/I/E/T)
+
+### Common Issues
+
+**Issue: Dev server won't stop**
+- Solution: `pkill -f Electron`
+
+**Issue: .md files open in wrong app**
+- Cause: Production build registered as default app
+- Solution: Delete `out/` directory, then set default app via Finder
+
+**Issue: Changes not reflecting**
+- Renderer changes should auto-reload
+- Main/preload changes need restart: Stop (`Ctrl+C`) and `npm start` again
+
+**Issue: File associations not working**
+- Dev mode: Use File → Open or drag-and-drop (expected behavior)
+- Production mode: Build with `npm run make` first
+
+### Cleaning Up
+
+```bash
+# Remove production builds
+rm -rf /Users/true/dev/mdviewer/out/
+
+# Full clean (also node_modules)
+rm -rf out/ node_modules/
+npm install
+```
+
+### Development Best Practices
+
+1. **Use dev server for daily work**: `npm start` with File → Open or drag-and-drop
+2. **Test file associations in production**: Only when needed, use `npm run make`
+3. **Clean up production builds**: Delete `out/` after testing file associations
+4. **Restart for main/preload changes**: HMR only works for renderer code
+5. **Use keyboard shortcuts**: `Cmd+O` to open files quickly during testing

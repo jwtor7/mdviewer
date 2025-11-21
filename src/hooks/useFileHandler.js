@@ -1,10 +1,11 @@
 import { useEffect } from 'react';
+import { DEFAULT_DOCUMENT } from '../constants/index.js';
 
-export const useFileHandler = (addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId) => {
+export const useFileHandler = (addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab) => {
   useEffect(() => {
     // Listen for file content from main process
     if (window.electronAPI) {
-      window.electronAPI.onFileOpen((value) => {
+      const cleanup = window.electronAPI.onFileOpen((value) => {
         // value is { filePath, content, name } or just string (legacy)
         const filePath = value.filePath || null;
         const fileContent = value.content || value;
@@ -17,16 +18,36 @@ export const useFileHandler = (addDocument, updateExistingDocument, findDocument
           updateExistingDocument(existing.id, { content: fileContent });
           setActiveTabId(existing.id);
         } else {
-          // Add new document
-          const newId = Date.now().toString();
-          addDocument({
-            id: newId,
-            name: fileName,
-            content: fileContent,
-            filePath,
-          });
+          // Check if default untouched document exists
+          const defaultDoc = documents.find(d =>
+            d.id === 'default' &&
+            d.filePath === null &&
+            d.content === DEFAULT_DOCUMENT.content
+          );
+
+          if (defaultDoc && documents.length === 1) {
+            // Replace default document with the new file
+            updateExistingDocument('default', {
+              name: fileName,
+              content: fileContent,
+              filePath,
+              id: Date.now().toString(),
+            });
+          } else {
+            // Add new document
+            const newId = Date.now().toString();
+            addDocument({
+              id: newId,
+              name: fileName,
+              content: fileContent,
+              filePath,
+            });
+          }
         }
       });
+
+      // Cleanup listener on unmount or dependency change
+      return cleanup;
     }
-  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId]);
+  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab]);
 };

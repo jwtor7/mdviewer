@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
@@ -10,6 +10,74 @@ if (started) {
 }
 
 let mainWindow;
+let pendingFileToOpen = null;
+
+const createMenu = () => {
+  const template = [
+    {
+      label: 'File',
+      submenu: [
+        {
+          label: 'Open...',
+          accelerator: 'CmdOrCtrl+O',
+          click: async () => {
+            const result = await dialog.showOpenDialog(mainWindow, {
+              properties: ['openFile'],
+              filters: [
+                { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+                { name: 'All Files', extensions: ['*'] }
+              ]
+            });
+
+            if (!result.canceled && result.filePaths.length > 0) {
+              openFile(result.filePaths[0]);
+            }
+          }
+        },
+        { type: 'separator' },
+        { role: 'quit' }
+      ]
+    },
+    {
+      label: 'Edit',
+      submenu: [
+        { role: 'undo' },
+        { role: 'redo' },
+        { type: 'separator' },
+        { role: 'cut' },
+        { role: 'copy' },
+        { role: 'paste' },
+        { role: 'selectAll' }
+      ]
+    },
+    {
+      label: 'View',
+      submenu: [
+        { role: 'reload' },
+        { role: 'forceReload' },
+        { role: 'toggleDevTools' },
+        { type: 'separator' },
+        { role: 'resetZoom' },
+        { role: 'zoomIn' },
+        { role: 'zoomOut' },
+        { type: 'separator' },
+        { role: 'togglefullscreen' }
+      ]
+    },
+    {
+      label: 'Window',
+      submenu: [
+        { role: 'minimize' },
+        { role: 'zoom' },
+        { type: 'separator' },
+        { role: 'front' }
+      ]
+    }
+  ];
+
+  const menu = Menu.buildFromTemplate(template);
+  Menu.setApplicationMenu(menu);
+};
 
 const createWindow = (initialFile = null) => {
   // Create the browser window.
@@ -68,32 +136,43 @@ ipcMain.handle('create-window-for-tab', (event, { filePath, content }) => {
       name: filePath ? path.basename(filePath) : 'Untitled'
     });
   });
+  return { success: true };
+});
+
+// Handle file opening on macOS (must be registered BEFORE app.whenReady)
+// This catches files opened via "Open With" or drag-and-drop onto app icon
+app.on('open-file', (event, filePath) => {
+  event.preventDefault();
+
+  if (mainWindow && mainWindow.webContents) {
+    // Window exists and is ready
+    openFile(filePath);
+  } else {
+    // Window not ready yet, queue the file
+    pendingFileToOpen = filePath;
+  }
 });
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+  createMenu();
   mainWindow = createWindow();
+
+  // If a file was queued before the window was ready, open it now
+  if (pendingFileToOpen) {
+    mainWindow.once('ready-to-show', () => {
+      openFile(pendingFileToOpen);
+      pendingFileToOpen = null;
+    });
+  }
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
-    }
-  });
-
-  // Handle file opening on launch (e.g. drag and drop onto app icon)
-  app.on('open-file', (event, path) => {
-    event.preventDefault();
-    if (mainWindow) {
-      openFile(path);
-    } else {
-      // If window not ready, wait for it
-      app.once('browser-window-created', () => {
-        openFile(path);
-      });
     }
   });
 });

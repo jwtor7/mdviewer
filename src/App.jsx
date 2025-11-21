@@ -26,7 +26,7 @@ const App = () => {
     const textareaRef = useRef(null);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
-    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId);
+    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument);
 
     // Keyboard shortcuts
     useKeyboardShortcuts({
@@ -59,8 +59,9 @@ const App = () => {
                             'text/plain': textBlob
                         })];
                         await navigator.clipboard.write(data);
-                    } catch (err) {
-                        // Fallback to plain text
+                    } catch (richCopyErr) {
+                        // Fallback to plain text if rich text copy fails
+                        // This error will propagate to outer catch if plain text also fails
                         await navigator.clipboard.writeText(previewElement.innerText);
                     }
                 }
@@ -98,8 +99,56 @@ const App = () => {
         }
     };
 
+    // Handle file drops onto the app window
+    const handleFileDragOver = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Allow dropping files
+        e.dataTransfer.dropEffect = 'copy';
+    }, []);
+
+    const handleFileDrop = useCallback((e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const files = Array.from(e.dataTransfer.files);
+        const markdownFiles = files.filter(file =>
+            file.name.endsWith('.md') || file.name.endsWith('.markdown')
+        );
+
+        markdownFiles.forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const content = event.target.result;
+                const existing = findDocumentByPath(file.path);
+
+                if (existing) {
+                    // Update existing document
+                    updateExistingDocument(existing.id, { content });
+                    setActiveTabId(existing.id);
+                } else {
+                    // Add new document
+                    addDocument({
+                        id: Date.now().toString() + Math.random(),
+                        name: file.name,
+                        content,
+                        filePath: file.path,
+                    });
+                }
+            };
+            reader.onerror = () => {
+                showError(`Failed to read file: ${file.name}`);
+            };
+            reader.readAsText(file);
+        });
+    }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, showError]);
+
     return (
-        <div className="app-container">
+        <div
+            className="app-container"
+            onDragOver={handleFileDragOver}
+            onDrop={handleFileDrop}
+        >
             <ErrorNotification errors={errors} onDismiss={dismissError} />
             <div className="tab-bar" role="tablist" aria-label="Open documents">
                 {documents.map(doc => (

@@ -36,18 +36,22 @@ export const useDocuments = () => {
   };
 
   const closeTab = (id) => {
-    setDocuments(prev => {
-      const newDocs = prev.filter(d => d.id !== id);
-      if (newDocs.length === 0) {
-        const defaultDoc = { id: 'default', name: 'Untitled', content: '', filePath: null };
-        setActiveTabId('default');
-        return [defaultDoc];
-      }
-      if (activeTabId === id) {
-        setActiveTabId(newDocs[newDocs.length - 1].id);
-      }
-      return newDocs;
-    });
+    // Calculate new state outside of setters
+    const newDocs = documents.filter(d => d.id !== id);
+
+    if (newDocs.length === 0) {
+      const defaultDoc = { id: 'default', name: 'Untitled', content: '', filePath: null };
+      setDocuments([defaultDoc]);
+      setActiveTabId('default');
+      return;
+    }
+
+    // If closing the active tab, switch to the last tab
+    if (activeTabId === id) {
+      setActiveTabId(newDocs[newDocs.length - 1].id);
+    }
+
+    setDocuments(newDocs);
   };
 
   return {

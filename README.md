@@ -1,7 +1,7 @@
 # Markdown Viewer
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.3.0-blue)
+![Version](https://img.shields.io/badge/version-1.4.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -43,6 +43,7 @@ A feature-rich, accessible, and performant Markdown Viewer for macOS built with 
 - **Enhanced Focus Indicators**: Clear visual focus states for all interactive elements
 
 ### ⌨️ Keyboard Shortcuts
+- `Cmd+O` / `Ctrl+O` - Open file dialog
 - `Cmd+B` / `Ctrl+B` - Bold formatting
 - `Cmd+I` / `Ctrl+I` - Italic formatting
 - `Cmd+E` / `Ctrl+E` - Toggle Preview/Code view
@@ -122,6 +123,106 @@ npm run make
 - Cycles through: System → Light → Dark → System
 - Respects OS theme preferences in System mode
 
+## 🧪 Development & Testing
+
+### Quick Start Development
+```bash
+# Start the development server (hot reload enabled)
+npm start
+```
+
+This launches the Electron app with Vite's hot module replacement:
+- **Renderer changes** (React components, hooks, CSS) reload instantly
+- **Main/preload changes** (main.js, preload.js) require restart
+
+### Testing File Opening (Development Mode)
+
+Since the dev server doesn't register macOS file associations, use these methods:
+
+#### Option 1: File → Open Menu
+1. Start dev server: `npm start`
+2. Click **File → Open** in the menu bar (or press `Cmd+O`)
+3. Select a `.md` file
+4. Test opening multiple files to verify no duplicate tabs
+
+#### Option 2: Drag and Drop
+1. Start dev server: `npm start`
+2. Drag `.md` files from Finder onto the app window
+3. Drop to open them
+4. Test with multiple files
+
+### Testing File Associations (Production Build)
+
+To test macOS file associations (double-clicking .md files):
+
+```bash
+# Build production app
+npm run make
+
+# App created at:
+# /Users/true/dev/mdviewer/out/mdviewer-darwin-arm64/mdviewer.app
+
+# Test by double-clicking .md files in Finder
+```
+
+**⚠️ Note**: Production builds register with macOS and take over `.md` file associations.
+
+### Stopping the Dev Server
+
+```bash
+# If Ctrl+C doesn't work, force kill:
+pkill -f Electron
+```
+
+### Cleaning Build Artifacts
+
+```bash
+# Remove production builds
+rm -rf /Users/true/dev/mdviewer/out/
+
+# Full clean (also removes node_modules)
+rm -rf /Users/true/dev/mdviewer/out/ node_modules/
+npm install
+```
+
+### Testing Checklist
+
+#### File Opening Fixes
+- [ ] Open first .md file - should NOT show "Untitled" default document
+- [ ] Open same file again - should NOT create duplicate tab
+- [ ] Open different file - should create one new tab only
+- [ ] Drag multiple files - each should open once
+- [ ] Use File → Open - should work identically to drag-and-drop
+
+#### Regression Testing
+- [ ] Theme switching works (System/Light/Dark)
+- [ ] View mode toggle (Preview/Code)
+- [ ] Text formatting buttons (Bold/Italic/List)
+- [ ] Copy to clipboard (Preview vs Code mode)
+- [ ] Tab closing and switching
+- [ ] Status bar shows correct statistics
+- [ ] Keyboard shortcuts work
+
+### Development Workflow
+
+```bash
+# 1. Start dev server
+npm start
+
+# 2. Make changes to code
+#    - Renderer changes auto-reload
+#    - Main/preload changes need restart
+
+# 3. Test using File → Open or drag-and-drop
+
+# 4. For production testing:
+npm run make
+# Test file associations by double-clicking .md files
+
+# 5. Clean up production build when done
+rm -rf out/
+```
+
 ## 🏗️ Architecture
 
 ### Technology Stack
@@ -151,14 +252,11 @@ mdviewer/
 │   │   ├── useTextFormatting.js # Text formatting logic
 │   │   ├── useFileHandler.js   # File opening via IPC
 │   │   ├── useErrorHandler.js  # Error notifications
-│   │   ├── useKeyboardShortcuts.js # Keyboard bindings
-│   │   └── useDebounce.js      # Debouncing utility
+│   │   └── useKeyboardShortcuts.js # Keyboard bindings
 │   ├── utils/                  # Utility functions
 │   │   └── textCalculations.js # Text statistics
 │   ├── constants/              # App constants
 │   │   └── index.js            # Configuration values
-│   ├── types/                  # Type definitions
-│   │   └── propTypes.js        # PropTypes schemas
 │   └── index.css               # Global styles
 ├── forge.config.js             # Electron Forge config
 ├── vite.*.config.mjs           # Vite configurations
@@ -172,6 +270,32 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [1.4.0] - 2025-11-21
+- **Critical Bug Fixes**:
+  - Fixed event listener accumulation causing duplicate tabs when opening files
+  - Fixed default "Untitled" document persisting when opening real files
+  - Fixed race condition in file opening on macOS launch
+  - Fixed memory leak in error notification timeout handling
+  - Fixed race condition in tab closing state updates
+
+- **New Features**:
+  - Added File → Open menu with Cmd+O keyboard shortcut
+  - Added drag-and-drop support for opening Markdown files onto app window
+  - Application menu with File, Edit, View, and Window menus
+
+- **Code Quality**:
+  - Removed unused constants (FORMATTING, DIVIDER_STYLES)
+  - Removed unused useDebounce hook
+  - Removed unused propTypes.js file
+  - Improved error handling consistency in clipboard operations
+  - Added IPC handler return values for better completion signaling
+
+- **Developer Experience**:
+  - Added comprehensive development and testing documentation
+  - Documented dev server workflow with File → Open and drag-and-drop
+  - Added testing checklist for bug fixes and regression tests
+  - Explained macOS file association behavior in development vs production
 
 ### [1.3.0] - 2025-11-21
 - **Architecture Improvements**:
