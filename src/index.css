@@ -274,6 +274,11 @@ body {
   opacity: 0.8;
 }
 
+.status-version {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
 .tab-bar {
   display: flex;
   background-color: var(--toolbar-bg);
