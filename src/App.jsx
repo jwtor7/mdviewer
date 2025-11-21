@@ -1,156 +1,78 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
 import MarkdownPreview from './components/MarkdownPreview';
 import CodeEditor from './components/CodeEditor';
+import ErrorNotification from './components/ErrorNotification';
+import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index.js';
+import { VIEW_MODES } from './constants/index.js';
+import { calculateTextStats } from './utils/textCalculations.js';
 import './index.css';
 
 const App = () => {
-    const [documents, setDocuments] = useState([
-        { id: 'default', name: 'Untitled', content: '# Welcome to Markdown Viewer\n\nStart typing or open a file to begin.', filePath: null }
-    ]);
-    const [activeTabId, setActiveTabId] = useState('default');
-    const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'code'
-    const [theme, setTheme] = useState('system'); // 'system' | 'light' | 'dark'
+    const {
+        documents,
+        activeDoc,
+        activeTabId,
+        setActiveTabId,
+        updateContent,
+        addDocument,
+        updateExistingDocument,
+        findDocumentByPath,
+        closeTab: closeDocument,
+    } = useDocuments();
+
+    const { theme, handleThemeToggle, getThemeIcon } = useTheme();
+    const { errors, showError, dismissError } = useErrorHandler();
+    const [viewMode, setViewMode] = useState(VIEW_MODES.PREVIEW);
     const textareaRef = useRef(null);
 
-    const activeDoc = documents.find(d => d.id === activeTabId) || documents[0];
-    const content = activeDoc.content;
+    const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
+    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId);
 
-    const setContent = (newContent) => {
-        setDocuments(prev => prev.map(doc =>
-            doc.id === activeTabId ? { ...doc, content: newContent } : doc
-        ));
-    };
+    // Keyboard shortcuts
+    useKeyboardShortcuts({
+        onBold: () => handleFormat('bold'),
+        onItalic: () => handleFormat('italic'),
+        onToggleView: useCallback(() => {
+            setViewMode(prev => prev === VIEW_MODES.PREVIEW ? VIEW_MODES.CODE : VIEW_MODES.PREVIEW);
+        }, []),
+        onToggleTheme: handleThemeToggle,
+    });
 
-    useEffect(() => {
-        // Listen for file content from main process
-        if (window.electronAPI) {
-            window.electronAPI.onFileOpen((value) => {
-                // value is { filePath, content, name } or just string (legacy)
-                const filePath = value.filePath || null;
-                const fileContent = value.content || value;
-                const fileName = value.name || 'Untitled';
+    // Performance: Memoize text statistics
+    const textStats = useMemo(
+        () => calculateTextStats(activeDoc.content),
+        [activeDoc.content]
+    );
 
-                setDocuments(prev => {
-                    const existing = prev.find(d => d.filePath === filePath);
-                    if (existing && filePath) {
-                        setActiveTabId(existing.id);
-                        return prev.map(d => d.id === existing.id ? { ...d, content: fileContent } : d);
+    const handleCopy = useCallback(async () => {
+        try {
+            if (viewMode === VIEW_MODES.CODE) {
+                await navigator.clipboard.writeText(activeDoc.content);
+            } else {
+                const previewElement = document.querySelector('.markdown-preview');
+                if (previewElement) {
+                    try {
+                        const htmlBlob = new Blob([previewElement.innerHTML], { type: 'text/html' });
+                        const textBlob = new Blob([previewElement.innerText], { type: 'text/plain' });
+                        const data = [new ClipboardItem({
+                            'text/html': htmlBlob,
+                            'text/plain': textBlob
+                        })];
+                        await navigator.clipboard.write(data);
+                    } catch (err) {
+                        // Fallback to plain text
+                        await navigator.clipboard.writeText(previewElement.innerText);
                     }
-                    const newId = Date.now().toString();
-                    setActiveTabId(newId);
-                    return [...prev, { id: newId, name: fileName, content: fileContent, filePath }];
-                });
-            });
-        }
-    }, []);
-
-    useEffect(() => {
-        const applyTheme = (newTheme) => {
-            const root = document.documentElement;
-            const isDark = newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-            root.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        };
-
-        applyTheme(theme);
-
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleChange = () => {
-            if (theme === 'system') {
-                applyTheme('system');
-            }
-        };
-
-        mediaQuery.addEventListener('change', handleChange);
-        return () => mediaQuery.removeEventListener('change', handleChange);
-    }, [theme]);
-
-    const handleCopy = async () => {
-        if (viewMode === 'code') {
-            await navigator.clipboard.writeText(content);
-        } else {
-            const previewElement = document.querySelector('.markdown-preview');
-            if (previewElement) {
-                try {
-                    const htmlBlob = new Blob([previewElement.innerHTML], { type: 'text/html' });
-                    const textBlob = new Blob([previewElement.innerText], { type: 'text/plain' });
-                    const data = [new ClipboardItem({
-                        'text/html': htmlBlob,
-                        'text/plain': textBlob
-                    })];
-                    await navigator.clipboard.write(data);
-                } catch (err) {
-                    console.error('Failed to copy rich text:', err);
-                    // Fallback to plain text
-                    await navigator.clipboard.writeText(previewElement.innerText);
                 }
             }
+        } catch (err) {
+            showError('Failed to copy to clipboard');
         }
-    };
+    }, [viewMode, activeDoc.content, showError]);
 
-    const handleThemeToggle = () => {
-        setTheme(prev => {
-            if (prev === 'system') return 'light';
-            if (prev === 'light') return 'dark';
-            return 'system';
-        });
-    };
-
-    const handleFormat = (type) => {
-        if (viewMode === 'preview') return;
-        if (!textareaRef.current) return;
-
-        const textarea = textareaRef.current;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const selectedText = content.substring(start, end);
-        let newText = '';
-        let newCursorPos = end;
-
-        switch (type) {
-            case 'bold':
-                newText = `**${selectedText}**`;
-                newCursorPos += 4;
-                break;
-            case 'italic':
-                newText = `*${selectedText}*`;
-                newCursorPos += 2;
-                break;
-            case 'list':
-                newText = `\n- ${selectedText}`;
-                newCursorPos += 3;
-                break;
-            default:
-                return;
-        }
-
-        const newContent = content.substring(0, start) + newText + content.substring(end);
-        setContent(newContent);
-
-        // Restore focus and cursor
-        setTimeout(() => {
-            textarea.focus();
-            textarea.setSelectionRange(start + newText.length, start + newText.length);
-        }, 0);
-    };
-
-    const getThemeIcon = () => {
-        if (theme === 'system') return '⚙️';
-        if (theme === 'light') return '☀️';
-        return '🌙';
-    };
-
-    const closeTab = (e, id) => {
+    const handleCloseTab = (e, id) => {
         e.stopPropagation();
-        setDocuments(prev => {
-            const newDocs = prev.filter(d => d.id !== id);
-            if (newDocs.length === 0) {
-                return [{ id: 'default', name: 'Untitled', content: '', filePath: null }];
-            }
-            if (activeTabId === id) {
-                setActiveTabId(newDocs[newDocs.length - 1].id);
-            }
-            return newDocs;
-        });
+        closeDocument(id);
     };
 
     const handleDragStart = (e, doc) => {
@@ -171,18 +93,15 @@ const App = () => {
                     content: doc.content
                 });
                 // Close the tab in current window
-                closeTab({ stopPropagation: () => { } }, doc.id);
+                closeDocument(doc.id);
             }
         }
     };
 
-    const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
-    const charCount = content.length;
-    const tokenCount = Math.ceil(content.length / 4);
-
     return (
         <div className="app-container">
-            <div className="tab-bar">
+            <ErrorNotification errors={errors} onDismiss={dismissError} />
+            <div className="tab-bar" role="tablist" aria-label="Open documents">
                 {documents.map(doc => (
                     <div
                         key={doc.id}
@@ -191,9 +110,20 @@ const App = () => {
                         draggable={true}
                         onDragStart={(e) => handleDragStart(e, doc)}
                         onDragEnd={(e) => handleDragEnd(e, doc)}
+                        role="tab"
+                        aria-selected={activeTabId === doc.id}
+                        aria-controls="content-area"
+                        tabIndex={activeTabId === doc.id ? 0 : -1}
                     >
                         <span>{doc.name}</span>
-                        <span className="tab-close" onClick={(e) => closeTab(e, doc.id)}>×</span>
+                        <button
+                            className="tab-close"
+                            onClick={(e) => handleCloseTab(e, doc.id)}
+                            aria-label={`Close ${doc.name}`}
+                            tabIndex={-1}
+                        >
+                            ×
+                        </button>
                     </div>
                 ))}
             </div>
@@ -206,16 +136,18 @@ const App = () => {
                     <button
                         className="icon-btn"
                         onClick={() => handleFormat('bold')}
-                        title="Bold"
-                        disabled={viewMode === 'preview'}
+                        title="Bold (Cmd+B)"
+                        aria-label="Format selected text as bold"
+                        disabled={viewMode === VIEW_MODES.PREVIEW}
                     >
                         <b>B</b>
                     </button>
                     <button
                         className="icon-btn"
                         onClick={() => handleFormat('italic')}
-                        title="Italic"
-                        disabled={viewMode === 'preview'}
+                        title="Italic (Cmd+I)"
+                        aria-label="Format selected text as italic"
+                        disabled={viewMode === VIEW_MODES.PREVIEW}
                     >
                         <i>I</i>
                     </button>
@@ -223,47 +155,69 @@ const App = () => {
                         className="icon-btn"
                         onClick={() => handleFormat('list')}
                         title="List"
-                        disabled={viewMode === 'preview'}
+                        aria-label="Format selected text as list item"
+                        disabled={viewMode === VIEW_MODES.PREVIEW}
                     >
                         •
                     </button>
-                    <div style={{ width: '1px', height: '20px', backgroundColor: 'var(--toolbar-border)', margin: '0 5px' }}></div>
+                    <div className="toolbar-divider" role="separator"></div>
 
-                    <button className="icon-btn" onClick={handleCopy} title="Copy Markdown">
+                    <button
+                        className="icon-btn"
+                        onClick={handleCopy}
+                        title="Copy (Cmd+C)"
+                        aria-label={viewMode === VIEW_MODES.CODE ? 'Copy markdown source' : 'Copy rendered preview'}
+                    >
                         📋
                     </button>
 
-                    <button className="icon-btn" onClick={handleThemeToggle} title={`Theme: ${theme}`}>
+                    <button
+                        className="icon-btn"
+                        onClick={handleThemeToggle}
+                        title={`Theme: ${theme} (Cmd+T)`}
+                        aria-label={`Current theme: ${theme}. Click to change theme.`}
+                    >
                         {getThemeIcon()}
                     </button>
 
-                    <div className="toggle-container">
+                    <div className="toggle-container" role="tablist" aria-label="View mode">
                         <button
-                            className={`toggle-btn ${viewMode === 'preview' ? 'active' : ''}`}
-                            onClick={() => setViewMode('preview')}
+                            className={`toggle-btn ${viewMode === VIEW_MODES.PREVIEW ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.PREVIEW)}
+                            role="tab"
+                            aria-selected={viewMode === VIEW_MODES.PREVIEW}
+                            aria-controls="content-area"
                         >
                             Preview
                         </button>
                         <button
-                            className={`toggle-btn ${viewMode === 'code' ? 'active' : ''}`}
-                            onClick={() => setViewMode('code')}
+                            className={`toggle-btn ${viewMode === VIEW_MODES.CODE ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.CODE)}
+                            role="tab"
+                            aria-selected={viewMode === VIEW_MODES.CODE}
+                            aria-controls="content-area"
                         >
                             Code
                         </button>
                     </div>
                 </div>
             </div>
-            <div className="content-area">
-                {viewMode === 'preview' ? (
-                    <MarkdownPreview content={content} />
+            <div
+                className="content-area"
+                id="content-area"
+                role="tabpanel"
+                aria-label={viewMode === VIEW_MODES.PREVIEW ? 'Markdown preview' : 'Markdown editor'}
+            >
+                {viewMode === VIEW_MODES.PREVIEW ? (
+                    <MarkdownPreview content={activeDoc.content} />
                 ) : (
-                    <CodeEditor ref={textareaRef} content={content} onChange={setContent} />
+                    <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
                 )}
             </div>
-            <div className="status-bar">
-                <div className="status-item">Words: {wordCount}</div>
-                <div className="status-item">Chars: {charCount}</div>
-                <div className="status-item">Tokens: {tokenCount}</div>
+            <div className="status-bar" role="status" aria-live="polite">
+                <div className="status-item" aria-label="Word count">Words: {textStats.wordCount}</div>
+                <div className="status-item" aria-label="Character count">Chars: {textStats.charCount}</div>
+                <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
             </div>
         </div>
     );

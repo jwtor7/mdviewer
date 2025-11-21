@@ -1,13 +1,14 @@
-import React from 'react';
+import React, { memo } from 'react';
+import PropTypes from 'prop-types';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 
-const MarkdownPreview = ({ content }) => {
+const MarkdownPreview = memo(({ content }) => {
   return (
-    <div className="markdown-preview" style={{ padding: '20px', height: '100%', overflowY: 'auto', color: '#abb2bf', backgroundColor: '#282c34' }}>
+    <div className="markdown-preview" role="document" aria-label="Rendered markdown preview">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypeSanitize]}
@@ -35,6 +36,12 @@ const MarkdownPreview = ({ content }) => {
       </ReactMarkdown>
     </div>
   );
+});
+
+MarkdownPreview.displayName = 'MarkdownPreview';
+
+MarkdownPreview.propTypes = {
+  content: PropTypes.string.isRequired,
 };
 
 export default MarkdownPreview;

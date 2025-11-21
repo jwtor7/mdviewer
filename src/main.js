@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
+import { WINDOW_CONFIG } from './constants/index.js';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -13,8 +14,8 @@ let mainWindow;
 const createWindow = (initialFile = null) => {
   // Create the browser window.
   const win = new BrowserWindow({
-    width: 800,
-    height: 600,
+    width: WINDOW_CONFIG.DEFAULT_WIDTH,
+    height: WINDOW_CONFIG.DEFAULT_HEIGHT,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
