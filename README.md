@@ -1,14 +1,32 @@
 # Markdown Viewer
 
+<div align="center">
+
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.4.3-blue.svg)
+![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 ![TypeSafe](https://img.shields.io/badge/types-PropTypes-blue)
 
-A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron and React.
+**A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron and React.**
+
+</div>
+
+## 📋 Table of Contents
+
+- [Features](#-features)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [Development & Testing](#-development--testing)
+- [Architecture](#-architecture)
+- [Changelog](#-changelog)
+- [Upcoming Features](#-upcoming-features)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Author](#-author)
+- [Acknowledgments](#-acknowledgments)
 
 ## ✨ Features
 
@@ -280,16 +298,24 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.0.0] - 2025-11-21
+- **Major Release**:
+  - Complete overhaul of tab and window management.
+  - Robust drag-and-drop support for tabs between windows.
+  - Smart window closing logic.
+  - Enhanced stability and performance.
+
+### [1.4.3] - 2025-11-21
+- **New Features**:
+  - Added tab reconnection: Drag tabs back into the main window to reconnect them.
+  - Improved window management: Windows now close automatically when the last tab is dragged out.
+  - Fixed "Untitled" window issue during drag-and-drop.
+
 ### [1.4.2] - 2025-11-21
 - **New Features**:
-  - **v1.4.3**
-    - Added tab reconnection: Drag tabs back into the main window to reconnect them.
-    - Improved window management: Windows now close automatically when the last tab is dragged out.
-    - Fixed "Untitled" window issue during drag-and-drop.
-  - **v1.4.2**
-    - Added version display in status bar.
-    - Enabled offline-capable prototyping workflow.
-    - Updated prototypes to display prototype version
+  - Added version display in status bar.
+  - Enabled offline-capable prototyping workflow.
+  - Updated prototypes to display prototype version
 
 ### [1.4.1] - 2025-11-21
 - **Bug Fixes**:
@@ -352,7 +378,7 @@ mdviewer/
 
 ### [1.2.0] - 2025-11-21
 - **Multi-Tab Support**: Open multiple Markdown files in tabs
-- **Drag-to-Spawn**: Drag tabs outside to create new windows
+- **Drag-to-Spawn Windows**: Drag tabs outside to create new windows
 - Improved file handling and state management
 
 ### [1.1.0] - 2025-11-21
@@ -368,10 +394,9 @@ mdviewer/
 ## 🚧 Upcoming Features
 
 - [ ] **Export to HTML/PDF**: Save rendered markdown as standalone files
-- [ ] **Auto-Save**: Automatically persist changes to disk
+- [ ] **Save Button**: Implement a save button / menu item
 - [ ] **Split View**: Side-by-side code and preview
-- [ ] **Custom CSS**: User-provided stylesheets for preview
-- [ ] **Vim Mode**: Vim keybindings in code editor
+- [ ] **Solarized Theme**: Solarized Theme similar to this one in antigravity
 - [ ] **Find & Replace**: Text search and replacement
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
@@ -387,7 +412,11 @@ MIT License - see [LICENSE](LICENSE) for details
 ## 👤 Author
 
 **Junior**
-Email: jr@trustcyber.ca
+
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://ca.linkedin.com/in/juniorw)
+[![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@jr.trustcyber)
+[![Substack](https://img.shields.io/badge/Substack-FF6719?style=for-the-badge&logo=substack&logoColor=white)](https://substack.com/@trustcyber)
+[![X (Twitter)](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/TrustCyberJR)
 
 ## 🙏 Acknowledgments
 
