@@ -8,8 +8,9 @@
 A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 
 ## Features
-- **Instant Rendering**: View Markdown files as they are meant to be seen.
+- **Instant Rendering**: View Markdown files as they are meant to be seen with GitHub Flavored Markdown.
 - **Code View**: Toggle between rendered HTML and raw Markdown source.
+- **Syntax Highlighting**: Beautiful code block highlighting.
 - **Offline**: Runs 100% locally without internet access.
 - **Secure**: Sandboxed environment with strict Content Security Policy.
 
@@ -34,6 +35,11 @@ A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 ---
 
 ## Changelog
+
+### [1.1.0] - 2025-11-21
+- Added UI with Preview/Code toggle.
+- Implemented Markdown rendering with GFM support.
+- Added syntax highlighting for code blocks.
 
 ### [1.0.0] - 2025-11-21
 - Initial release.
