@@ -1,11 +1,34 @@
+:root {
+  --bg-color: #282c34;
+  --text-color: #abb2bf;
+  --toolbar-bg: #21252b;
+  --toolbar-border: #181a1f;
+  --editor-bg: #1e1e1e;
+  --editor-text: #d4d4d4;
+  --btn-hover: #3e4451;
+  --btn-active: #3e4451;
+}
+
+[data-theme='light'] {
+  --bg-color: #ffffff;
+  --text-color: #333333;
+  --toolbar-bg: #f0f0f0;
+  --toolbar-border: #e0e0e0;
+  --editor-bg: #ffffff;
+  --editor-text: #333333;
+  --btn-hover: #e0e0e0;
+  --btn-active: #d0d0d0;
+}
+
 body {
   margin: 0;
   padding: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  background-color: #282c34;
-  color: white;
+  background-color: var(--bg-color);
+  color: var(--text-color);
   height: 100vh;
   overflow: hidden;
+  transition: background-color 0.3s, color 0.3s;
 }
 
 #root {
@@ -20,24 +43,32 @@ body {
 
 .toolbar {
   height: 50px;
-  background-color: #21252b;
+  background-color: var(--toolbar-bg);
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  border-bottom: 1px solid #181a1f;
+  border-bottom: 1px solid var(--toolbar-border);
   -webkit-app-region: drag;
-  /* Allow dragging window by toolbar */
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  -webkit-app-region: no-drag;
 }
 
 .toolbar-title {
   font-weight: bold;
   font-size: 14px;
+  color: var(--text-color);
 }
 
 .toggle-container {
   display: flex;
-  background-color: #181a1f;
+  background-color: var(--toolbar-border);
   border-radius: 4px;
   padding: 2px;
   -webkit-app-region: no-drag;
@@ -46,26 +77,78 @@ body {
 .toggle-btn {
   background: none;
   border: none;
-  color: #9da5b4;
+  color: var(--text-color);
   padding: 5px 15px;
   cursor: pointer;
   font-size: 12px;
   border-radius: 3px;
   transition: all 0.2s;
+  opacity: 0.7;
 }
 
 .toggle-btn:hover {
-  color: white;
+  background-color: var(--btn-hover);
+  opacity: 1;
 }
 
 .toggle-btn.active {
-  background-color: #3e4451;
-  color: white;
+  background-color: var(--btn-active);
+  color: var(--text-color);
   font-weight: bold;
+  opacity: 1;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  padding: 6px;
+  cursor: pointer;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  opacity: 0.7;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn:hover {
+  background-color: var(--btn-hover);
+  opacity: 1;
+}
+
+.icon-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
 }
 
 .content-area {
   flex: 1;
   overflow: hidden;
   position: relative;
+  background-color: var(--bg-color);
+}
+
+.markdown-preview {
+  background-color: var(--bg-color) !important;
+  color: var(--text-color) !important;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.status-bar {
+  height: 25px;
+  background-color: var(--toolbar-bg);
+  border-top: 1px solid var(--toolbar-border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--text-color);
+  -webkit-app-region: no-drag;
+}
+
+.status-item {
+  opacity: 0.8;
 }

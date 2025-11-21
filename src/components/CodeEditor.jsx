@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 
-const CodeEditor = ({ content, onChange }) => {
+const CodeEditor = forwardRef(({ content, onChange }, ref) => {
   return (
     <textarea
+      ref={ref}
       value={content}
       onChange={(e) => onChange(e.target.value)}
       style={{
@@ -14,11 +15,11 @@ const CodeEditor = ({ content, onChange }) => {
         border: 'none',
         resize: 'none',
         outline: 'none',
-        backgroundColor: '#1e1e1e',
-        color: '#d4d4d4',
+        backgroundColor: 'var(--editor-bg)',
+        color: 'var(--editor-text)',
       }}
     />
   );
-};
+});
 
 export default CodeEditor;

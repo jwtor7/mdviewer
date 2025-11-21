@@ -47,11 +47,26 @@ A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 - Enabled drag-and-drop support on app icon.
 
 ### [1.1.0] - 2025-11-21
-- Added UI with Preview/Code toggle.
-- Implemented Markdown rendering with GFM support.
-- Added syntax highlighting for code blocks.
+- **Toolbar**:
+    - Copy to Clipboard: Copies Markdown source in Code view, and Rich Text (HTML) in Preview view.
+    - Theme Toggle: Switch between Light, Dark, and System themes.
+    - Formatting Buttons: Bold, Italic, and List buttons (Code view only).
+- **Status Bar**: Real-time Word, Character, and Token counts.
+- **UI**: Improved layout with visible toolbar in all views.
+- **Core**:
+    - Preview/Code toggle.
+    - GFM support.
+    - Syntax highlighting.
 
 ### [1.0.0] - 2025-11-21
 - Initial release.
 - Basic Markdown rendering.
 - Code/Preview toggle.
+
+## Upcoming Features
+
+- [ ] **Export to HTML/PDF**: Save your rendered markdown as a standalone HTML file or PDF document.
+- [ ] **Auto-Save**: Automatically save changes to the open file.
+- [ ] **Split View**: View code and preview side-by-side.
+- [ ] **Custom CSS**: Load your own CSS file to customize the preview.
+- [ ] **Vim Mode**: Keybindings for Vim users in the code editor.
