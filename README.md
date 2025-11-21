@@ -212,17 +212,6 @@ npm start
 # 2. Make changes to code
 #    - Renderer changes auto-reload
 #    - Main/preload changes need restart
-
-# 3. Test using File → Open or drag-and-drop
-
-# 4. For production testing:
-npm run make
-# Test file associations by double-clicking .md files
-
-# 5. Clean up production build when done
-rm -rf out/
-# 5. Clean up production build when done
-rm -rf out/
 ```
 
 ### Prototyping Workflow
@@ -230,6 +219,17 @@ For rapid feature iteration without full builds:
 1.  Create a standalone HTML file in `prototypes/` (e.g., `prototypes/new-feature.html`).
 2.  Use React/Babel via CDN for zero-build testing.
 3.  Verify logic and UI in the browser before porting to the Electron app.
+
+### Agent-Driven Standalone Prototypes
+We use a rapid prototyping workflow that allows us to test new features in isolation before integrating them into the main application.
+- **Location**: `prototypes/` directory.
+- **Format**: Standalone HTML files with embedded React/Babel.
+- **Offline Capable**: Uses local libraries in `prototypes/lib/` (React, ReactDOM, Babel, Tailwind), requiring no internet connection.
+- **Workflow**:
+    1.  Agent creates a new HTML file in `prototypes/` (e.g., `feature-name.html`) using `prototypes/template.html`.
+    2.  Agent implements the feature using the standalone React setup.
+    3.  Agent verifies functionality using the browser tool.
+    4.  Once verified, the code is ported to the main Electron app.
 
 
 ## 🏗️ Architecture
