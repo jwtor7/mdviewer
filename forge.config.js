@@ -4,6 +4,17 @@ const { FuseV1Options, FuseVersion } = require('@electron/fuses');
 module.exports = {
   packagerConfig: {
     asar: true,
+    extendInfo: {
+      CFBundleDocumentTypes: [
+        {
+          CFBundleTypeName: 'Markdown File',
+          CFBundleTypeRole: 'Editor',
+          LSHandlerRank: 'Owner',
+          LSItemContentTypes: ['net.daringfireball.markdown'],
+          CFBundleTypeExtensions: ['md', 'markdown'],
+        },
+      ],
+    },
   },
   rebuildConfig: {},
   makers: [
