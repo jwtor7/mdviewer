@@ -4,16 +4,42 @@ import CodeEditor from './components/CodeEditor';
 import './index.css';
 
 const App = () => {
-    const [content, setContent] = useState('# Welcome to Markdown Viewer\n\nStart typing or open a file to begin.');
+    const [documents, setDocuments] = useState([
+        { id: 'default', name: 'Untitled', content: '# Welcome to Markdown Viewer\n\nStart typing or open a file to begin.', filePath: null }
+    ]);
+    const [activeTabId, setActiveTabId] = useState('default');
     const [viewMode, setViewMode] = useState('preview'); // 'preview' | 'code'
     const [theme, setTheme] = useState('system'); // 'system' | 'light' | 'dark'
     const textareaRef = useRef(null);
+
+    const activeDoc = documents.find(d => d.id === activeTabId) || documents[0];
+    const content = activeDoc.content;
+
+    const setContent = (newContent) => {
+        setDocuments(prev => prev.map(doc =>
+            doc.id === activeTabId ? { ...doc, content: newContent } : doc
+        ));
+    };
 
     useEffect(() => {
         // Listen for file content from main process
         if (window.electronAPI) {
             window.electronAPI.onFileOpen((value) => {
-                setContent(value);
+                // value is { filePath, content, name } or just string (legacy)
+                const filePath = value.filePath || null;
+                const fileContent = value.content || value;
+                const fileName = value.name || 'Untitled';
+
+                setDocuments(prev => {
+                    const existing = prev.find(d => d.filePath === filePath);
+                    if (existing && filePath) {
+                        setActiveTabId(existing.id);
+                        return prev.map(d => d.id === existing.id ? { ...d, content: fileContent } : d);
+                    }
+                    const newId = Date.now().toString();
+                    setActiveTabId(newId);
+                    return [...prev, { id: newId, name: fileName, content: fileContent, filePath }];
+                });
             });
         }
     }, []);
@@ -113,12 +139,64 @@ const App = () => {
         return '🌙';
     };
 
+    const closeTab = (e, id) => {
+        e.stopPropagation();
+        setDocuments(prev => {
+            const newDocs = prev.filter(d => d.id !== id);
+            if (newDocs.length === 0) {
+                return [{ id: 'default', name: 'Untitled', content: '', filePath: null }];
+            }
+            if (activeTabId === id) {
+                setActiveTabId(newDocs[newDocs.length - 1].id);
+            }
+            return newDocs;
+        });
+    };
+
+    const handleDragStart = (e, doc) => {
+        e.dataTransfer.setData('text/plain', JSON.stringify(doc));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragEnd = (e, doc) => {
+        // Check if dropped outside the window
+        if (e.screenX < window.screenX ||
+            e.screenX > window.screenX + window.outerWidth ||
+            e.screenY < window.screenY ||
+            e.screenY > window.screenY + window.outerHeight) {
+
+            if (window.electronAPI && window.electronAPI.createWindowForTab) {
+                window.electronAPI.createWindowForTab({
+                    filePath: doc.filePath,
+                    content: doc.content
+                });
+                // Close the tab in current window
+                closeTab({ stopPropagation: () => { } }, doc.id);
+            }
+        }
+    };
+
     const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
     const charCount = content.length;
     const tokenCount = Math.ceil(content.length / 4);
 
     return (
         <div className="app-container">
+            <div className="tab-bar">
+                {documents.map(doc => (
+                    <div
+                        key={doc.id}
+                        className={`tab ${activeTabId === doc.id ? 'active' : ''}`}
+                        onClick={() => setActiveTabId(doc.id)}
+                        draggable={true}
+                        onDragStart={(e) => handleDragStart(e, doc)}
+                        onDragEnd={(e) => handleDragEnd(e, doc)}
+                    >
+                        <span>{doc.name}</span>
+                        <span className="tab-close" onClick={(e) => closeTab(e, doc.id)}>×</span>
+                    </div>
+                ))}
+            </div>
             <div className="toolbar">
                 <div className="toolbar-group">
                     <div className="toolbar-title">Markdown Viewer</div>

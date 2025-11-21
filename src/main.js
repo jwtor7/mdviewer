@@ -1,7 +1,6 @@
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
-
 import fs from 'node:fs';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -11,9 +10,9 @@ if (started) {
 
 let mainWindow;
 
-const createWindow = () => {
+const createWindow = (initialFile = null) => {
   // Create the browser window.
-  mainWindow = new BrowserWindow({
+  const win = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -26,32 +25,55 @@ const createWindow = () => {
 
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    mainWindow.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
+    win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
   } else {
-    mainWindow.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
+    win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
   }
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools();
+  // win.webContents.openDevTools();
+
+  if (initialFile) {
+    win.once('ready-to-show', () => {
+      openFile(initialFile, win);
+    });
+  }
+
+  return win;
 };
 
-const openFile = (filepath) => {
+const openFile = (filepath, targetWindow = mainWindow) => {
   fs.readFile(filepath, 'utf-8', (err, data) => {
     if (err) {
       console.error('Failed to read file', err);
       return;
     }
-    if (mainWindow) {
-      mainWindow.webContents.send('file-open', data);
+    if (targetWindow && !targetWindow.isDestroyed()) {
+      targetWindow.webContents.send('file-open', {
+        filePath: filepath,
+        content: data,
+        name: filepath ? path.basename(filepath) : 'Untitled'
+      });
     }
   });
 };
+
+ipcMain.handle('create-window-for-tab', (event, { filePath, content }) => {
+  const win = createWindow();
+  win.once('ready-to-show', () => {
+    win.webContents.send('file-open', {
+      filePath,
+      content,
+      name: filePath ? path.basename(filePath) : 'Untitled'
+    });
+  });
+});
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
-  createWindow();
+  mainWindow = createWindow();
 
   // On OS X it's common to re-create a window in the app when the
   // dock icon is clicked and there are no other windows open.

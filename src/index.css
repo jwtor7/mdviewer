@@ -152,3 +152,58 @@ body {
 .status-item {
   opacity: 0.8;
 }
+
+.tab-bar {
+  display: flex;
+  background-color: var(--toolbar-bg);
+  border-bottom: 1px solid var(--toolbar-border);
+  height: 35px;
+  align-items: flex-end;
+  padding-left: 10px;
+  -webkit-app-region: drag;
+}
+
+.tab {
+  padding: 5px 15px;
+  background-color: var(--toolbar-border);
+  color: var(--text-color);
+  border-radius: 5px 5px 0 0;
+  margin-right: 2px;
+  font-size: 12px;
+  cursor: pointer;
+  opacity: 0.7;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  -webkit-app-region: no-drag;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.tab:hover {
+  opacity: 1;
+  background-color: var(--btn-hover);
+}
+
+.tab.active {
+  background-color: var(--bg-color);
+  opacity: 1;
+  font-weight: bold;
+  border-top: 2px solid #61dafb;
+}
+
+.tab-close {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  opacity: 0.5;
+}
+
+.tab-close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  opacity: 1;
+}

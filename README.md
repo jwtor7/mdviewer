@@ -1,7 +1,7 @@
 # Markdown Viewer
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-1.1.0-blue)
+![Version](https://img.shields.io/badge/version-1.2.0-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-latest-blueviolet)
 
@@ -9,6 +9,8 @@ A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 
 ## Features
 - **Instant Rendering**: View Markdown files as they are meant to be seen with GitHub Flavored Markdown.
+- **Multi-Tab Support**: Open multiple files in tabs, switch between them seamlessly.
+- **Tear-Off Tabs**: Drag tabs out of the window to create new windows.
 - **Code View**: Toggle between rendered HTML and raw Markdown source.
 - **Syntax Highlighting**: Beautiful code block highlighting.
 - **Offline**: Runs 100% locally without internet access.
@@ -36,15 +38,10 @@ A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 
 ## Changelog
 
-### [1.2.1] - 2025-11-21
-- Fixed application title in window.
-- Improved macOS file association configuration.
-- Fixed React mounting issue in renderer.
-
 ### [1.2.0] - 2025-11-21
-- Implemented native file handling (open with...).
-- Added file associations for `.md` files.
-- Enabled drag-and-drop support on app icon.
+- **Multi-Tab Support**: Open multiple Markdown files in tabs within a single window.
+- **Tear-Off Tabs**: Drag tabs outside the window to open them in new windows.
+- Improved file handling and state management.
 
 ### [1.1.0] - 2025-11-21
 - **Toolbar**:
