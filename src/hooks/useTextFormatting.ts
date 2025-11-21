@@ -1,13 +1,25 @@
-import { CALCULATIONS, VIEW_MODES } from '../constants/index.js';
+import type { RefObject } from 'react';
+import { CALCULATIONS, VIEW_MODES, type ViewMode } from '../constants/index.js';
 
-export const useTextFormatting = (content, setContent, textareaRef, viewMode) => {
-  const handleFormat = (type) => {
+type FormatType = 'bold' | 'italic' | 'list';
+
+export interface UseTextFormattingReturn {
+  handleFormat: (type: FormatType) => void;
+}
+
+export const useTextFormatting = (
+  content: string,
+  setContent: (content: string) => void,
+  textareaRef: RefObject<HTMLTextAreaElement | null>,
+  viewMode: ViewMode
+): UseTextFormattingReturn => {
+  const handleFormat = (type: FormatType): void => {
     if (viewMode === VIEW_MODES.PREVIEW) return;
-    if (!textareaRef.current) return;
+    if (!textareaRef?.current) return;
 
     const textarea = textareaRef.current;
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
+    const start: number = textarea.selectionStart;
+    const end: number = textarea.selectionEnd;
     const selectedText = content.substring(start, end);
     let newText = '';
 

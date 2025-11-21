@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "ESNext",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "types": ["vite/client"],
+    "isolatedModules": true
+  },
+  "include": [
+    "src/renderer.tsx",
+    "src/App.tsx",
+    "src/components/**/*",
+    "src/hooks/**/*",
+    "src/utils/**/*",
+    "src/constants/**/*"
+  ]
+}

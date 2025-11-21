@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react';
-import { THEME_MODES } from '../constants/index.js';
+import { THEME_MODES, type ThemeMode } from '../constants/index.js';
 
-export const useTheme = () => {
-  const [theme, setTheme] = useState(THEME_MODES.SYSTEM);
+export interface UseThemeReturn {
+  theme: ThemeMode;
+  handleThemeToggle: () => void;
+  getThemeIcon: () => string;
+}
+
+export const useTheme = (): UseThemeReturn => {
+  const [theme, setTheme] = useState<ThemeMode>(THEME_MODES.SYSTEM);
 
   useEffect(() => {
-    const applyTheme = (newTheme) => {
+    const applyTheme = (newTheme: ThemeMode): void => {
       const root = document.documentElement;
       const isDark = newTheme === THEME_MODES.DARK ||
         (newTheme === THEME_MODES.SYSTEM && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -15,7 +21,7 @@ export const useTheme = () => {
     applyTheme(theme);
 
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
+    const handleChange = (): void => {
       if (theme === THEME_MODES.SYSTEM) {
         applyTheme(THEME_MODES.SYSTEM);
       }
@@ -25,7 +31,7 @@ export const useTheme = () => {
     return () => mediaQuery.removeEventListener('change', handleChange);
   }, [theme]);
 
-  const handleThemeToggle = () => {
+  const handleThemeToggle = (): void => {
     setTheme(prev => {
       if (prev === THEME_MODES.SYSTEM) return THEME_MODES.LIGHT;
       if (prev === THEME_MODES.LIGHT) return THEME_MODES.DARK;
@@ -33,7 +39,7 @@ export const useTheme = () => {
     });
   };
 
-  const getThemeIcon = () => {
+  const getThemeIcon = (): string => {
     if (theme === THEME_MODES.SYSTEM) return '⚙️';
     if (theme === THEME_MODES.LIGHT) return '☀️';
     return '🌙';

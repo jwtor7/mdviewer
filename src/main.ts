@@ -1,26 +1,29 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, dialog, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from './constants/index.js';
+import type { FileOpenData } from './types/electron';
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
-let mainWindow;
-let pendingFileToOpen = null;
+let mainWindow: BrowserWindow | null = null;
+let pendingFileToOpen: string | null = null;
 
-const createMenu = () => {
-  const template = [
+const createMenu = (): void => {
+  const template: MenuItemConstructorOptions[] = [
     {
       label: 'File',
       submenu: [
         {
           label: 'Open...',
           accelerator: 'CmdOrCtrl+O',
-          click: async () => {
+          click: async (): Promise<void> => {
+            if (!mainWindow) return;
+
             const result = await dialog.showOpenDialog(mainWindow, {
               properties: ['openFile'],
               filters: [
@@ -79,7 +82,7 @@ const createMenu = () => {
   Menu.setApplicationMenu(menu);
 };
 
-const createWindow = (initialFile = null) => {
+const createWindow = (initialFile: string | null = null): BrowserWindow => {
   // Create the browser window.
   const win = new BrowserWindow({
     width: WINDOW_CONFIG.DEFAULT_WIDTH,
@@ -111,27 +114,28 @@ const createWindow = (initialFile = null) => {
   return win;
 };
 
-const openFile = (filepath, targetWindow = mainWindow) => {
-  fs.readFile(filepath, 'utf-8', (err, data) => {
+const openFile = (filepath: string, targetWindow: BrowserWindow | null = mainWindow): void => {
+  fs.readFile(filepath, 'utf-8', (err: NodeJS.ErrnoException | null, data: string) => {
     if (err) {
       console.error('Failed to read file', err);
       return;
     }
     if (targetWindow && !targetWindow.isDestroyed()) {
-      targetWindow.webContents.send('file-open', {
+      const fileData: FileOpenData = {
         filePath: filepath,
         content: data,
         name: filepath ? path.basename(filepath) : 'Untitled'
-      });
+      };
+      targetWindow.webContents.send('file-open', fileData);
     }
   });
 };
 
 
 
-const droppedTabs = new Set();
+const droppedTabs = new Set<string>();
 
-ipcMain.handle('tab-dropped', (event, dragId) => {
+ipcMain.handle('tab-dropped', (_event: IpcMainInvokeEvent, dragId: string): boolean => {
   droppedTabs.add(dragId);
   // Auto-cleanup after 5 seconds to prevent memory leaks
   setTimeout(() => {
@@ -140,36 +144,37 @@ ipcMain.handle('tab-dropped', (event, dragId) => {
   return true;
 });
 
-ipcMain.handle('check-tab-dropped', (event, dragId) => {
+ipcMain.handle('check-tab-dropped', (_event: IpcMainInvokeEvent, dragId: string): boolean => {
   const wasDropped = droppedTabs.has(dragId);
-  // Optional: remove immediately if checked? 
-  // Better to keep it briefly in case of race conditions or multiple checks, 
+  // Optional: remove immediately if checked?
+  // Better to keep it briefly in case of race conditions or multiple checks,
   // but usually one check is enough. Let's keep it for the timeout duration to be safe.
   return wasDropped;
 });
 
-ipcMain.handle('close-window', (event) => {
+ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) {
     win.close();
   }
 });
 
-ipcMain.handle('create-window-for-tab', (event, { filePath, content }) => {
+ipcMain.handle('create-window-for-tab', (_event: IpcMainInvokeEvent, { filePath, content }: { filePath: string | null; content: string }): { success: boolean } => {
   const win = createWindow();
   win.once('ready-to-show', () => {
-    win.webContents.send('file-open', {
+    const fileData: FileOpenData = {
       filePath,
       content,
       name: filePath ? path.basename(filePath) : 'Untitled'
-    });
+    };
+    win.webContents.send('file-open', fileData);
   });
   return { success: true };
 });
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon
-app.on('open-file', (event, filePath) => {
+app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
 
   if (mainWindow && mainWindow.webContents) {
@@ -191,8 +196,10 @@ app.whenReady().then(() => {
   // If a file was queued before the window was ready, open it now
   if (pendingFileToOpen) {
     mainWindow.once('ready-to-show', () => {
-      openFile(pendingFileToOpen);
-      pendingFileToOpen = null;
+      if (pendingFileToOpen) {
+        openFile(pendingFileToOpen);
+        pendingFileToOpen = null;
+      }
     });
   }
 

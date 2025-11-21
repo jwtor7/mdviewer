@@ -1,14 +1,15 @@
-import React, { useState, useRef, useMemo, useCallback, memo } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import MarkdownPreview from './components/MarkdownPreview';
 import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
-import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index.js';
-import { VIEW_MODES } from './constants/index.js';
-import { calculateTextStats } from './utils/textCalculations.js';
+import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
+import { VIEW_MODES, type ViewMode, type Document } from './constants/index';
+import type { DraggableDocument } from './types/document';
+import { calculateTextStats } from './utils/textCalculations';
 import pkg from '../package.json';
 import './index.css';
 
-const App = () => {
+const App: React.FC = () => {
     const {
         documents,
         activeDoc,
@@ -23,8 +24,8 @@ const App = () => {
 
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
     const { errors, showError, dismissError } = useErrorHandler();
-    const [viewMode, setViewMode] = useState(VIEW_MODES.PREVIEW);
-    const textareaRef = useRef(null);
+    const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.PREVIEW);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
     useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument);
@@ -45,12 +46,12 @@ const App = () => {
         [activeDoc.content]
     );
 
-    const handleCopy = useCallback(async () => {
+    const handleCopy = useCallback(async (): Promise<void> => {
         try {
             if (viewMode === VIEW_MODES.CODE) {
                 await navigator.clipboard.writeText(activeDoc.content);
             } else {
-                const previewElement = document.querySelector('.markdown-preview');
+                const previewElement = document.querySelector('.markdown-preview') as HTMLElement | null;
                 if (previewElement) {
                     try {
                         const htmlBlob = new Blob([previewElement.innerHTML], { type: 'text/html' });
@@ -72,20 +73,20 @@ const App = () => {
         }
     }, [viewMode, activeDoc.content, showError]);
 
-    const handleCloseTab = (e, id) => {
+    const handleCloseTab = (e: React.MouseEvent<HTMLButtonElement>, id: string): void => {
         e.stopPropagation();
         closeDocument(id);
     };
 
     // Track the current drag operation ID
-    const dragIdRef = useRef(null);
+    const dragIdRef = useRef<string | null>(null);
 
-    const handleDragStart = (e, doc) => {
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document): void => {
         const dragId = Date.now().toString();
         dragIdRef.current = dragId;
 
         // Ensure filePath is included in the dragged data
-        const dragData = {
+        const dragData: DraggableDocument = {
             ...doc,
             filePath: doc.filePath || null, // Explicitly include, even if null
             dragId
@@ -94,7 +95,7 @@ const App = () => {
         e.dataTransfer.effectAllowed = 'move';
     };
 
-    const closeTabOrWindow = (id) => {
+    const closeTabOrWindow = (id: string): void => {
         if (documents.length === 1 && documents[0].id === id) {
             if (window.electronAPI && window.electronAPI.closeWindow) {
                 window.electronAPI.closeWindow();
@@ -106,12 +107,12 @@ const App = () => {
         }
     };
 
-    const handleDragEnd = async (e, doc) => {
+    const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>, doc: Document): Promise<void> => {
         const currentDragId = dragIdRef.current;
 
         // Check if the tab was dropped and handled by ANY window (including this one)
         let handled = false;
-        if (window.electronAPI && window.electronAPI.checkTabDropped) {
+        if (window.electronAPI && window.electronAPI.checkTabDropped && currentDragId) {
             handled = await window.electronAPI.checkTabDropped(currentDragId);
         }
 
@@ -143,7 +144,7 @@ const App = () => {
     };
 
     // Handle file drops onto the app window
-    const handleFileDragOver = useCallback((e) => {
+    const handleFileDragOver = useCallback((e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
         e.stopPropagation();
         // Allow dropping files
@@ -155,7 +156,7 @@ const App = () => {
         }
     }, []);
 
-    const handleFileDrop = useCallback((e) => {
+    const handleFileDrop = useCallback((e: React.DragEvent<HTMLDivElement>): void => {
         e.preventDefault();
         e.stopPropagation();
 
@@ -163,7 +164,7 @@ const App = () => {
         const textData = e.dataTransfer.getData('text/plain');
         if (textData) {
             try {
-                const doc = JSON.parse(textData);
+                const doc = JSON.parse(textData) as DraggableDocument;
 
                 if (doc.id && doc.content && doc.filePath) {
                     // It's a tab!
@@ -186,7 +187,7 @@ const App = () => {
                     }
 
                     // Check if we already have this doc (by path)
-                    const existing = findDocumentByPath(doc.filePath);
+                    const existing = doc.filePath ? findDocumentByPath(doc.filePath) : undefined;
                     if (existing) {
                         setActiveTabId(existing.id);
                     } else {
@@ -206,15 +207,17 @@ const App = () => {
         }
 
         const files = Array.from(e.dataTransfer.files);
-        const markdownFiles = files.filter(file =>
+        const markdownFiles = files.filter((file: File) =>
             file.name.endsWith('.md') || file.name.endsWith('.markdown')
         );
 
-        markdownFiles.forEach(file => {
+        markdownFiles.forEach((file: File) => {
             const reader = new FileReader();
-            reader.onload = (event) => {
-                const content = event.target.result;
-                const existing = findDocumentByPath(file.path);
+            reader.onload = (event: ProgressEvent<FileReader>): void => {
+                const content = event.target?.result as string;
+                // Electron file objects have a 'path' property
+                const filePath = (file as File & { path?: string }).path || null;
+                const existing = filePath ? findDocumentByPath(filePath) : undefined;
 
                 if (existing) {
                     // Update existing document
@@ -226,16 +229,16 @@ const App = () => {
                         id: Date.now().toString() + Math.random(),
                         name: file.name,
                         content,
-                        filePath: file.path,
+                        filePath,
                     });
                 }
             };
-            reader.onerror = () => {
+            reader.onerror = (): void => {
                 showError(`Failed to read file: ${file.name}`);
             };
             reader.readAsText(file);
         });
-    }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, showError]);
+    }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, showError, documents]);
 
     return (
         <div
@@ -245,7 +248,7 @@ const App = () => {
         >
             <ErrorNotification errors={errors} onDismiss={dismissError} />
             <div className="tab-bar" role="tablist" aria-label="Open documents">
-                {documents.map(doc => (
+                {documents.map((doc: Document) => (
                     <div
                         key={doc.id}
                         className={`tab ${activeTabId === doc.id ? 'active' : ''}`}

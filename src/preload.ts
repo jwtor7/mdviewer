@@ -1,0 +1,21 @@
+import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import type { ElectronAPI, FileOpenData } from './types/electron';
+
+contextBridge.exposeInMainWorld('electronAPI', {
+  onFileOpen: (callback: (data: FileOpenData) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, value: FileOpenData): void => callback(value);
+    ipcRenderer.on('file-open', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('file-open', handler);
+    };
+  },
+  createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('create-window-for-tab', data),
+  notifyTabDropped: (dragId: string): Promise<boolean> =>
+    ipcRenderer.invoke('tab-dropped', dragId),
+  checkTabDropped: (dragId: string): Promise<boolean> =>
+    ipcRenderer.invoke('check-tab-dropped', dragId),
+  closeWindow: (): Promise<void> =>
+    ipcRenderer.invoke('close-window'),
+} satisfies ElectronAPI);

@@ -1,7 +1,12 @@
 import React from 'react';
-import PropTypes from 'prop-types';
+import { ErrorItem } from '../types/error';
 
-const ErrorNotification = ({ errors, onDismiss }) => {
+export interface ErrorNotificationProps {
+  errors: ErrorItem[];
+  onDismiss: (id: number) => void;
+}
+
+const ErrorNotification: React.FC<ErrorNotificationProps> = ({ errors, onDismiss }) => {
   if (errors.length === 0) return null;
 
   return (
@@ -20,17 +25,6 @@ const ErrorNotification = ({ errors, onDismiss }) => {
       ))}
     </div>
   );
-};
-
-ErrorNotification.propTypes = {
-  errors: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.number.isRequired,
-      message: PropTypes.string.isRequired,
-      type: PropTypes.string.isRequired,
-    })
-  ).isRequired,
-  onDismiss: PropTypes.func.isRequired,
 };
 
 export default ErrorNotification;

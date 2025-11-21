@@ -1,18 +1,31 @@
 import { useEffect } from 'react';
-import { DEFAULT_DOCUMENT } from '../constants/index.js';
+import { DEFAULT_DOCUMENT, type Document } from '../constants/index.js';
+import type { FileOpenData } from '../types/electron.js';
+import type { DocumentUpdate } from './useDocuments.js';
 
-export const useFileHandler = (addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab) => {
+export const useFileHandler = (
+  addDocument: (doc: Partial<Document>) => string,
+  updateExistingDocument: (id: string, updates: DocumentUpdate) => void,
+  findDocumentByPath: (filePath: string) => Document | undefined,
+  setActiveTabId: (id: string) => void,
+  documents: Document[],
+  closeTab: (id: string) => void
+): void => {
   useEffect(() => {
     // Listen for file content from main process
     if (window.electronAPI) {
-      const cleanup = window.electronAPI.onFileOpen((value) => {
+      const cleanup = window.electronAPI.onFileOpen((value: FileOpenData | string) => {
         // value is { filePath, content, name } or just string (legacy)
-        const filePath = value.filePath || null;
-        const fileContent = value.content || value;
-        const fileName = value.name || 'Untitled';
+        const isFileOpenData = (val: FileOpenData | string): val is FileOpenData => {
+          return typeof val === 'object' && 'content' in val;
+        };
+
+        const filePath = isFileOpenData(value) ? value.filePath : null;
+        const fileContent = isFileOpenData(value) ? value.content : value;
+        const fileName = isFileOpenData(value) ? value.name : 'Untitled';
 
         // Check if document with this path already exists
-        const existing = findDocumentByPath(filePath);
+        const existing = filePath ? findDocumentByPath(filePath) : undefined;
         if (existing && filePath) {
           // Update existing document
           updateExistingDocument(existing.id, { content: fileContent });

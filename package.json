@@ -18,7 +18,11 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\""
+    "lint": "echo \"No linting configured\"",
+    "typecheck": "tsc --noEmit",
+    "typecheck:main": "tsc --noEmit -p tsconfig.main.json",
+    "typecheck:preload": "tsc --noEmit -p tsconfig.preload.json",
+    "typecheck:renderer": "tsc --noEmit -p tsconfig.renderer.json"
   },
   "keywords": [],
   "author": {
@@ -36,12 +40,17 @@
     "@electron-forge/plugin-fuses": "^7.10.2",
     "@electron-forge/plugin-vite": "^7.10.2",
     "@electron/fuses": "^1.8.0",
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.2.6",
+    "@types/react-dom": "^19.2.3",
+    "@types/react-syntax-highlighter": "^15.5.13",
+    "@vitejs/plugin-react": "^5.1.1",
     "electron": "39.2.3",
+    "typescript": "^5.9.3",
     "vite": "^5.4.21"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",
-    "prop-types": "^15.8.1",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
