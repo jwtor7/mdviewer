@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prototype Template</title>
+    <script src="./lib/react.development.js"></script>
+    <script src="./lib/react-dom.development.js"></script>
+    <script src="./lib/babel.min.js"></script>
+    <script src="./lib/tailwindcss.js"></script>
+    <style>
+        body {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+        const APP_VERSION = '1.4.2-proto';
+
+        function App() {
+            return (
+                <div className="h-screen flex flex-col items-center justify-center">
+                    <h1 className="text-3xl font-bold mb-4">Offline Prototype Template</h1>
+                    <p className="text-gray-400">Edit this file to start prototyping.</p>
+                    <div className="mt-8 text-sm text-gray-500">v{APP_VERSION}</div>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+
+</html>
