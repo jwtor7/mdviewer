@@ -5,6 +5,7 @@ import ErrorNotification from './components/ErrorNotification';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index.js';
 import { VIEW_MODES } from './constants/index.js';
 import { calculateTextStats } from './utils/textCalculations.js';
+import pkg from '../package.json';
 import './index.css';
 
 const App = () => {
@@ -267,6 +268,7 @@ const App = () => {
                 <div className="status-item" aria-label="Word count">Words: {textStats.wordCount}</div>
                 <div className="status-item" aria-label="Character count">Chars: {textStats.charCount}</div>
                 <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
+                <div className="status-item" aria-label="App version">v{pkg.version}</div>
             </div>
         </div>
     );

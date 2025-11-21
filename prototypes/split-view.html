@@ -82,6 +82,10 @@
                             </div>
                         )}
                     </div>
+                    <div className="h-6 bg-gray-800 border-t border-gray-700 flex items-center px-4 gap-4 text-xs text-gray-400">
+                        <div>Words: {content.split(/\s+/).filter(w => w.length > 0).length}</div>
+                        <div>v1.4.1-proto</div>
+                    </div>
                 </div>
             );
         }
