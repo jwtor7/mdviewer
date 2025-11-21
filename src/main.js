@@ -2,14 +2,18 @@ import { app, BrowserWindow } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 
+import fs from 'node:fs';
+
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
   app.quit();
 }
 
+let mainWindow;
+
 const createWindow = () => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 800,
     height: 600,
     webPreferences: {
@@ -28,7 +32,19 @@ const createWindow = () => {
   }
 
   // Open the DevTools.
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
+};
+
+const openFile = (filepath) => {
+  fs.readFile(filepath, 'utf-8', (err, data) => {
+    if (err) {
+      console.error('Failed to read file', err);
+      return;
+    }
+    if (mainWindow) {
+      mainWindow.webContents.send('file-open', data);
+    }
+  });
 };
 
 // This method will be called when Electron has finished
@@ -44,6 +60,19 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
+
+  // Handle file opening on launch (e.g. drag and drop onto app icon)
+  app.on('open-file', (event, path) => {
+    event.preventDefault();
+    if (mainWindow) {
+      openFile(path);
+    } else {
+      // If window not ready, wait for it
+      app.once('browser-window-created', () => {
+        openFile(path);
+      });
+    }
+  });
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -54,6 +83,3 @@ app.on('window-all-closed', () => {
     app.quit();
   }
 });
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and import them here.

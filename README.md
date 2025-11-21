@@ -36,6 +36,11 @@ A convenient, offline-capable Markdown Viewer for macOS built with Electron.
 
 ## Changelog
 
+### [1.2.0] - 2025-11-21
+- Implemented native file handling (open with...).
+- Added file associations for `.md` files.
+- Enabled drag-and-drop support on app icon.
+
 ### [1.1.0] - 2025-11-21
 - Added UI with Preview/Code toggle.
 - Implemented Markdown rendering with GFM support.
