@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
+import { app, BrowserWindow, ipcMain, Menu, dialog, shell, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
@@ -335,6 +335,53 @@ ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
   const win = BrowserWindow.fromWebContents(event.sender);
   if (win) {
     win.close();
+  }
+});
+
+ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: string): Promise<void> => {
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-open-external-url')) {
+    console.warn('Rate limit exceeded for open-external-url');
+    throw new Error('Rate limit exceeded');
+  }
+
+  // Security: Validate URL format and protocol
+  try {
+    const parsedUrl = new URL(url);
+
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
+      console.warn(`Blocked attempt to open URL with invalid protocol: ${parsedUrl.protocol}`);
+      throw new Error('Only HTTP and HTTPS URLs are allowed');
+    }
+
+    // Get the window to show the dialog
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win) {
+      throw new Error('Window not found');
+    }
+
+    // Show confirmation dialog
+    const result = await dialog.showMessageBox(win, {
+      type: 'question',
+      buttons: ['Open in Browser', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1,
+      title: 'Open External Link',
+      message: 'Do you want to open this link in your default browser?',
+      detail: url,
+    });
+
+    // If user clicked "Open in Browser" (index 0)
+    if (result.response === 0) {
+      await shell.openExternal(url);
+      console.log(`Opened external URL: ${parsedUrl.origin}`);
+    }
+  } catch (err) {
+    const error = err as Error;
+    console.error('Failed to open external URL:', error.message);
+    throw error;
   }
 });
 

@@ -18,4 +18,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('check-tab-dropped', dragId),
   closeWindow: (): Promise<void> =>
     ipcRenderer.invoke('close-window'),
+  openExternalUrl: (url: string): Promise<void> =>
+    ipcRenderer.invoke('open-external-url', url),
 } satisfies ElectronAPI);

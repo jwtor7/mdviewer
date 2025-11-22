@@ -28,7 +28,9 @@ export type IPCMessage =
   /** Check if a tab was dropped (for drag-and-drop validation) */
   | { channel: 'check-tab-dropped'; data: { dragId: string } }
   /** Request to close the current window */
-  | { channel: 'close-window'; data: void };
+  | { channel: 'close-window'; data: void }
+  /** Request to open an external URL in the default browser */
+  | { channel: 'open-external-url'; data: { url: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -36,6 +38,7 @@ export interface ElectronAPI {
   notifyTabDropped: (dragId: string) => Promise<boolean>;
   checkTabDropped: (dragId: string) => Promise<boolean>;
   closeWindow: () => Promise<void>;
+  openExternalUrl: (url: string) => Promise<void>;
 }
 
 declare global {

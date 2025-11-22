@@ -34,6 +34,30 @@ const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
         </code>
       );
     },
+    a(props) {
+      const { href, children, ...rest } = props;
+
+      const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        if (href && window.electronAPI?.openExternalUrl) {
+          window.electronAPI.openExternalUrl(href).catch((err) => {
+            console.error('Failed to open external URL:', err);
+          });
+        }
+      };
+
+      return (
+        <a
+          href={href}
+          onClick={handleClick}
+          title={href ? `Open link: ${href}` : undefined}
+          style={{ cursor: 'pointer', textDecoration: 'underline' }}
+          {...rest}
+        >
+          {children}
+        </a>
+      );
+    },
   };
 
   return (
