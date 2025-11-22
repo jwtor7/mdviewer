@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { DEFAULT_DOCUMENT, type Document } from '../constants/index.js';
+import { DEFAULT_DOCUMENT } from '../constants/index.js';
+import type { Document } from '../types/document.js';
 
 export interface DocumentUpdate {
   name?: string;

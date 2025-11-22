@@ -4,6 +4,32 @@ export interface FileOpenData {
   name: string;
 }
 
+/**
+ * Discriminated union representing all IPC message types in the application.
+ *
+ * This type provides compile-time safety for IPC communication between the main
+ * and renderer processes. Each message type includes:
+ * - channel: The IPC channel identifier
+ * - data: The payload type for that specific channel
+ *
+ * @example
+ * // In main process handler:
+ * ipcMain.handle('file-open', (event, data: Extract<IPCMessage, { channel: 'file-open' }>['data']) => {
+ *   // data is correctly typed as FileOpenData
+ * });
+ */
+export type IPCMessage =
+  /** Sent when a file should be opened in the renderer */
+  | { channel: 'file-open'; data: FileOpenData }
+  /** Request to create a new window for a tab that was dragged out */
+  | { channel: 'create-window-for-tab'; data: { filePath: string | null; content: string } }
+  /** Notify that a tab was dropped (for drag-and-drop tracking) */
+  | { channel: 'notify-tab-dropped'; data: { dragId: string } }
+  /** Check if a tab was dropped (for drag-and-drop validation) */
+  | { channel: 'check-tab-dropped'; data: { dragId: string } }
+  /** Request to close the current window */
+  | { channel: 'close-window'; data: void };
+
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;

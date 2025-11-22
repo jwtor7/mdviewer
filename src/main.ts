@@ -3,7 +3,21 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from './constants/index.js';
-import type { FileOpenData } from './types/electron';
+import type { FileOpenData, IPCMessage } from './types/electron';
+
+/**
+ * Type helper for IPC handlers that extracts the correct data type for a given channel.
+ * This ensures handlers receive properly typed data based on the IPCMessage union.
+ *
+ * @example
+ * const handler: IPCHandler<'file-open'> = (event, data) => {
+ *   // data is correctly typed as FileOpenData
+ * };
+ */
+type IPCHandler<T extends IPCMessage['channel']> = (
+  event: IpcMainInvokeEvent,
+  data: Extract<IPCMessage, { channel: T }>['data']
+) => any;
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {

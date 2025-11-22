@@ -14,12 +14,7 @@ export const CALCULATIONS = {
   FOCUS_RESTORE_DELAY: 0,
 } as const;
 
-export interface Document {
-  id: string;
-  name: string;
-  content: string;
-  filePath: string | null;
-}
+import type { Document } from '../types/document';
 
 export const DEFAULT_DOCUMENT: Document = {
   id: 'default',
