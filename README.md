@@ -3,14 +3,16 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.0.1-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
-![TypeSafe](https://img.shields.io/badge/types-PropTypes-blue)
 
-**A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron and React.**
+**A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron, React, and TypeScript.**
+
+![mdviewer Screenshot](https://github.com/jwtor7/mdviewer/raw/main/screenshot.png)
 
 </div>
 
@@ -81,7 +83,8 @@
 - **Electron Fuses**: Additional security hardening at build time
 
 ### 💻 Developer Experience
-- **Type Safety**: PropTypes validation on all components
+- **Full TypeScript**: 100% type-safe codebase with strict mode enabled
+- **Type-Safe IPC**: Discriminated unions for inter-process communication
 - **Clean Architecture**: Custom hooks for separation of concerns
 - **Error Handling**: User-friendly error notifications
 - **Modular Code**: Well-organized hooks, components, and utilities
@@ -203,24 +206,6 @@ rm -rf /Users/true/dev/mdviewer/out/ node_modules/
 npm install
 ```
 
-### Testing Checklist
-
-#### File Opening Fixes
-- [ ] Open first .md file - should NOT show "Untitled" default document
-- [ ] Open same file again - should NOT create duplicate tab
-- [ ] Open different file - should create one new tab only
-- [ ] Drag multiple files - each should open once
-- [ ] Use File → Open - should work identically to drag-and-drop
-
-#### Regression Testing
-- [ ] Theme switching works (System/Light/Dark)
-- [ ] View mode toggle (Preview/Code)
-- [ ] Text formatting buttons (Bold/Italic/List)
-- [ ] Copy to clipboard (Preview vs Code mode)
-- [ ] Tab closing and switching
-- [ ] Status bar shows correct statistics
-- [ ] Keyboard shortcuts work
-
 ### Development Workflow
 
 ```bash
@@ -255,6 +240,7 @@ We use a rapid prototyping workflow that allows us to test new features in isola
 ### Technology Stack
 - **Electron 39.2.3**: Cross-platform desktop framework
 - **React 19.2.0**: UI library with modern hooks
+- **TypeScript 5.9.3**: Type-safe development with strict mode
 - **Vite**: Fast build tool and dev server
 - **react-markdown**: Markdown parsing and rendering
 - **remark-gfm**: GitHub Flavored Markdown plugin
@@ -265,26 +251,34 @@ We use a rapid prototyping workflow that allows us to test new features in isola
 ```
 mdviewer/
 ├── src/
-│   ├── main.js                 # Electron main process
-│   ├── preload.js              # Secure IPC bridge
-│   ├── renderer.jsx            # React entry point
-│   ├── App.jsx                 # Main application component
+│   ├── main.ts                 # Electron main process
+│   ├── preload.ts              # Secure IPC bridge
+│   ├── renderer.tsx            # React entry point
+│   ├── App.tsx                 # Main application component
 │   ├── components/             # React components
-│   │   ├── MarkdownPreview.jsx # Preview renderer
-│   │   ├── CodeEditor.jsx      # Code editor
-│   │   └── ErrorNotification.jsx # Error toasts
+│   │   ├── MarkdownPreview.tsx # Preview renderer
+│   │   ├── CodeEditor.tsx      # Code editor
+│   │   └── ErrorNotification.tsx # Error toasts
 │   ├── hooks/                  # Custom React hooks
-│   │   ├── useDocuments.js     # Document state management
-│   │   ├── useTheme.js         # Theme system
-│   │   ├── useTextFormatting.js # Text formatting logic
-│   │   ├── useFileHandler.js   # File opening via IPC
-│   │   ├── useErrorHandler.js  # Error notifications
-│   │   └── useKeyboardShortcuts.js # Keyboard bindings
+│   │   ├── useDocuments.ts     # Document state management
+│   │   ├── useTheme.ts         # Theme system
+│   │   ├── useTextFormatting.ts # Text formatting logic
+│   │   ├── useFileHandler.ts   # File opening via IPC
+│   │   ├── useErrorHandler.ts  # Error notifications
+│   │   └── useKeyboardShortcuts.ts # Keyboard bindings
+│   ├── types/                  # TypeScript definitions
+│   │   ├── document.d.ts       # Document types
+│   │   ├── electron.d.ts       # IPC & Electron types
+│   │   └── error.d.ts          # Error types
 │   ├── utils/                  # Utility functions
-│   │   └── textCalculations.js # Text statistics
+│   │   └── textCalculations.ts # Text statistics
 │   ├── constants/              # App constants
-│   │   └── index.js            # Configuration values
+│   │   └── index.ts            # Configuration values
 │   └── index.css               # Global styles
+├── tsconfig.json               # Base TypeScript config
+├── tsconfig.main.json          # Main process config
+├── tsconfig.preload.json       # Preload config
+├── tsconfig.renderer.json      # Renderer config
 ├── forge.config.js             # Electron Forge config
 ├── vite.*.config.mjs           # Vite configurations
 └── package.json                # Dependencies & scripts
@@ -297,6 +291,17 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.1.0] - 2025-11-21
+- **TypeScript Migration**:
+  - Migrated entire codebase from JavaScript to TypeScript (16 files converted)
+  - Added strict type checking with zero compilation errors
+  - Created comprehensive type definitions for Electron IPC, documents, and errors
+  - Implemented discriminated unions for type-safe IPC communication
+  - Configured separate tsconfig files for main, preload, and renderer processes
+  - Added typecheck scripts to package.json for validation
+  - Enhanced developer experience with full IDE autocomplete and type safety
+  - Zero breaking changes - all functionality preserved
 
 ### [2.0.1] - 2025-11-21
 - **UI Improvements**:
