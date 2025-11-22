@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -291,6 +291,13 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.1.1] - 2025-11-21
+- **Critical Bug Fix**:
+  - Fixed "Object has been destroyed" error when opening files after closing all windows on macOS
+  - Added proper window lifecycle management with 'closed' event handler to clear destroyed window references
+  - Improved window state validation in 'open-file' handler with `isDestroyed()` checks
+  - App now gracefully creates new windows when opening files with no active windows
 
 ### [2.1.0] - 2025-11-21
 - **TypeScript Migration**:

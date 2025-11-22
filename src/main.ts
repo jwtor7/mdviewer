@@ -109,6 +109,13 @@ const createWindow = (initialFile: string | null = null): BrowserWindow => {
     },
   });
 
+  // Clear mainWindow reference when this window is closed
+  win.on('closed', () => {
+    if (mainWindow === win) {
+      mainWindow = null;
+    }
+  });
+
   // and load the index.html of the app.
   if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
     win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
@@ -191,11 +198,14 @@ ipcMain.handle('create-window-for-tab', (_event: IpcMainInvokeEvent, { filePath,
 app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
 
-  if (mainWindow && mainWindow.webContents) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
     // Window exists and is ready
     openFile(filePath);
+  } else if (app.isReady()) {
+    // App is ready but no valid window exists - create a new one
+    mainWindow = createWindow(filePath);
   } else {
-    // Window not ready yet, queue the file
+    // App not ready yet, queue the file
     pendingFileToOpen = filePath;
   }
 });
@@ -221,7 +231,7 @@ app.whenReady().then(() => {
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      createWindow();
+      mainWindow = createWindow();
     }
   });
 });
