@@ -163,7 +163,7 @@ To test actual macOS file associations (double-clicking .md files):
 npm run make
 
 # App location:
-# /Users/true/dev/mdviewer/out/mdviewer-darwin-arm64/mdviewer.app
+# ./out/mdviewer-darwin-arm64/mdviewer.app
 
 # Now test by double-clicking .md files in Finder
 ```
@@ -212,7 +212,7 @@ npm run make
 
 ```bash
 # Remove production builds
-rm -rf /Users/true/dev/mdviewer/out/
+rm -rf out/
 
 # Full clean (also node_modules)
 rm -rf out/ node_modules/

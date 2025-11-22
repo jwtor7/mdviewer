@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.1.1-blue.svg)
+![Version](https://img.shields.io/badge/version-2.1.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -181,7 +181,7 @@ To test macOS file associations (double-clicking .md files):
 npm run make
 
 # App created at:
-# /Users/true/dev/mdviewer/out/mdviewer-darwin-arm64/mdviewer.app
+# ./out/mdviewer-darwin-arm64/mdviewer.app
 
 # Test by double-clicking .md files in Finder
 ```
@@ -199,10 +199,10 @@ pkill -f Electron
 
 ```bash
 # Remove production builds
-rm -rf /Users/true/dev/mdviewer/out/
+rm -rf out/
 
 # Full clean (also removes node_modules)
-rm -rf /Users/true/dev/mdviewer/out/ node_modules/
+rm -rf out/ node_modules/
 npm install
 ```
 
@@ -291,6 +291,11 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.1.2] - 2025-11-22
+- **Security Enhancements**:
+  - Removed local system paths from documentation to prevent information disclosure
+  - Sanitized README.md and CLAUDE.md to use relative paths only
 
 ### [2.1.1] - 2025-11-21
 - **Critical Bug Fix**:
