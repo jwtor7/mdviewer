@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -299,6 +299,16 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.3.0] - 2025-11-22
+- **External Link Handling (Issue #1 Fix)**:
+  - Links in Markdown preview now open in external browser instead of navigating in-app
+  - Added confirmation dialog before opening external URLs for security
+  - URL preview shown in dialog to prevent phishing
+  - Protocol validation (http/https only) prevents malicious URLs
+  - Rate limiting applied to external URL handler
+  - Custom link component with hover tooltip shows destination URL
+  - Implements IPC bridge for secure communication between renderer and main process
 
 ### [2.2.0] - 2025-11-22
 - **Major Security Release**:
