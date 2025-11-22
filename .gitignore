@@ -60,6 +60,10 @@ typings/
 # dotenv environment variables file
 .env
 .env.test
+*.env
+
+# Security audit reports (private, do not commit)
+SecurityReport.md
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache

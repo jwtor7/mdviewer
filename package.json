@@ -1,7 +1,7 @@
 {
   "name": "mdviewer",
   "productName": "mdviewer",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "A feature-rich, accessible Markdown Viewer for macOS",
   "main": ".vite/build/main.js",
   "build": {
@@ -18,7 +18,8 @@
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
-    "lint": "echo \"No linting configured\"",
+    "lint": "eslint src/**/*.{ts,tsx}",
+    "lint:fix": "eslint src/**/*.{ts,tsx} --fix",
     "typecheck": "tsc --noEmit",
     "typecheck:main": "tsc --noEmit -p tsconfig.main.json",
     "typecheck:preload": "tsc --noEmit -p tsconfig.preload.json",
@@ -44,8 +45,13 @@
     "@types/react": "^19.2.6",
     "@types/react-dom": "^19.2.3",
     "@types/react-syntax-highlighter": "^15.5.13",
+    "@typescript-eslint/eslint-plugin": "^8.47.0",
+    "@typescript-eslint/parser": "^8.47.0",
     "@vitejs/plugin-react": "^5.1.1",
     "electron": "39.2.3",
+    "eslint": "^9.39.1",
+    "eslint-plugin-no-secrets": "^2.2.1",
+    "eslint-plugin-security": "^3.0.1",
     "typescript": "^5.9.3",
     "vite": "^5.4.21"
   },

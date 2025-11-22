@@ -40,3 +40,16 @@ export type ViewMode = typeof VIEW_MODES[keyof typeof VIEW_MODES];
 export const ERROR_DISPLAY_DURATION = 5000;
 
 export const DEBOUNCE_DELAY = 300;
+
+// Security Configuration
+export const SECURITY_CONFIG = {
+  MAX_FILE_SIZE: 50 * 1024 * 1024, // 50MB - Maximum file size for markdown files
+  MAX_CONTENT_SIZE: 10 * 1024 * 1024, // 10MB - Maximum content size for IPC messages
+  MAX_WINDOWS: 10, // Maximum number of concurrent windows
+  MAX_DROPPED_TABS: 1000, // Maximum number of drag-drop operations to track
+  ALLOWED_EXTENSIONS: ['.md', '.markdown'] as const, // Allowed file extensions
+  RATE_LIMIT: {
+    MAX_CALLS: 100, // Maximum IPC calls per window
+    WINDOW_MS: 1000, // Rate limit window in milliseconds
+  },
+} as const;

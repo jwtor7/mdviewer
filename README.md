@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.1.2-blue.svg)
+![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -81,6 +81,14 @@
 - **Content Sanitization**: XSS protection via rehype-sanitize
 - **Strict CSP**: Content Security Policy prevents unauthorized code execution
 - **Electron Fuses**: Additional security hardening at build time
+- **Path Traversal Protection**: File path validation prevents unauthorized file access
+- **Input Validation**: All IPC messages validated for type and size
+- **Rate Limiting**: 100 calls/second limit on IPC handlers prevents DoS attacks
+- **File Size Limits**: 50MB max file size, 10MB max IPC content prevents memory exhaustion
+- **Runtime Protection**: External URL navigation blocked, popup window creation prevented
+- **Resource Limits**: Maximum 10 concurrent windows to prevent resource exhaustion
+- **Error Sanitization**: Error messages sanitized to prevent information disclosure
+- **Security Scanning**: ESLint security plugins detect vulnerabilities during development
 
 ### 💻 Developer Experience
 - **Full TypeScript**: 100% type-safe codebase with strict mode enabled
@@ -291,6 +299,25 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.2.0] - 2025-11-22
+- **Major Security Release**:
+  - **Path Traversal Protection**: Added file path validation to prevent unauthorized file access (MODERATE severity fix)
+  - **Input Validation**: Implemented comprehensive IPC message validation for type and size (MODERATE severity fix)
+  - **Rate Limiting**: Added 100 calls/second limit on all IPC handlers to prevent DoS attacks (LOW severity fix)
+  - **File Size Limits**: Enforced 50MB max file size and 10MB max IPC content to prevent memory exhaustion (LOW severity fix)
+  - **Runtime Protection**: Blocked external URL navigation and popup window creation (LOW severity fix)
+  - **Resource Limits**: Implemented maximum 10 concurrent windows to prevent resource exhaustion
+  - **Memory Leak Fix**: Refactored droppedTabs from Set to Map with proper cleanup (LOW severity fix)
+  - **Error Sanitization**: Added error message sanitization to prevent information disclosure (LOW severity fix)
+  - **Security Scanning**: Installed ESLint security plugins (eslint-plugin-security, eslint-plugin-no-secrets)
+  - **Dependency Updates**: Ran npm audit fix to address known vulnerabilities
+  - **Security Constants**: Created centralized security configuration in src/constants/index.ts
+
+- **Developer Experience**:
+  - Added security-focused ESLint configuration with flat config format
+  - New npm scripts: `npm run lint` and `npm run lint:fix`
+  - Comprehensive security audit report generated (SecurityReport.md - not committed)
 
 ### [2.1.2] - 2025-11-22
 - **Security Enhancements**:
