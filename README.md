@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.3-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.4-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -305,6 +305,15 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.6.4] - 2025-11-23
+- **UI/UX Refactoring**:
+  - Renamed view modes for improved clarity: "Preview" → "Rendered", "Code" → "Raw"
+  - Updated all button labels, tooltips, and keyboard shortcut descriptions
+  - Updated error messages and accessibility labels
+  - "Rendered" now clearly indicates processed markdown output
+  - "Raw" now clearly indicates unprocessed markdown source
+  - View mode cycle: Rendered → Raw → Split → Rendered
 
 ### [2.6.3] - 2025-11-23
 - **UI/UX Improvements**:

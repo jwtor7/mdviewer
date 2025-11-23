@@ -20,6 +20,15 @@ Welcome to mdviewer! This test document includes the feature roadmap, recent cha
 
 ## 📝 Recent Changelog
 
+### [2.6.4] - 2025-11-23
+- **UI/UX Refactoring**:
+  - Renamed view modes for improved clarity: "Preview" → "Rendered", "Raw" → "Raw"
+  - Updated all button labels, tooltips, and keyboard shortcut descriptions
+  - Updated error messages and accessibility labels
+  - "Rendered" now clearly indicates processed markdown output
+  - "Raw" now clearly indicates unprocessed markdown source
+  - View mode cycle: Rendered → Raw → Split → Rendered
+
 ### [2.6.3] - 2025-11-23
 - **UI/UX Improvements**:
   - Added scroll position indicator to Raw view - visual bar shows current position in document
@@ -211,5 +220,5 @@ npm run test
 
 ---
 
-**mdviewer v2.6.3** - Built with Electron, React, and TypeScript
+**mdviewer v2.6.4** - Built with Electron, React, and TypeScript
 `;
