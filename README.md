@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -55,7 +55,7 @@
 - **Quick Formatting Buttons**: Bold, Italic, and List formatting
 - **Find & Replace**: Powerful search with case-sensitive option, match navigation, and bulk replace
 - **Rich Text Copy**: Copy rendered HTML or raw Markdown to clipboard
-- **Save As**: Save documents to disk with file picker dialog
+- **Save As**: Save documents as Markdown (.md) or PDF (.pdf) with unified file picker dialog
 - **Keyboard Shortcuts**: Efficient text editing with familiar shortcuts
 - **Selection Preservation**: Smart cursor positioning after formatting
 
@@ -67,7 +67,7 @@
 
 ### ⌨️ Keyboard Shortcuts
 - `Cmd+O` / `Ctrl+O` - Open file dialog
-- `Cmd+S` / `Ctrl+S` - Save As
+- `Cmd+S` / `Ctrl+S` - Save As (Markdown or PDF)
 - `Cmd+F` / `Ctrl+F` - Find & Replace
 - `Cmd+B` / `Ctrl+B` - Bold formatting
 - `Cmd+I` / `Ctrl+I` - Italic formatting
@@ -305,6 +305,15 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.6.0] - 2025-11-22
+- **Enhanced Save As Functionality**:
+  - Save As (💾) now offers both Markdown and PDF export in a single unified dialog
+  - File format automatically detected based on chosen file extension (.md, .markdown, or .pdf)
+  - Format-specific success messages ("Markdown saved!" vs "PDF exported!")
+  - Removed separate Export PDF button to simplify toolbar UI
+  - Reuses existing PDF generation logic for consistent output
+  - Security: Rate limiting, content size validation, and input sanitization
 
 ### [2.5.0] - 2025-11-22
 - **Save As Functionality**:

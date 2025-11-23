@@ -565,12 +565,13 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { success: false, error: 'Window not found' };
     }
 
-    // Show save dialog
+    // Show save dialog with both Markdown and PDF options
     const result = await dialog.showSaveDialog(parentWindow, {
-      title: 'Save File',
+      title: 'Save As',
       defaultPath: filePath || filename,
       filters: [
         { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+        { name: 'PDF Files', extensions: ['pdf'] },
         { name: 'All Files', extensions: ['*'] }
       ]
     });
@@ -579,10 +580,57 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { success: false, error: 'Cancelled' };
     }
 
-    // Write content to file
-    await fsPromises.writeFile(result.filePath, content, 'utf-8');
+    // Determine format based on file extension
+    const ext = path.extname(result.filePath).toLowerCase();
 
-    return { success: true, filePath: result.filePath };
+    if (ext === '.pdf') {
+      // Export as PDF using existing PDF generation logic
+      try {
+        // Create a temporary hidden window to render the content
+        const pdfWindow = new BrowserWindow({
+          show: false,
+          webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: true,
+          },
+        });
+
+        // Generate HTML with inline CSS for PDF rendering
+        const htmlContent = await generatePDFHTML(content);
+
+        await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+        // Wait for page to finish loading
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        // Generate PDF
+        const pdfData = await pdfWindow.webContents.printToPDF({
+          printBackground: true,
+          margins: {
+            top: 0.5,
+            bottom: 0.5,
+            left: 0.5,
+            right: 0.5,
+          },
+        });
+
+        // Save to file
+        await fsPromises.writeFile(result.filePath, pdfData);
+
+        // Clean up
+        pdfWindow.close();
+
+        return { success: true, filePath: result.filePath };
+      } catch (pdfErr) {
+        console.error('PDF export error:', pdfErr);
+        return { success: false, error: 'Failed to export PDF' };
+      }
+    } else {
+      // Save as Markdown (default)
+      await fsPromises.writeFile(result.filePath, content, 'utf-8');
+      return { success: true, filePath: result.filePath };
+    }
   } catch (err) {
     console.error('Save file error:', err);
     return { success: false, error: 'Failed to save file' };

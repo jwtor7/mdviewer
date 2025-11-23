@@ -48,7 +48,10 @@ const App: React.FC = () => {
             });
 
             if (result.success) {
-                showError('File saved successfully!', 'info');
+                // Show format-specific success message based on file extension
+                const isPDF = result.filePath?.toLowerCase().endsWith('.pdf') || false;
+                const message = isPDF ? 'PDF exported successfully!' : 'Markdown saved successfully!';
+                showError(message, 'info');
             } else {
                 if (result.error !== 'Cancelled') {
                     showError(result.error || 'Failed to save file');
@@ -117,30 +120,6 @@ const App: React.FC = () => {
             showError('Failed to copy to clipboard');
         }
     }, [viewMode, activeDoc.content, showError]);
-
-    const handleExportPDF = useCallback(async (): Promise<void> => {
-        if (!window.electronAPI?.exportPDF) {
-            showError('PDF export not available');
-            return;
-        }
-
-        try {
-            const result = await window.electronAPI.exportPDF({
-                content: activeDoc.content,
-                filename: activeDoc.name,
-            });
-
-            if (result.success) {
-                showError('PDF exported successfully!', 'info');
-            } else {
-                if (result.error !== 'Cancelled') {
-                    showError(result.error || 'Failed to export PDF');
-                }
-            }
-        } catch (err) {
-            showError('Failed to export PDF');
-        }
-    }, [activeDoc.content, activeDoc.name, showError]);
 
     const handleCloseTab = (e: React.MouseEvent<HTMLButtonElement>, id: string): void => {
         e.stopPropagation();
@@ -390,19 +369,10 @@ const App: React.FC = () => {
                     <button
                         className="icon-btn"
                         onClick={handleSave}
-                        title="Save As (Cmd+S)"
-                        aria-label="Save document to file"
+                        title="Save As... (Markdown or PDF) (Cmd+S)"
+                        aria-label="Save document as Markdown or PDF"
                     >
                         💾
-                    </button>
-
-                    <button
-                        className="icon-btn"
-                        onClick={handleExportPDF}
-                        title="Export as PDF"
-                        aria-label="Export document as PDF"
-                    >
-                        📄
                     </button>
 
                     <button
