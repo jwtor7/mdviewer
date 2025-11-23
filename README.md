@@ -548,7 +548,6 @@ mdviewer/
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
 - [ ] **Custom Themes**: User-configurable color schemes
-- [ ] **Auto-save**: Automatic saving with configurable intervals
 
 ## 🤝 Contributing
 
