@@ -33,8 +33,8 @@ export const THEME_MODES = {
 } as const;
 
 export const VIEW_MODES = {
-  PREVIEW: 'preview',
-  CODE: 'code',
+  RENDERED: 'rendered',
+  RAW: 'raw',
   SPLIT: 'split',
 } as const;
 

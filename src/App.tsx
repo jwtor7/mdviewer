@@ -25,7 +25,7 @@ const App: React.FC = () => {
 
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
     const { errors, showError, dismissError } = useErrorHandler();
-    const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.PREVIEW);
+    const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.RENDERED);
     const [showFindReplace, setShowFindReplace] = useState(false);
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
     const [highlightedContent, setHighlightedContent] = useState<React.ReactNode | null>(null);
@@ -65,9 +65,9 @@ const App: React.FC = () => {
 
     // Handle find
     const handleFind = useCallback((): void => {
-        // Only show find/replace in CODE or SPLIT view
-        if (viewMode === VIEW_MODES.PREVIEW) {
-            showError('Find & Replace is only available in Code or Split view', 'info');
+        // Only show find/replace in RAW or SPLIT view
+        if (viewMode === VIEW_MODES.RENDERED) {
+            showError('Find & Replace is only available in Raw or Split view', 'info');
             return;
         }
         setShowFindReplace(true);
@@ -79,9 +79,9 @@ const App: React.FC = () => {
         onItalic: () => handleFormat('italic'),
         onToggleView: useCallback(() => {
             setViewMode(prev => {
-                if (prev === VIEW_MODES.PREVIEW) return VIEW_MODES.CODE;
-                if (prev === VIEW_MODES.CODE) return VIEW_MODES.SPLIT;
-                return VIEW_MODES.PREVIEW;
+                if (prev === VIEW_MODES.RENDERED) return VIEW_MODES.RAW;
+                if (prev === VIEW_MODES.RAW) return VIEW_MODES.SPLIT;
+                return VIEW_MODES.RENDERED;
             });
         }, []),
         onToggleTheme: handleThemeToggle,
@@ -97,7 +97,7 @@ const App: React.FC = () => {
 
     const handleCopy = useCallback(async (): Promise<void> => {
         try {
-            if (viewMode === VIEW_MODES.CODE) {
+            if (viewMode === VIEW_MODES.RAW) {
                 await navigator.clipboard.writeText(activeDoc.content);
             } else {
                 const previewElement = document.querySelector('.markdown-preview') as HTMLElement | null;
@@ -334,7 +334,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('bold')}
                         title="Bold (Cmd+B)"
                         aria-label="Format selected text as bold"
-                        disabled={viewMode === VIEW_MODES.PREVIEW}
+                        disabled={viewMode === VIEW_MODES.RENDERED}
                     >
                         <b>B</b>
                     </button>
@@ -343,7 +343,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('italic')}
                         title="Italic (Cmd+I)"
                         aria-label="Format selected text as italic"
-                        disabled={viewMode === VIEW_MODES.PREVIEW}
+                        disabled={viewMode === VIEW_MODES.RENDERED}
                     >
                         <i>I</i>
                     </button>
@@ -352,7 +352,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('list')}
                         title="List"
                         aria-label="Format selected text as list item"
-                        disabled={viewMode === VIEW_MODES.PREVIEW}
+                        disabled={viewMode === VIEW_MODES.RENDERED}
                     >
                         •
                     </button>
@@ -362,7 +362,7 @@ const App: React.FC = () => {
                         className="icon-btn"
                         onClick={handleCopy}
                         title="Copy (Cmd+C)"
-                        aria-label={viewMode === VIEW_MODES.CODE ? 'Copy markdown source' : 'Copy rendered preview'}
+                        aria-label={viewMode === VIEW_MODES.RAW ? 'Copy raw markdown' : 'Copy rendered content'}
                     >
                         📋
                     </button>
@@ -381,7 +381,7 @@ const App: React.FC = () => {
                         onClick={handleFind}
                         title="Find & Replace (Cmd+F)"
                         aria-label="Open find and replace"
-                        disabled={viewMode === VIEW_MODES.PREVIEW}
+                        disabled={viewMode === VIEW_MODES.RENDERED}
                     >
                         🔍
                     </button>
@@ -397,24 +397,24 @@ const App: React.FC = () => {
 
                     <div className="toggle-container" role="tablist" aria-label="View mode">
                         <button
-                            className={`toggle-btn ${viewMode === VIEW_MODES.PREVIEW ? 'active' : ''}`}
-                            onClick={() => setViewMode(VIEW_MODES.PREVIEW)}
-                            title="Preview Mode (Cmd+E to cycle)"
+                            className={`toggle-btn ${viewMode === VIEW_MODES.RENDERED ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.RENDERED)}
+                            title="Rendered Mode (Cmd+E to cycle)"
                             role="tab"
-                            aria-selected={viewMode === VIEW_MODES.PREVIEW}
+                            aria-selected={viewMode === VIEW_MODES.RENDERED}
                             aria-controls="content-area"
                         >
-                            Preview
+                            Rendered
                         </button>
                         <button
-                            className={`toggle-btn ${viewMode === VIEW_MODES.CODE ? 'active' : ''}`}
-                            onClick={() => setViewMode(VIEW_MODES.CODE)}
-                            title="Code Mode (Cmd+E to cycle)"
+                            className={`toggle-btn ${viewMode === VIEW_MODES.RAW ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.RAW)}
+                            title="Raw Mode (Cmd+E to cycle)"
                             role="tab"
-                            aria-selected={viewMode === VIEW_MODES.CODE}
+                            aria-selected={viewMode === VIEW_MODES.RAW}
                             aria-controls="content-area"
                         >
-                            Code
+                            Raw
                         </button>
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.SPLIT ? 'active' : ''}`}
@@ -434,14 +434,14 @@ const App: React.FC = () => {
                 id="content-area"
                 role="tabpanel"
                 aria-label={
-                    viewMode === VIEW_MODES.PREVIEW
+                    viewMode === VIEW_MODES.RENDERED
                         ? 'Markdown preview'
                         : viewMode === VIEW_MODES.SPLIT
                         ? 'Split view: code and preview'
                         : 'Markdown editor'
                 }
             >
-                {showFindReplace && (viewMode === VIEW_MODES.CODE || viewMode === VIEW_MODES.SPLIT) && (
+                {showFindReplace && (viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT) && (
                     <FindReplace
                         content={activeDoc.content}
                         onClose={() => {
@@ -453,9 +453,9 @@ const App: React.FC = () => {
                         onHighlightedContentChange={setHighlightedContent}
                     />
                 )}
-                {viewMode === VIEW_MODES.PREVIEW ? (
+                {viewMode === VIEW_MODES.RENDERED ? (
                     <MarkdownPreview content={activeDoc.content} theme={theme} />
-                ) : viewMode === VIEW_MODES.CODE ? (
+                ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
                         ref={textareaRef}
                         content={activeDoc.content}

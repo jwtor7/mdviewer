@@ -39,7 +39,7 @@ The application follows Electron's standard three-process model:
    - Security: Bridges isolated renderer with main process
 
 3. **Renderer Process** (`src/renderer.tsx` → `src/App.tsx`):
-   - React application with multiple view modes: Preview, Code, and Split
+   - React application with multiple view modes: Rendered, Raw, and Split
    - Listens for file content via `window.electronAPI.onFileOpen`
    - Security: Runs in sandboxed environment with strict CSP
 
@@ -90,8 +90,8 @@ File associations configured in `forge.config.js`:
 Three-mode theme toggle (system/light/dark) using CSS custom properties on `document.documentElement` with `data-theme` attribute. Listens to OS theme changes via `matchMedia('prefers-color-scheme: dark')`.
 
 ### Rich Text Copy
-- **Code view**: Copies plain Markdown text
-- **Preview view**: Uses Clipboard API to copy both HTML and plain text representations for rich paste support
+- **Raw view**: Copies plain Markdown text
+- **Rendered view**: Uses Clipboard API to copy both HTML and plain text representations for rich paste support
 
 ### Status Bar
 Real-time statistics calculated from content state:
@@ -100,7 +100,7 @@ Real-time statistics calculated from content state:
 - Token count: Approximation (length / 4)
 
 ### Text Formatting
-Applies Markdown formatting (bold/italic/list) to selected text in Code view by manipulating textarea selection ranges.
+Applies Markdown formatting (bold/italic/list) to selected text in Raw view by manipulating textarea selection ranges.
 
 ## Development Notes
 
@@ -287,3 +287,4 @@ npm install
 3. **Clean up production builds**: Delete `out/` after testing file associations
 4. **Restart for main/preload changes**: HMR only works for renderer code
 5. **Use keyboard shortcuts**: `Cmd+O` to open files quickly during testing
+- remember to update the default content with the current roadmap and changelog

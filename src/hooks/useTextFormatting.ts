@@ -14,7 +14,7 @@ export const useTextFormatting = (
   viewMode: ViewMode
 ): UseTextFormattingReturn => {
   const handleFormat = (type: FormatType): void => {
-    if (viewMode === VIEW_MODES.PREVIEW) return;
+    if (viewMode === VIEW_MODES.RENDERED) return;
     if (!textareaRef?.current) return;
 
     const textarea = textareaRef.current;

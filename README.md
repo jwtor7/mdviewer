@@ -39,7 +39,7 @@
 - **File Associations**: Open `.md` files directly with "Open With" or drag-and-drop
 
 ### 🎨 Viewing & Editing
-- **Triple View Modes**: Toggle between Preview, Code, and Split view (side-by-side)
+- **Triple View Modes**: Toggle between Rendered, Raw, and Split view (side-by-side)
 - **Split View**: View rendered preview and raw source simultaneously with resizable divider
 - **GitHub Flavored Markdown**: Full GFM support with tables, task lists, and strikethrough
 - **Syntax Highlighting**: Beautiful code blocks with VS Code Dark+ theme
@@ -71,7 +71,7 @@
 - `Cmd+F` / `Ctrl+F` - Find & Replace
 - `Cmd+B` / `Ctrl+B` - Bold formatting
 - `Cmd+I` / `Ctrl+I` - Italic formatting
-- `Cmd+E` / `Ctrl+E` - Cycle view modes (Preview → Code → Split)
+- `Cmd+E` / `Ctrl+E` - Cycle view modes (Rendered → Raw → Split)
 - `Cmd+T` / `Ctrl+T` - Cycle themes (System → Light → Dark → Solarized Light → Solarized Dark)
 
 ### 🚀 Performance
@@ -143,12 +143,12 @@ npm run make
 - **Within App**: Use tabs to manage multiple open documents
 
 ### View Modes
-- **Preview Mode**: Rendered Markdown with syntax highlighting
-- **Code Mode**: Raw Markdown source with monospace font
+- **Rendered Mode**: Rendered Markdown with syntax highlighting
+- **Raw Mode**: Raw Markdown source with monospace font
 - **Split Mode**: Side-by-side code and preview with resizable divider
 - Cycle through modes using the toolbar buttons or `Cmd+E`
 
-### Formatting Text (Code Mode)
+### Formatting Text (Raw Mode)
 1. Select text in the editor
 2. Click formatting buttons or use keyboard shortcuts
 3. Text is automatically wrapped with Markdown syntax
@@ -308,13 +308,13 @@ mdviewer/
 
 ### [2.6.3] - 2025-11-23
 - **UI/UX Improvements**:
-  - Added scroll position indicator to Code view - visual bar shows current position in document
+  - Added scroll position indicator to Raw view - visual bar shows current position in document
   - Indicator height represents visible content ratio, position shows scroll location
-  - Increased right-side padding from 20px to 80px in Code view to prevent text cutoff by scrollbar
-  - Increased right-side padding from 20px to 60px in Preview view
+  - Increased right-side padding from 20px to 80px in Raw view to prevent text cutoff by scrollbar
+  - Increased right-side padding from 20px to 60px in Rendered view
   - Added proper box-sizing to ensure padding is calculated correctly
-  - Fixed horizontal scrolling in Preview view with `overflow-x: hidden`
-  - Long URLs now wrap properly in Preview view instead of being cut off
+  - Fixed horizontal scrolling in Rendered view with `overflow-x: hidden`
+  - Long URLs now wrap properly in Rendered view instead of being cut off
   - Added `word-break` and `overflow-wrap` to links for better text wrapping
 
 ### [2.6.2] - 2025-11-23
@@ -382,17 +382,17 @@ mdviewer/
   - Smooth resizing with visual feedback on hover
   - All editing features work in split view (formatting, find/replace)
   - Synchronized content between code and preview panes
-  - Cycle through views: Preview → Code → Split → Preview
+  - Cycle through views: Rendered → Raw → Split → Rendered
 
 - **Enhanced Keyboard Shortcuts**:
   - Cmd+S: Save As
-  - Cmd+F: Find & Replace (Code/Split view only)
+  - Cmd+F: Find & Replace (Raw/Split view only)
   - Cmd+E: Now cycles through all three view modes
   - Enter/Shift+Enter: Navigate matches in Find & Replace
 
 - **UI Improvements**:
-  - Find button (🔍) added to toolbar (disabled in Preview mode)
-  - View mode toggle now has three buttons: Preview, Code, Split
+  - Find button (🔍) added to toolbar (disabled in Rendered mode)
+  - View mode toggle now has three buttons: Rendered, Raw, Split
   - Improved button tooltips showing keyboard shortcuts
   - Theme-aware styling for Find & Replace panel
 
@@ -571,12 +571,12 @@ mdviewer/
 
 ### [1.0.0] - 2025-11-21
 - Initial release with basic Markdown rendering
-- Preview/Code view toggle
+- Rendered/Raw view toggle
 - Syntax highlighting
 
 ## 🚧 Upcoming Features
 
-- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Code and Preview views - select text in Code view and see it highlighted in Preview, and vice versa
+- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views - select text in Raw view and see it highlighted in Rendered view, and vice versa
 - [ ] **Markdown Formatting Toolbar**: Add toolbar buttons for common markdown elements (Heading 1, Heading 2, Heading 3, Code Block, Quote, Link, Image, etc.) to complement the existing Bold, Italic, and List buttons
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
