@@ -549,7 +549,7 @@ mdviewer/
 - [ ] **Table Editor**: Visual table editing interface
 - [ ] **Custom Themes**: User-configurable color schemes
 
-## 🤝 Contributing
+## 🤝🏽 Contributing
 
 Contributions are welcome! Please feel free to submit issues or pull requests.
 
@@ -566,7 +566,7 @@ MIT License - see [LICENSE](LICENSE) for details
 [![Substack](https://img.shields.io/badge/Substack-FF6719?style=for-the-badge&logo=substack&logoColor=white)](https://substack.com/@trustcyber)
 [![X (Twitter)](https://img.shields.io/badge/X-000000?style=for-the-badge&logo=x&logoColor=white)](https://x.com/TrustCyberJR)
 
-## 🙏 Acknowledgments
+## 🙏🏽 Acknowledgments
 
 - Built with [Electron](https://www.electronjs.org/)
 - UI powered by [React](https://react.dev/)
