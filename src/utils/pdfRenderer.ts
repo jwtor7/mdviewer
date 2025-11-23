@@ -1,0 +1,122 @@
+import { unified } from 'unified';
+import remarkParse from 'remark-parse';
+import remarkGfm from 'remark-gfm';
+import remarkRehype from 'remark-rehype';
+import rehypeSanitize from 'rehype-sanitize';
+import rehypeHighlight from 'rehype-highlight';
+import rehypeStringify from 'rehype-stringify';
+
+export const convertMarkdownToHTML = async (markdown: string): Promise<string> => {
+  const file = await unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkRehype)
+    .use(rehypeSanitize)
+    .use(rehypeHighlight)
+    .use(rehypeStringify)
+    .process(markdown);
+
+  return String(file);
+};
+
+export const getPDFStyles = (): string => {
+  return `
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #333333;
+      background: #ffffff;
+      padding: 20px;
+      line-height: 1.6;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2em;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 0.3em;
+      margin-top: 0;
+      margin-bottom: 0.5em;
+    }
+    h2 {
+      font-size: 1.5em;
+      border-bottom: 1px solid #e0e0e0;
+      padding-bottom: 0.3em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    h3 {
+      font-size: 1.25em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    p {
+      margin-bottom: 1em;
+    }
+    ul, ol {
+      padding-left: 2em;
+      margin-bottom: 1em;
+    }
+    li {
+      margin-bottom: 0.5em;
+    }
+    blockquote {
+      border-left: 4px solid #e0e0e0;
+      padding-left: 1em;
+      color: #666;
+      margin: 1em 0;
+    }
+    code {
+      background-color: #f5f5f5;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 0.9em;
+    }
+    pre {
+      background-color: #f5f5f5;
+      padding: 1em;
+      border-radius: 5px;
+      overflow-x: auto;
+      margin-bottom: 1em;
+    }
+    pre code {
+      background-color: transparent;
+      padding: 0;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 1em;
+    }
+    th, td {
+      border: 1px solid #e0e0e0;
+      padding: 0.5em;
+      text-align: left;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
+    a {
+      color: #268bd2;
+      text-decoration: none;
+    }
+    img {
+      max-width: 100%;
+    }
+  `;
+};
+
+export const generatePDFHTML = async (markdownContent: string): Promise<string> => {
+  const htmlBody = await convertMarkdownToHTML(markdownContent);
+
+  return `<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>${getPDFStyles()}</style>
+  </head>
+  <body>
+    ${htmlBody}
+  </body>
+</html>`;
+};

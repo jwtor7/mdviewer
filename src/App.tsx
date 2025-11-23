@@ -73,6 +73,30 @@ const App: React.FC = () => {
         }
     }, [viewMode, activeDoc.content, showError]);
 
+    const handleExportPDF = useCallback(async (): Promise<void> => {
+        if (!window.electronAPI?.exportPDF) {
+            showError('PDF export not available');
+            return;
+        }
+
+        try {
+            const result = await window.electronAPI.exportPDF({
+                content: activeDoc.content,
+                filename: activeDoc.name,
+            });
+
+            if (result.success) {
+                showError('PDF exported successfully!', 'info');
+            } else {
+                if (result.error !== 'Cancelled') {
+                    showError(result.error || 'Failed to export PDF');
+                }
+            }
+        } catch (err) {
+            showError('Failed to export PDF');
+        }
+    }, [activeDoc.content, activeDoc.name, showError]);
+
     const handleCloseTab = (e: React.MouseEvent<HTMLButtonElement>, id: string): void => {
         e.stopPropagation();
         closeDocument(id);
@@ -266,6 +290,7 @@ const App: React.FC = () => {
                             className="tab-close"
                             onClick={(e) => handleCloseTab(e, doc.id)}
                             aria-label={`Close ${doc.name}`}
+                            title={`Close ${doc.name}`}
                             tabIndex={-1}
                         >
                             ×
@@ -319,6 +344,15 @@ const App: React.FC = () => {
 
                     <button
                         className="icon-btn"
+                        onClick={handleExportPDF}
+                        title="Export as PDF"
+                        aria-label="Export document as PDF"
+                    >
+                        📄
+                    </button>
+
+                    <button
+                        className="icon-btn"
                         onClick={handleThemeToggle}
                         title={`Theme: ${theme} (Cmd+T)`}
                         aria-label={`Current theme: ${theme}. Click to change theme.`}
@@ -330,6 +364,7 @@ const App: React.FC = () => {
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.PREVIEW ? 'active' : ''}`}
                             onClick={() => setViewMode(VIEW_MODES.PREVIEW)}
+                            title="Preview Mode (Cmd+E to toggle)"
                             role="tab"
                             aria-selected={viewMode === VIEW_MODES.PREVIEW}
                             aria-controls="content-area"
@@ -339,6 +374,7 @@ const App: React.FC = () => {
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.CODE ? 'active' : ''}`}
                             onClick={() => setViewMode(VIEW_MODES.CODE)}
+                            title="Code Mode (Cmd+E to toggle)"
                             role="tab"
                             aria-selected={viewMode === VIEW_MODES.CODE}
                             aria-controls="content-area"
@@ -355,7 +391,7 @@ const App: React.FC = () => {
                 aria-label={viewMode === VIEW_MODES.PREVIEW ? 'Markdown preview' : 'Markdown editor'}
             >
                 {viewMode === VIEW_MODES.PREVIEW ? (
-                    <MarkdownPreview content={activeDoc.content} />
+                    <MarkdownPreview content={activeDoc.content} theme={theme} />
                 ) : (
                     <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
                 )}

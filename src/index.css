@@ -20,6 +20,28 @@
   --btn-active: #d0d0d0;
 }
 
+[data-theme='solarized-light'] {
+  --bg-color: #fdf6e3;
+  --text-color: #657b83;
+  --toolbar-bg: #eee8d5;
+  --toolbar-border: #93a1a1;
+  --editor-bg: #fdf6e3;
+  --editor-text: #657b83;
+  --btn-hover: #eee8d5;
+  --btn-active: #93a1a1;
+}
+
+[data-theme='solarized-dark'] {
+  --bg-color: #002b36;
+  --text-color: #839496;
+  --toolbar-bg: #073642;
+  --toolbar-border: #586e75;
+  --editor-bg: #002b36;
+  --editor-text: #839496;
+  --btn-hover: #073642;
+  --btn-active: #586e75;
+}
+
 body {
   margin: 0;
   padding: 0;
@@ -213,7 +235,7 @@ body {
 }
 
 .markdown-preview a {
-  color: #61dafb;
+  color: #268bd2;
   text-decoration: none;
 }
 
@@ -315,7 +337,7 @@ body {
   background-color: var(--bg-color);
   opacity: 1;
   font-weight: bold;
-  border-top: 2px solid #61dafb;
+  border-top: 2px solid #268bd2;
 }
 
 .tab-close {
@@ -409,17 +431,58 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid #61dafb;
+  outline: 2px solid #268bd2;
   outline-offset: 2px;
 }
 
 .tab:focus-visible {
-  outline: 2px solid #61dafb;
+  outline: 2px solid #268bd2;
   outline-offset: -2px;
 }
 
 .icon-btn:focus-visible,
 .toggle-btn:focus-visible {
-  outline: 2px solid #61dafb;
+  outline: 2px solid #268bd2;
   outline-offset: 2px;
+}
+
+/* Custom tooltips for better visibility and instant feedback */
+.icon-btn,
+.toggle-btn {
+  position: relative;
+}
+
+.icon-btn::after,
+.toggle-btn::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 6px 10px;
+  background-color: rgba(0, 0, 0, 0.9);
+  color: #ffffff;
+  font-size: 12px;
+  white-space: nowrap;
+  border-radius: 4px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  z-index: 1000;
+}
+
+[data-theme='light'] .icon-btn::after,
+[data-theme='light'] .toggle-btn::after {
+  background-color: rgba(0, 0, 0, 0.85);
+}
+
+.icon-btn:hover::after,
+.toggle-btn:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-4px);
+}
+
+/* Hide tooltip on disabled buttons */
+.icon-btn:disabled::after {
+  display: none;
 }

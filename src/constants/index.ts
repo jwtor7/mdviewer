@@ -27,6 +27,8 @@ export const THEME_MODES = {
   SYSTEM: 'system',
   LIGHT: 'light',
   DARK: 'dark',
+  SOLARIZED_LIGHT: 'solarized-light',
+  SOLARIZED_DARK: 'solarized-dark',
 } as const;
 
 export const VIEW_MODES = {

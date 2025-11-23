@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -300,6 +300,35 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.4.0] - 2025-11-22
+- **Solarized Theme Support**:
+  - Added Solarized Light theme with warm beige background (#fdf6e3)
+  - Added Solarized Dark theme with deep blue-black background (#002b36)
+  - Theme cycling now includes 5 themes: System → Light → Dark → Solarized Light → Solarized Dark
+  - Theme-aware syntax highlighting: code blocks automatically use Solarized syntax themes when active
+  - Updated theme icons: 🌅 for Solarized Light, 🌃 for Solarized Dark
+  - Unified Solarized blue (#268bd2) for links, focus indicators, and active tab borders
+
+- **PDF Export Functionality**:
+  - Export markdown documents as PDF files with professional formatting
+  - PDF export button (📄) added to toolbar
+  - Save dialog allows custom filename and location
+  - Preserves all markdown formatting: headers, lists, tables, code blocks, images
+  - Syntax-highlighted code blocks in PDF output
+  - Security: Rate limiting, content size validation (10MB max), and input sanitization
+  - Success/error notifications with blue info alerts
+
+- **Enhanced User Experience**:
+  - Added custom CSS tooltips for instant feedback (no delay)
+  - All toolbar buttons now have descriptive tooltips with keyboard shortcuts
+  - Tab close buttons show document name in tooltip
+  - View mode toggles (Preview/Code) include keyboard shortcut hints
+  - Smooth fade-in animations for tooltip display
+  - Theme-aware tooltip backgrounds
+
+- **Dependencies**:
+  - Added unified, remark-parse, remark-rehype, rehype-sanitize, rehype-stringify, rehype-highlight for PDF rendering
+
 ### [2.3.0] - 2025-11-22
 - **External Link Handling (Issue #1 Fix)**:
   - Links in Markdown preview now open in external browser instead of navigating in-app
@@ -451,10 +480,8 @@ mdviewer/
 
 ## 🚧 Upcoming Features
 
-- [ ] **Export to HTML/PDF**: Save rendered markdown as standalone files
 - [ ] **Save Button**: Implement a save button / menu item
 - [ ] **Split View**: Side-by-side code and preview
-- [ ] **Solarized Theme**: Solarized Theme similar to this one in antigravity
 - [ ] **Find & Replace**: Text search and replacement
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface

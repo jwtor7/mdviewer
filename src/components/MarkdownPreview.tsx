@@ -4,14 +4,25 @@ import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { solarizedlight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { solarizedDarkAtom } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
 import type { SyntaxHighlighterProps } from 'react-syntax-highlighter';
+import type { ThemeMode } from '../constants/index.js';
 
 export interface MarkdownPreviewProps {
   content: string;
+  theme: ThemeMode;
 }
 
-const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
+const MarkdownPreview = memo(({ content, theme }: MarkdownPreviewProps) => {
+  // Select syntax highlighting style based on theme
+  const getSyntaxStyle = (): SyntaxHighlighterProps['style'] => {
+    if (theme === 'solarized-light') return solarizedlight as SyntaxHighlighterProps['style'];
+    if (theme === 'solarized-dark') return solarizedDarkAtom as SyntaxHighlighterProps['style'];
+    return vscDarkPlus as SyntaxHighlighterProps['style'];
+  };
+
   const components: Components = {
     code(props) {
       const { node, className, children, ...rest } = props;
@@ -22,7 +33,7 @@ const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
 
       return !isInline && match ? (
         <SyntaxHighlighter
-          style={vscDarkPlus as SyntaxHighlighterProps['style']}
+          style={getSyntaxStyle()}
           language={match[1]}
           PreTag="div"
         >

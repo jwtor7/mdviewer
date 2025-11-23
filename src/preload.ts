@@ -20,4 +20,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('close-window'),
   openExternalUrl: (url: string): Promise<void> =>
     ipcRenderer.invoke('open-external-url', url),
+  exportPDF: (data: { content: string; filename: string }): Promise<{ success: boolean; filePath?: string; error?: string }> =>
+    ipcRenderer.invoke('export-pdf', data),
 } satisfies ElectronAPI);

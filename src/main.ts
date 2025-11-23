@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import { WINDOW_CONFIG, SECURITY_CONFIG } from './constants/index.js';
 import type { FileOpenData, IPCMessage } from './types/electron';
+import { generatePDFHTML } from './utils/pdfRenderer.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -439,6 +440,92 @@ ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknow
   });
 
   return { success: true };
+});
+
+ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-export-pdf')) {
+    console.warn('Rate limit exceeded for export-pdf');
+    return { success: false, error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { success: false, error: 'Invalid data' };
+  }
+
+  const { content, filename } = data as { content: unknown; filename: unknown };
+
+  if (typeof content !== 'string' || typeof filename !== 'string') {
+    return { success: false, error: 'Invalid parameters' };
+  }
+
+  // Security: Validate content size
+  if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+    return { success: false, error: 'Content too large' };
+  }
+
+  try {
+    // Get the requesting window for dialog parent
+    const parentWindow = BrowserWindow.fromWebContents(event.sender);
+    if (!parentWindow) {
+      return { success: false, error: 'Window not found' };
+    }
+
+    // Show save dialog
+    const result = await dialog.showSaveDialog(parentWindow, {
+      title: 'Export PDF',
+      defaultPath: filename.replace(/\.(md|markdown)$/, '.pdf'),
+      filters: [
+        { name: 'PDF Files', extensions: ['pdf'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, error: 'Cancelled' };
+    }
+
+    // Create a temporary hidden window to render the content
+    const pdfWindow = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+        sandbox: true,
+      },
+    });
+
+    // Generate HTML with inline CSS for PDF rendering
+    const htmlContent = await generatePDFHTML(content);
+
+    await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+
+    // Wait for page to finish loading
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // Generate PDF
+    const pdfData = await pdfWindow.webContents.printToPDF({
+      printBackground: true,
+      margins: {
+        top: 0.5,
+        bottom: 0.5,
+        left: 0.5,
+        right: 0.5,
+      },
+    });
+
+    // Save to file
+    await fsPromises.writeFile(result.filePath, pdfData);
+
+    // Clean up
+    pdfWindow.close();
+
+    return { success: true, filePath: result.filePath };
+  } catch (err) {
+    console.error('PDF export error:', err);
+    return { success: false, error: 'Failed to export PDF' };
+  }
 });
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)

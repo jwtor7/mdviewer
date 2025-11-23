@@ -13,9 +13,16 @@ export const useTheme = (): UseThemeReturn => {
   useEffect(() => {
     const applyTheme = (newTheme: ThemeMode): void => {
       const root = document.documentElement;
-      const isDark = newTheme === THEME_MODES.DARK ||
-        (newTheme === THEME_MODES.SYSTEM && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+      if (newTheme === THEME_MODES.SOLARIZED_LIGHT) {
+        root.setAttribute('data-theme', 'solarized-light');
+      } else if (newTheme === THEME_MODES.SOLARIZED_DARK) {
+        root.setAttribute('data-theme', 'solarized-dark');
+      } else {
+        const isDark = newTheme === THEME_MODES.DARK ||
+          (newTheme === THEME_MODES.SYSTEM && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        root.setAttribute('data-theme', isDark ? 'dark' : 'light');
+      }
     };
 
     applyTheme(theme);
@@ -35,6 +42,8 @@ export const useTheme = (): UseThemeReturn => {
     setTheme(prev => {
       if (prev === THEME_MODES.SYSTEM) return THEME_MODES.LIGHT;
       if (prev === THEME_MODES.LIGHT) return THEME_MODES.DARK;
+      if (prev === THEME_MODES.DARK) return THEME_MODES.SOLARIZED_LIGHT;
+      if (prev === THEME_MODES.SOLARIZED_LIGHT) return THEME_MODES.SOLARIZED_DARK;
       return THEME_MODES.SYSTEM;
     });
   };
@@ -42,7 +51,10 @@ export const useTheme = (): UseThemeReturn => {
   const getThemeIcon = (): string => {
     if (theme === THEME_MODES.SYSTEM) return '⚙️';
     if (theme === THEME_MODES.LIGHT) return '☀️';
-    return '🌙';
+    if (theme === THEME_MODES.DARK) return '🌙';
+    if (theme === THEME_MODES.SOLARIZED_LIGHT) return '🌅';
+    if (theme === THEME_MODES.SOLARIZED_DARK) return '🌃';
+    return '⚙️';
   };
 
   return {
