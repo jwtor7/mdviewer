@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.5.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -39,7 +39,8 @@
 - **File Associations**: Open `.md` files directly with "Open With" or drag-and-drop
 
 ### 🎨 Viewing & Editing
-- **Dual View Modes**: Toggle between rendered preview and raw Markdown source
+- **Triple View Modes**: Toggle between Preview, Code, and Split view (side-by-side)
+- **Split View**: View rendered preview and raw source simultaneously with resizable divider
 - **GitHub Flavored Markdown**: Full GFM support with tables, task lists, and strikethrough
 - **Syntax Highlighting**: Beautiful code blocks with VS Code Dark+ theme
 - **Live Preview**: Instant rendering as you type
@@ -50,9 +51,11 @@
 - **Real-Time Statistics**: Live word, character, and token counts in status bar
 - **Responsive Layout**: Optimized toolbar, content area, and status bar
 
-### ✏️ Text Formatting
+### ✏️ Text Formatting & Editing
 - **Quick Formatting Buttons**: Bold, Italic, and List formatting
+- **Find & Replace**: Powerful search with case-sensitive option, match navigation, and bulk replace
 - **Rich Text Copy**: Copy rendered HTML or raw Markdown to clipboard
+- **Save As**: Save documents to disk with file picker dialog
 - **Keyboard Shortcuts**: Efficient text editing with familiar shortcuts
 - **Selection Preservation**: Smart cursor positioning after formatting
 
@@ -64,10 +67,12 @@
 
 ### ⌨️ Keyboard Shortcuts
 - `Cmd+O` / `Ctrl+O` - Open file dialog
+- `Cmd+S` / `Ctrl+S` - Save As
+- `Cmd+F` / `Ctrl+F` - Find & Replace
 - `Cmd+B` / `Ctrl+B` - Bold formatting
 - `Cmd+I` / `Ctrl+I` - Italic formatting
-- `Cmd+E` / `Ctrl+E` - Toggle Preview/Code view
-- `Cmd+T` / `Ctrl+T` - Cycle themes (System → Light → Dark)
+- `Cmd+E` / `Ctrl+E` - Cycle view modes (Preview → Code → Split)
+- `Cmd+T` / `Ctrl+T` - Cycle themes (System → Light → Dark → Solarized Light → Solarized Dark)
 
 ### 🚀 Performance
 - **Memoized Components**: Optimized rendering with React.memo
@@ -140,7 +145,8 @@ npm run make
 ### View Modes
 - **Preview Mode**: Rendered Markdown with syntax highlighting
 - **Code Mode**: Raw Markdown source with monospace font
-- Toggle between modes using the toolbar button or `Cmd+E`
+- **Split Mode**: Side-by-side code and preview with resizable divider
+- Cycle through modes using the toolbar buttons or `Cmd+E`
 
 ### Formatting Text (Code Mode)
 1. Select text in the editor
@@ -299,6 +305,45 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.5.0] - 2025-11-22
+- **Save As Functionality**:
+  - Added Save button (💾) to toolbar with Cmd+S keyboard shortcut
+  - Opens native file save dialog allowing user to choose location and filename
+  - Supports both new files and overwriting existing files
+  - Success/error notifications with existing error notification system
+  - Security: Rate limiting, content size validation, and input sanitization
+
+- **Find & Replace**:
+  - Comprehensive search functionality in Code and Split views
+  - Case-sensitive/insensitive search toggle
+  - Navigate between matches with Previous/Next buttons (↑/↓)
+  - Keyboard navigation: Enter for next match, Shift+Enter for previous
+  - Replace current match or replace all matches at once
+  - Live match count display (e.g., "1 of 5")
+  - Floating panel with Esc to close
+  - Auto-focus find input when opened with Cmd+F
+  - Visual match highlighting in the editor
+
+- **Split View Mode**:
+  - New view mode showing code editor and preview side-by-side
+  - Resizable divider between panes (drag to adjust, 20-80% range)
+  - Smooth resizing with visual feedback on hover
+  - All editing features work in split view (formatting, find/replace)
+  - Synchronized content between code and preview panes
+  - Cycle through views: Preview → Code → Split → Preview
+
+- **Enhanced Keyboard Shortcuts**:
+  - Cmd+S: Save As
+  - Cmd+F: Find & Replace (Code/Split view only)
+  - Cmd+E: Now cycles through all three view modes
+  - Enter/Shift+Enter: Navigate matches in Find & Replace
+
+- **UI Improvements**:
+  - Find button (🔍) added to toolbar (disabled in Preview mode)
+  - View mode toggle now has three buttons: Preview, Code, Split
+  - Improved button tooltips showing keyboard shortcuts
+  - Theme-aware styling for Find & Replace panel
 
 ### [2.4.0] - 2025-11-22
 - **Solarized Theme Support**:
@@ -480,11 +525,10 @@ mdviewer/
 
 ## 🚧 Upcoming Features
 
-- [ ] **Save Button**: Implement a save button / menu item
-- [ ] **Split View**: Side-by-side code and preview
-- [ ] **Find & Replace**: Text search and replacement
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
+- [ ] **Custom Themes**: User-configurable color schemes
+- [ ] **Auto-save**: Automatic saving with configurable intervals
 
 ## 🤝 Contributing
 

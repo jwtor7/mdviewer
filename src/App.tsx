@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, useCallback } from 'react';
 import MarkdownPreview from './components/MarkdownPreview';
 import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
+import FindReplace from './components/FindReplace';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
 import { VIEW_MODES, type ViewMode } from './constants/index';
 import type { Document, DraggableDocument } from './types/document';
@@ -25,19 +26,63 @@ const App: React.FC = () => {
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
     const { errors, showError, dismissError } = useErrorHandler();
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.PREVIEW);
+    const [showFindReplace, setShowFindReplace] = useState(false);
+    const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
     useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument);
+
+    // Handle save
+    const handleSave = useCallback(async (): Promise<void> => {
+        if (!window.electronAPI?.saveFile) {
+            showError('Save functionality not available');
+            return;
+        }
+
+        try {
+            const result = await window.electronAPI.saveFile({
+                content: activeDoc.content,
+                filename: activeDoc.name,
+                filePath: activeDoc.filePath,
+            });
+
+            if (result.success) {
+                showError('File saved successfully!', 'info');
+            } else {
+                if (result.error !== 'Cancelled') {
+                    showError(result.error || 'Failed to save file');
+                }
+            }
+        } catch (err) {
+            showError('Failed to save file');
+        }
+    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, showError]);
+
+    // Handle find
+    const handleFind = useCallback((): void => {
+        // Only show find/replace in CODE or SPLIT view
+        if (viewMode === VIEW_MODES.PREVIEW) {
+            showError('Find & Replace is only available in Code or Split view', 'info');
+            return;
+        }
+        setShowFindReplace(true);
+    }, [viewMode, showError]);
 
     // Keyboard shortcuts
     useKeyboardShortcuts({
         onBold: () => handleFormat('bold'),
         onItalic: () => handleFormat('italic'),
         onToggleView: useCallback(() => {
-            setViewMode(prev => prev === VIEW_MODES.PREVIEW ? VIEW_MODES.CODE : VIEW_MODES.PREVIEW);
+            setViewMode(prev => {
+                if (prev === VIEW_MODES.PREVIEW) return VIEW_MODES.CODE;
+                if (prev === VIEW_MODES.CODE) return VIEW_MODES.SPLIT;
+                return VIEW_MODES.PREVIEW;
+            });
         }, []),
         onToggleTheme: handleThemeToggle,
+        onSave: handleSave,
+        onFind: handleFind,
     });
 
     // Performance: Memoize text statistics
@@ -344,11 +389,30 @@ const App: React.FC = () => {
 
                     <button
                         className="icon-btn"
+                        onClick={handleSave}
+                        title="Save As (Cmd+S)"
+                        aria-label="Save document to file"
+                    >
+                        💾
+                    </button>
+
+                    <button
+                        className="icon-btn"
                         onClick={handleExportPDF}
                         title="Export as PDF"
                         aria-label="Export document as PDF"
                     >
                         📄
+                    </button>
+
+                    <button
+                        className="icon-btn"
+                        onClick={handleFind}
+                        title="Find & Replace (Cmd+F)"
+                        aria-label="Open find and replace"
+                        disabled={viewMode === VIEW_MODES.PREVIEW}
+                    >
+                        🔍
                     </button>
 
                     <button
@@ -364,7 +428,7 @@ const App: React.FC = () => {
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.PREVIEW ? 'active' : ''}`}
                             onClick={() => setViewMode(VIEW_MODES.PREVIEW)}
-                            title="Preview Mode (Cmd+E to toggle)"
+                            title="Preview Mode (Cmd+E to cycle)"
                             role="tab"
                             aria-selected={viewMode === VIEW_MODES.PREVIEW}
                             aria-controls="content-area"
@@ -374,12 +438,22 @@ const App: React.FC = () => {
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.CODE ? 'active' : ''}`}
                             onClick={() => setViewMode(VIEW_MODES.CODE)}
-                            title="Code Mode (Cmd+E to toggle)"
+                            title="Code Mode (Cmd+E to cycle)"
                             role="tab"
                             aria-selected={viewMode === VIEW_MODES.CODE}
                             aria-controls="content-area"
                         >
                             Code
+                        </button>
+                        <button
+                            className={`toggle-btn ${viewMode === VIEW_MODES.SPLIT ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.SPLIT)}
+                            title="Split Mode (Cmd+E to cycle)"
+                            role="tab"
+                            aria-selected={viewMode === VIEW_MODES.SPLIT}
+                            aria-controls="content-area"
+                        >
+                            Split
                         </button>
                     </div>
                 </div>
@@ -388,12 +462,59 @@ const App: React.FC = () => {
                 className="content-area"
                 id="content-area"
                 role="tabpanel"
-                aria-label={viewMode === VIEW_MODES.PREVIEW ? 'Markdown preview' : 'Markdown editor'}
+                aria-label={
+                    viewMode === VIEW_MODES.PREVIEW
+                        ? 'Markdown preview'
+                        : viewMode === VIEW_MODES.SPLIT
+                        ? 'Split view: code and preview'
+                        : 'Markdown editor'
+                }
             >
+                {showFindReplace && (viewMode === VIEW_MODES.CODE || viewMode === VIEW_MODES.SPLIT) && (
+                    <FindReplace
+                        content={activeDoc.content}
+                        onClose={() => setShowFindReplace(false)}
+                        onReplace={updateContent}
+                        textareaRef={textareaRef}
+                    />
+                )}
                 {viewMode === VIEW_MODES.PREVIEW ? (
                     <MarkdownPreview content={activeDoc.content} theme={theme} />
-                ) : (
+                ) : viewMode === VIEW_MODES.CODE ? (
                     <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
+                ) : (
+                    <div className="split-view">
+                        <div className="split-pane split-pane-left" style={{ width: `${splitDividerPosition}%` }}>
+                            <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
+                        </div>
+                        <div
+                            className="split-divider"
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                const startX = e.clientX;
+                                const startWidth = splitDividerPosition;
+
+                                const handleMouseMove = (moveEvent: MouseEvent): void => {
+                                    const deltaX = moveEvent.clientX - startX;
+                                    const containerWidth = (e.currentTarget as HTMLElement).parentElement?.clientWidth || 1;
+                                    const deltaPercent = (deltaX / containerWidth) * 100;
+                                    const newWidth = Math.min(Math.max(20, startWidth + deltaPercent), 80);
+                                    setSplitDividerPosition(newWidth);
+                                };
+
+                                const handleMouseUp = (): void => {
+                                    document.removeEventListener('mousemove', handleMouseMove);
+                                    document.removeEventListener('mouseup', handleMouseUp);
+                                };
+
+                                document.addEventListener('mousemove', handleMouseMove);
+                                document.addEventListener('mouseup', handleMouseUp);
+                            }}
+                        />
+                        <div className="split-pane split-pane-right" style={{ width: `${100 - splitDividerPosition}%` }}>
+                            <MarkdownPreview content={activeDoc.content} theme={theme} />
+                        </div>
+                    </div>
                 )}
             </div>
             <div className="status-bar" role="status" aria-live="polite">

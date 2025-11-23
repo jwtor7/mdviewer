@@ -34,6 +34,7 @@ export const THEME_MODES = {
 export const VIEW_MODES = {
   PREVIEW: 'preview',
   CODE: 'code',
+  SPLIT: 'split',
 } as const;
 
 export type ThemeMode = typeof THEME_MODES[keyof typeof THEME_MODES];

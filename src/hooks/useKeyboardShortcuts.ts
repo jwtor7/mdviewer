@@ -5,6 +5,8 @@ export interface UseKeyboardShortcutsProps {
   onItalic: () => void;
   onToggleView: () => void;
   onToggleTheme: () => void;
+  onSave?: () => void;
+  onFind?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -12,6 +14,8 @@ export const useKeyboardShortcuts = ({
   onItalic,
   onToggleView,
   onToggleTheme,
+  onSave,
+  onFind,
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -37,9 +41,19 @@ export const useKeyboardShortcuts = ({
         e.preventDefault();
         onToggleTheme();
       }
+      // Cmd/Ctrl + S: Save
+      if (isMod && e.key === 's' && onSave) {
+        e.preventDefault();
+        onSave();
+      }
+      // Cmd/Ctrl + F: Find
+      if (isMod && e.key === 'f' && onFind) {
+        e.preventDefault();
+        onFind();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBold, onItalic, onToggleView, onToggleTheme]);
+  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind]);
 };

@@ -22,4 +22,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('open-external-url', url),
   exportPDF: (data: { content: string; filename: string }): Promise<{ success: boolean; filePath?: string; error?: string }> =>
     ipcRenderer.invoke('export-pdf', data),
+  saveFile: (data: { content: string; filename: string; filePath: string | null }): Promise<{ success: boolean; filePath?: string; error?: string }> =>
+    ipcRenderer.invoke('save-file', data),
 } satisfies ElectronAPI);

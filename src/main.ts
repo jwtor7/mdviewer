@@ -299,10 +299,12 @@ ipcMain.handle('tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boole
   // Security: Enforce maximum size to prevent unbounded growth
   if (droppedTabs.size >= SECURITY_CONFIG.MAX_DROPPED_TABS) {
     console.warn(`Max dropped tabs limit (${SECURITY_CONFIG.MAX_DROPPED_TABS}) reached, clearing oldest`);
-    const firstKey = droppedTabs.keys().next().value;
-    const timeout = droppedTabs.get(firstKey);
-    if (timeout) clearTimeout(timeout);
-    droppedTabs.delete(firstKey);
+    const firstKey = droppedTabs.keys().next().value as string | undefined;
+    if (firstKey) {
+      const timeout = droppedTabs.get(firstKey);
+      if (timeout) clearTimeout(timeout);
+      droppedTabs.delete(firstKey);
+    }
   }
 
   // Auto-cleanup after 5 seconds
@@ -525,6 +527,65 @@ ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): P
   } catch (err) {
     console.error('PDF export error:', err);
     return { success: false, error: 'Failed to export PDF' };
+  }
+});
+
+ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-save-file')) {
+    console.warn('Rate limit exceeded for save-file');
+    return { success: false, error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { success: false, error: 'Invalid data' };
+  }
+
+  const { content, filename, filePath } = data as { content: unknown; filename: unknown; filePath: unknown };
+
+  if (typeof content !== 'string' || typeof filename !== 'string') {
+    return { success: false, error: 'Invalid parameters' };
+  }
+
+  if (filePath !== null && typeof filePath !== 'string') {
+    return { success: false, error: 'Invalid filePath' };
+  }
+
+  // Security: Validate content size
+  if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+    return { success: false, error: 'Content too large' };
+  }
+
+  try {
+    // Get the requesting window for dialog parent
+    const parentWindow = BrowserWindow.fromWebContents(event.sender);
+    if (!parentWindow) {
+      return { success: false, error: 'Window not found' };
+    }
+
+    // Show save dialog
+    const result = await dialog.showSaveDialog(parentWindow, {
+      title: 'Save File',
+      defaultPath: filePath || filename,
+      filters: [
+        { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+        { name: 'All Files', extensions: ['*'] }
+      ]
+    });
+
+    if (result.canceled || !result.filePath) {
+      return { success: false, error: 'Cancelled' };
+    }
+
+    // Write content to file
+    await fsPromises.writeFile(result.filePath, content, 'utf-8');
+
+    return { success: true, filePath: result.filePath };
+  } catch (err) {
+    console.error('Save file error:', err);
+    return { success: false, error: 'Failed to save file' };
   }
 });
 

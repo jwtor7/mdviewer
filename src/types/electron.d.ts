@@ -9,6 +9,12 @@ export interface PDFExportData {
   filename: string;
 }
 
+export interface SaveFileData {
+  content: string;
+  filename: string;
+  filePath: string | null;
+}
+
 /**
  * Discriminated union representing all IPC message types in the application.
  *
@@ -37,7 +43,9 @@ export type IPCMessage =
   /** Request to open an external URL in the default browser */
   | { channel: 'open-external-url'; data: { url: string } }
   /** Request to export document as PDF */
-  | { channel: 'export-pdf'; data: PDFExportData };
+  | { channel: 'export-pdf'; data: PDFExportData }
+  /** Request to save file to disk */
+  | { channel: 'save-file'; data: SaveFileData };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -47,6 +55,7 @@ export interface ElectronAPI {
   closeWindow: () => Promise<void>;
   openExternalUrl: (url: string) => Promise<void>;
   exportPDF: (data: PDFExportData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  saveFile: (data: SaveFileData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
 }
 
 declare global {
