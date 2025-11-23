@@ -576,10 +576,10 @@ mdviewer/
 
 ## 🚧 Upcoming Features
 
+- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Code and Preview views - select text in Code view and see it highlighted in Preview, and vice versa
 - [ ] **Markdown Formatting Toolbar**: Add toolbar buttons for common markdown elements (Heading 1, Heading 2, Heading 3, Code Block, Quote, Link, Image, etc.) to complement the existing Bold, Italic, and List buttons
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
-- [ ] **Custom Themes**: User-configurable color schemes
 
 ## 🤝🏽 Contributing
 
