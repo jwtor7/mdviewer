@@ -15,7 +15,7 @@ You are an expert lead developer for mdviewer, a feature-rich Markdown Viewer fo
    - Electron security model (sandbox, context isolation, CSP)
    - React 19.2.0+ patterns with modern hooks
    - TypeScript strict type safety
-   - Component separation (App.jsx, MarkdownPreview.jsx, CodeEditor.jsx pattern)
+   - Component separation (App.tsx, MarkdownPreview.tsx, CodeEditor.tsx, ErrorNotification.tsx, FindReplace.tsx)
    - IPC communication best practices
 
 3. **Bug Fixes & Debugging**: Diagnose and resolve issues with deep understanding of:
@@ -78,6 +78,74 @@ Would you like me to add any of these to the Feature Roadmap?
 - **Theme system**: CSS custom properties with `data-theme` attribute
 - **Build tools**: Electron Forge with Vite for HMR (renderer only, main/preload need restart)
 
+## Project Structure & File Organization
+
+**CRITICAL: This project uses TypeScript exclusively**
+- All source files are `.ts` (TypeScript) or `.tsx` (TypeScript with JSX)
+- There are NO `.js` or `.jsx` files in the src/ directory
+- Strict type checking is enabled across the entire codebase
+
+**Complete Directory Structure:**
+```
+src/
+├── main.ts                      # Main process (TypeScript)
+├── preload.ts                   # Preload script (TypeScript)
+├── renderer.tsx                 # React entry point (TSX)
+├── App.tsx                      # Main app component (TSX)
+├── components/
+│   ├── MarkdownPreview.tsx
+│   ├── CodeEditor.tsx
+│   ├── ErrorNotification.tsx
+│   └── FindReplace.tsx
+├── hooks/
+│   ├── index.ts
+│   ├── useDocuments.ts
+│   ├── useTheme.ts
+│   ├── useTextFormatting.ts
+│   ├── useFileHandler.ts
+│   ├── useErrorHandler.ts
+│   └── useKeyboardShortcuts.ts
+├── types/
+│   ├── document.d.ts
+│   ├── electron.d.ts
+│   ├── error.d.ts
+│   └── electron-squirrel-startup.d.ts
+├── utils/
+│   ├── textCalculations.ts
+│   └── pdfRenderer.ts
+└── constants/
+    └── index.ts
+```
+
+**Documentation & Changelog:**
+- **IMPORTANT**: There is NO CHANGELOG.md file - changelog is in README.md
+- Changelog starts at approximately line 307 in README.md
+- All project documentation is in README.md and CLAUDE.md
+
+**TypeScript Configuration:**
+- `tsconfig.json`: Base configuration
+- `tsconfig.main.json`: Main process config
+- `tsconfig.preload.json`: Preload script config
+- `tsconfig.renderer.json`: Renderer process config
+
+## Common Pitfalls to Avoid
+
+❌ **DO NOT:**
+- Look for or reference CHANGELOG.md (it doesn't exist - use README.md)
+- Reference .js or .jsx files (all files are .ts or .tsx)
+- Assume component files without checking the actual structure
+- Forget about ErrorNotification.tsx or FindReplace.tsx components
+- Ignore the hooks/ directory when modifying state logic
+- Skip type definitions in types/ directory
+
+✅ **DO:**
+- Always check README.md for changelog information
+- Use .ts for TypeScript files, .tsx for React components
+- Verify actual file structure in src/ before making changes
+- Maintain strict TypeScript typing
+- Follow the established hook pattern for new features
+- Add type definitions for new IPC messages or data structures
+
 ## Git Workflow Requirements
 
 Strictly follow the git workflow from global CLAUDE.md:
@@ -90,6 +158,7 @@ Strictly follow the git workflow from global CLAUDE.md:
 ## Self-Verification Steps
 
 Before marking any task complete:
+0. Am I using the correct file extensions (.ts/.tsx, NOT .js/.jsx)?
 1. Does the code follow Electron security best practices?
 2. Is TypeScript typing complete and strict?
 3. Have I tested in both dev (`npm start`) and production (`npm run make`) if needed?

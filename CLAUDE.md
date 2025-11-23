@@ -26,28 +26,30 @@ npm run lint                 # Currently no linting configured
 
 The application follows Electron's standard three-process model:
 
-1. **Main Process** (`src/main.js`):
+1. **Main Process** (`src/main.ts`):
    - Creates and manages the BrowserWindow
    - Handles macOS file associations and "Open With" functionality
    - Listens for `open-file` events (drag-and-drop onto app icon, file associations)
    - Reads file contents and sends to renderer via IPC (`file-open` event)
    - Security: Runs with full Node.js access
 
-2. **Preload Script** (`src/preload.js`):
+2. **Preload Script** (`src/preload.ts`):
    - Uses `contextBridge` to safely expose `electronAPI` to renderer
    - Provides `onFileOpen` callback for receiving file contents
    - Security: Bridges isolated renderer with main process
 
-3. **Renderer Process** (`src/renderer.jsx` → `src/App.jsx`):
-   - React application with two main view modes: Preview and Code
+3. **Renderer Process** (`src/renderer.tsx` → `src/App.tsx`):
+   - React application with multiple view modes: Preview, Code, and Split
    - Listens for file content via `window.electronAPI.onFileOpen`
    - Security: Runs in sandboxed environment with strict CSP
 
 ### Component Structure
 
-- **App.jsx**: Main application container managing state (content, viewMode, theme), toolbar, and status bar
-- **MarkdownPreview.jsx**: Renders Markdown using `react-markdown` with GitHub Flavored Markdown (`remark-gfm`) and syntax highlighting (`react-syntax-highlighter`)
-- **CodeEditor.jsx**: Simple textarea wrapper with ref forwarding for text selection/formatting
+- **App.tsx**: Main application container managing state (documents, viewMode, theme), toolbar, tabs, and status bar
+- **MarkdownPreview.tsx**: Renders Markdown using `react-markdown` with GitHub Flavored Markdown (`remark-gfm`) and syntax highlighting (`react-syntax-highlighter`)
+- **CodeEditor.tsx**: Textarea wrapper with ref forwarding for text selection/formatting
+- **ErrorNotification.tsx**: Toast notifications for errors and success messages
+- **FindReplace.tsx**: Draggable search and replace panel with match navigation
 
 ### Build System
 
@@ -102,14 +104,73 @@ Applies Markdown formatting (bold/italic/list) to selected text in Code view by 
 
 ## Development Notes
 
-### JSX Files
-The project uses `.jsx` extensions for files containing JSX syntax. `renderer.jsx` (not `.js`) is the entry point to support JSX transpilation.
+### TypeScript Files
+The project uses TypeScript with `.ts` extensions for non-React files and `.tsx` extensions for files containing JSX syntax. `renderer.tsx` (not `.js`) is the entry point to support JSX transpilation. All source code has strict type checking enabled.
+
+### TypeScript Configuration
+The project uses multiple tsconfig files for different build targets:
+- `tsconfig.json`: Base configuration with strict mode enabled
+- `tsconfig.main.json`: Main process configuration
+- `tsconfig.preload.json`: Preload script configuration
+- `tsconfig.renderer.json`: Renderer process configuration
+
+Type checking scripts:
+- `npm run typecheck`: Check all processes
+- `npm run typecheck:main`: Check main process only
+- `npm run typecheck:preload`: Check preload script only
+- `npm run typecheck:renderer`: Check renderer process only
+
+### Project Structure
+
+```
+src/
+├── main.ts                      # Electron main process (TypeScript)
+├── preload.ts                   # Secure IPC bridge (TypeScript)
+├── renderer.tsx                 # React entry point (TSX)
+├── App.tsx                      # Main application component (TSX)
+├── index.css                    # Global styles
+├── components/                  # React components
+│   ├── MarkdownPreview.tsx      # Preview renderer
+│   ├── CodeEditor.tsx           # Code editor
+│   ├── ErrorNotification.tsx    # Error/success toasts
+│   └── FindReplace.tsx          # Find & replace panel
+├── hooks/                       # Custom React hooks
+│   ├── index.ts                 # Hook exports
+│   ├── useDocuments.ts          # Multi-tab document state
+│   ├── useTheme.ts              # Theme system
+│   ├── useTextFormatting.ts     # Text formatting logic
+│   ├── useFileHandler.ts        # File opening via IPC
+│   ├── useErrorHandler.ts       # Error notifications
+│   └── useKeyboardShortcuts.ts  # Keyboard bindings
+├── types/                       # TypeScript definitions
+│   ├── document.d.ts            # Document types
+│   ├── electron.d.ts            # IPC & Electron types
+│   ├── error.d.ts               # Error types
+│   └── electron-squirrel-startup.d.ts
+├── utils/                       # Utility functions
+│   ├── textCalculations.ts      # Text statistics
+│   └── pdfRenderer.ts           # PDF export logic
+└── constants/                   # App constants
+    └── index.ts                 # Configuration values
+```
 
 ### DevTools
-DevTools are commented out in production. Uncomment `mainWindow.webContents.openDevTools()` in `src/main.js:35` for debugging.
+DevTools are commented out in production. Uncomment `mainWindow.webContents.openDevTools()` in `src/main.ts` for debugging.
 
 ### React Version
 Uses React 19.2.0 with modern hooks (useState, useEffect, useRef, forwardRef).
+
+## Important Notes
+
+### Language & Extensions
+- **TypeScript Only**: All source files use `.ts` (TypeScript) or `.tsx` (TypeScript with JSX)
+- **No JavaScript**: There are no `.js` or `.jsx` files in the src/ directory
+- **Strict Mode**: TypeScript strict mode is enabled for maximum type safety
+
+### Documentation
+- **Changelog Location**: The project changelog is in README.md (NOT in a separate CHANGELOG.md file)
+- **Version History**: See README.md starting at line ~307 for complete changelog
+- **Project Overview**: README.md contains comprehensive feature documentation
 
 ## Testing & Development Workflow
 
@@ -122,7 +183,7 @@ npm start
 
 This launches Electron with Vite's HMR (hot module replacement):
 - **Renderer changes** (React components, hooks, CSS) → Auto-reload instantly
-- **Main/preload changes** (main.js, preload.js) → Requires manual restart
+- **Main/preload changes** (main.ts, preload.ts) → Requires manual restart
 
 **Stopping the dev server:**
 ```bash
