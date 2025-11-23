@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.1-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -305,6 +305,27 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.6.2] - 2025-11-23
+- **Find & Replace Enhancements**:
+  - Added real-time incremental search highlighting - highlights update as you type
+  - Highlights appear immediately when typing in find input (e.g., "T" → all Ts highlighted)
+  - Match counter updates in real-time showing "X of Y"
+  - Current match highlighted in orange, other matches in yellow
+  - Perfect scroll synchronization using mirrored content layer approach
+  - Case-sensitive toggle respected in real-time highlighting
+
+- **Bug Fixes**:
+  - Fixed undo/redo functionality after using "Replace All" - now uses `document.execCommand('insertText')` to preserve undo stack
+  - Fixed highlight alignment issues with complete redesign using background layer approach
+
+- **Developer Experience**:
+  - Added comprehensive default test content on startup (240-line test document)
+  - Default content includes feature roadmap, recent changelog, and test elements
+  - 50+ instances of "test" for Find & Replace validation
+  - Wide code blocks and long lines for scroll testing
+  - Updated CLAUDE.md with complete TypeScript references and project structure
+  - Updated mdviewer-lead-dev agent with correct file extensions and project context
 
 ### [2.6.1] - 2025-11-22
 - **PDF Export Improvements**:

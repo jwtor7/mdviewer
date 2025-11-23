@@ -5,6 +5,7 @@ export interface FindReplaceProps {
   onClose: () => void;
   onReplace: (newContent: string) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  onHighlightedContentChange: (content: React.ReactNode | null) => void;
 }
 
 interface Match {
@@ -12,7 +13,13 @@ interface Match {
   end: number;
 }
 
-const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, textareaRef }) => {
+const FindReplace: React.FC<FindReplaceProps> = ({
+  content,
+  onClose,
+  onReplace,
+  textareaRef,
+  onHighlightedContentChange
+}) => {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
@@ -57,15 +64,90 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
     setCurrentMatchIndex(foundMatches.length > 0 ? 0 : -1);
   }, [findText, content, caseSensitive]);
 
-  // Highlight current match in textarea
+  // Generate highlighted content for the CodeEditor
+  useEffect(() => {
+    if (!findText || matches.length === 0) {
+      onHighlightedContentChange(null);
+      return;
+    }
+
+    // Build highlighted content with <mark> tags
+    const parts: React.ReactNode[] = [];
+    let lastIndex = 0;
+
+    matches.forEach((match, idx) => {
+      // Add text before match
+      if (match.start > lastIndex) {
+        parts.push(content.substring(lastIndex, match.start));
+      }
+
+      // Add highlighted match
+      const matchText = content.substring(match.start, match.end);
+      const isCurrent = idx === currentMatchIndex;
+      parts.push(
+        <mark key={`match-${idx}`} className={isCurrent ? 'current-match' : ''}>
+          {matchText}
+        </mark>
+      );
+
+      lastIndex = match.end;
+    });
+
+    // Add remaining text
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+
+    onHighlightedContentChange(<>{parts}</>);
+  }, [matches, currentMatchIndex, content, findText, onHighlightedContentChange]);
+
+  // Scroll to current match and sync highlight layer
   useEffect(() => {
     if (currentMatchIndex >= 0 && matches.length > 0 && textareaRef.current) {
       const match = matches[currentMatchIndex];
+      const textarea = textareaRef.current;
+
       // Set selection without stealing focus from find input
-      textareaRef.current.setSelectionRange(match.start, match.end);
-      textareaRef.current.scrollTop = textareaRef.current.scrollHeight * (match.start / content.length);
+      textarea.setSelectionRange(match.start, match.end);
+
+      // Calculate the line position to scroll to
+      const textBeforeMatch = content.substring(0, match.start);
+      const lines = textBeforeMatch.split('\n');
+      const lineNumber = lines.length - 1;
+
+      // Get line height from computed style
+      const computedStyle = window.getComputedStyle(textarea);
+      const lineHeight = parseFloat(computedStyle.lineHeight);
+
+      // Calculate scroll position to center the match in the viewport
+      const matchScrollTop = lineNumber * lineHeight;
+      const viewportHeight = textarea.clientHeight;
+      const centeredScrollTop = matchScrollTop - (viewportHeight / 2) + (lineHeight / 2);
+
+      // Scroll to the match
+      textarea.scrollTop = Math.max(0, centeredScrollTop);
     }
-  }, [currentMatchIndex, matches, textareaRef, content.length]);
+  }, [currentMatchIndex, matches, textareaRef, content]);
+
+  // Sync scroll between textarea and highlight layer
+  useEffect(() => {
+    if (!textareaRef.current) return;
+
+    const textarea = textareaRef.current;
+    const wrapper = textarea.closest('.code-editor-wrapper');
+    if (!wrapper) return;
+
+    const highlightLayer = wrapper.querySelector('.code-editor-highlight-layer') as HTMLElement;
+    if (!highlightLayer) return;
+
+    const syncScroll = () => {
+      highlightLayer.scrollTop = textarea.scrollTop;
+      highlightLayer.scrollLeft = textarea.scrollLeft;
+    };
+
+    textarea.addEventListener('scroll', syncScroll);
+    return () => textarea.removeEventListener('scroll', syncScroll);
+  }, [textareaRef, findText, matches]);
 
   const handleNext = (): void => {
     if (matches.length === 0) return;
@@ -78,11 +160,23 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
   };
 
   const handleReplaceCurrent = (): void => {
-    if (currentMatchIndex < 0 || matches.length === 0) return;
+    if (currentMatchIndex < 0 || matches.length === 0 || !textareaRef.current) return;
 
     const match = matches[currentMatchIndex];
-    const newContent = content.substring(0, match.start) + replaceText + content.substring(match.end);
-    onReplace(newContent);
+    const textarea = textareaRef.current;
+
+    // Use Selection API to replace text while preserving undo stack
+    textarea.focus();
+    textarea.setSelectionRange(match.start, match.end);
+
+    // Try modern API first, fallback to execCommand
+    if (typeof document.execCommand === 'function') {
+      document.execCommand('insertText', false, replaceText);
+    } else {
+      // Fallback for browsers without execCommand
+      const newContent = content.substring(0, match.start) + replaceText + content.substring(match.end);
+      onReplace(newContent);
+    }
 
     // After replacement, advance to next match
     if (matches.length > 1) {
@@ -91,19 +185,28 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
   };
 
   const handleReplaceAll = (): void => {
-    if (!findText || matches.length === 0) return;
+    if (!findText || matches.length === 0 || !textareaRef.current) return;
 
+    const textarea = textareaRef.current;
+
+    // Build the final content with all replacements
     let newContent = content;
-    const searchText = caseSensitive ? findText : findText.toLowerCase();
-    const searchContent = caseSensitive ? newContent : newContent.toLowerCase();
-
-    // Replace from end to start to maintain indices
     for (let i = matches.length - 1; i >= 0; i--) {
       const match = matches[i];
       newContent = newContent.substring(0, match.start) + replaceText + newContent.substring(match.end);
     }
 
-    onReplace(newContent);
+    // Use Selection API to replace entire content while preserving undo stack
+    textarea.focus();
+    textarea.select();
+
+    // Try modern API first, fallback to direct state update
+    if (typeof document.execCommand === 'function') {
+      document.execCommand('insertText', false, newContent);
+    } else {
+      // Fallback for browsers without execCommand
+      onReplace(newContent);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent): void => {

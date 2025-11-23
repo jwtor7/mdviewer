@@ -265,18 +265,63 @@ body {
   background-color: rgba(127, 127, 127, 0.1);
 }
 
-.code-editor {
+/* Code Editor Wrapper - contains both highlight layer and textarea */
+.code-editor-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Highlight Layer - sits behind textarea, mirrors its typography */
+.code-editor-highlight-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
   padding: 20px;
   font-family: monospace;
   font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow: auto;
+  pointer-events: none;
+  z-index: 1;
+  color: transparent;
+  background-color: var(--editor-bg);
+  transition: background-color 0.3s;
+}
+
+/* Highlighted text within the layer */
+.code-editor-highlight-layer mark {
+  color: transparent;
+  background-color: rgba(255, 255, 0, 0.3);
+  border-radius: 2px;
+}
+
+.code-editor-highlight-layer mark.current-match {
+  background-color: rgba(255, 165, 0, 0.5);
+  border: 1px solid rgba(255, 165, 0, 0.8);
+}
+
+/* Textarea - transparent background so highlights show through */
+.code-editor {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.5;
   border: none;
   resize: none;
   outline: none;
-  background-color: var(--editor-bg);
+  background-color: transparent;
   color: var(--editor-text);
-  transition: background-color 0.3s, color 0.3s;
+  transition: color 0.3s;
+  z-index: 2;
 }
 
 .status-bar {
@@ -655,3 +700,4 @@ body {
 .find-replace-checkbox span {
   opacity: 0.8;
 }
+

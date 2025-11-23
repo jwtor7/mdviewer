@@ -28,6 +28,7 @@ const App: React.FC = () => {
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.PREVIEW);
     const [showFindReplace, setShowFindReplace] = useState(false);
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
+    const [highlightedContent, setHighlightedContent] = useState<React.ReactNode | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
@@ -443,19 +444,33 @@ const App: React.FC = () => {
                 {showFindReplace && (viewMode === VIEW_MODES.CODE || viewMode === VIEW_MODES.SPLIT) && (
                     <FindReplace
                         content={activeDoc.content}
-                        onClose={() => setShowFindReplace(false)}
+                        onClose={() => {
+                            setShowFindReplace(false);
+                            setHighlightedContent(null);
+                        }}
                         onReplace={updateContent}
                         textareaRef={textareaRef}
+                        onHighlightedContentChange={setHighlightedContent}
                     />
                 )}
                 {viewMode === VIEW_MODES.PREVIEW ? (
                     <MarkdownPreview content={activeDoc.content} theme={theme} />
                 ) : viewMode === VIEW_MODES.CODE ? (
-                    <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
+                    <CodeEditor
+                        ref={textareaRef}
+                        content={activeDoc.content}
+                        onChange={updateContent}
+                        highlightedContent={highlightedContent}
+                    />
                 ) : (
                     <div className="split-view">
                         <div className="split-pane split-pane-left" style={{ width: `${splitDividerPosition}%` }}>
-                            <CodeEditor ref={textareaRef} content={activeDoc.content} onChange={updateContent} />
+                            <CodeEditor
+                                ref={textareaRef}
+                                content={activeDoc.content}
+                                onChange={updateContent}
+                                highlightedContent={highlightedContent}
+                            />
                         </div>
                         <div
                             className="split-divider"
