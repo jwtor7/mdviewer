@@ -76,22 +76,30 @@ export const getPDFStyles = (): string => {
       background-color: #f5f5f5;
       padding: 1em;
       border-radius: 5px;
-      overflow-x: auto;
+      overflow-x: visible;
+      overflow-y: visible;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      page-break-inside: avoid;
       margin-bottom: 1em;
     }
     pre code {
       background-color: transparent;
       padding: 0;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
     table {
       border-collapse: collapse;
       width: 100%;
       margin-bottom: 1em;
+      page-break-inside: avoid;
     }
     th, td {
       border: 1px solid #e0e0e0;
       padding: 0.5em;
       text-align: left;
+      word-wrap: break-word;
     }
     th {
       background-color: #f5f5f5;
@@ -99,6 +107,8 @@ export const getPDFStyles = (): string => {
     a {
       color: #268bd2;
       text-decoration: none;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
     }
     img {
       max-width: 100%;

@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -305,6 +305,16 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.6.1] - 2025-11-22
+- **PDF Export Improvements**:
+  - Fixed scroll bars appearing in code blocks in PDF exports
+  - Implemented proper text wrapping for long code lines using `white-space: pre-wrap`
+  - Added `word-wrap: break-word` for code blocks, tables, and URLs
+  - Long URLs now break at appropriate points instead of causing overflow
+  - Table cells wrap content properly without scroll bars
+  - Added `page-break-inside: avoid` for code blocks and tables to keep them together when possible
+  - All PDF content is now fully readable without horizontal or vertical scroll bars
 
 ### [2.6.0] - 2025-11-22
 - **Enhanced Save As Functionality**:
