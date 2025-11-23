@@ -20,6 +20,38 @@ Welcome to mdviewer! This test document includes the feature roadmap, recent cha
 
 ## 📝 Recent Changelog
 
+### [2.6.3] - 2025-11-23
+- **UI/UX Improvements**:
+  - Added scroll position indicator to Code view - visual bar shows current position in document
+  - Indicator height represents visible content ratio, position shows scroll location
+  - Increased right-side padding from 20px to 80px in Code view to prevent text cutoff by scrollbar
+  - Increased right-side padding from 20px to 60px in Preview view
+  - Added proper box-sizing to ensure padding is calculated correctly
+  - Fixed horizontal scrolling in Preview view with \`overflow-x: hidden\`
+  - Long URLs now wrap properly in Preview view instead of being cut off
+  - Added \`word-break\` and \`overflow-wrap\` to links for better text wrapping
+
+### [2.6.2] - 2025-11-23
+- **Find & Replace Enhancements**:
+  - Added real-time incremental search highlighting - highlights update as you type
+  - Highlights appear immediately when typing in find input (e.g., "T" → all Ts highlighted)
+  - Match counter updates in real-time showing "X of Y"
+  - Current match highlighted in orange, other matches in yellow
+  - Perfect scroll synchronization using mirrored content layer approach
+  - Case-sensitive toggle respected in real-time highlighting
+
+- **Bug Fixes**:
+  - Fixed undo/redo functionality after using "Replace All" - now uses \`document.execCommand('insertText')\` to preserve undo stack
+  - Fixed highlight alignment issues with complete redesign using background layer approach
+
+- **Developer Experience**:
+  - Added comprehensive default test content on startup (240-line test document)
+  - Default content includes feature roadmap, recent changelog, and test elements
+  - 50+ instances of "test" for Find & Replace validation
+  - Wide code blocks and long lines for scroll testing
+  - Updated CLAUDE.md with complete TypeScript references and project structure
+  - Updated mdviewer-lead-dev agent with correct file extensions and project context
+
 ### [2.6.1] - 2025-11-22
 - **PDF Export Improvements**:
   - Fixed scroll bars appearing in code blocks in PDF exports
@@ -29,59 +61,6 @@ Welcome to mdviewer! This test document includes the feature roadmap, recent cha
   - Table cells wrap content properly without scroll bars
   - Added \`page-break-inside: avoid\` for code blocks and tables to keep them together when possible
   - All PDF content is now fully readable without horizontal or vertical scroll bars
-
-### [2.6.0] - 2025-11-22
-- **Enhanced Save As Functionality**:
-  - Save As (💾) now offers both Markdown and PDF export in a single unified dialog
-  - File format automatically detected based on chosen file extension (.md, .markdown, or .pdf)
-  - Format-specific success messages ("Markdown saved!" vs "PDF exported!")
-  - Removed separate Export PDF button to simplify toolbar UI
-  - Reuses existing PDF generation logic for consistent output
-  - Security: Rate limiting, content size validation, and input sanitization
-
-### [2.5.0] - 2025-11-22
-- **Save As Functionality**:
-  - Added Save button (💾) to toolbar with Cmd+S keyboard shortcut
-  - Opens native file save dialog allowing user to choose location and filename
-  - Supports both new files and overwriting existing files
-  - Success/error notifications with existing error notification system
-  - Security: Rate limiting, content size validation, and input sanitization
-
-- **Find & Replace**:
-  - Comprehensive search functionality in Code and Split views
-  - Case-sensitive/insensitive search toggle
-  - Navigate between matches with Previous/Next buttons (↑/↓)
-  - Keyboard navigation: Enter for next match, Shift+Enter for previous
-  - Replace current match or replace all matches at once
-  - Live match count display (e.g., "1 of 5")
-  - Floating panel with Esc to close
-  - Auto-focus find input when opened with Cmd+F
-  - Visual match highlighting in the editor
-
-- **Split View Mode**:
-  - New view mode showing code editor and preview side-by-side
-  - Resizable divider between panes (drag to adjust, 20-80% range)
-  - Smooth resizing with visual feedback on hover
-  - All editing features work in split view (formatting, find/replace)
-  - Synchronized content between code and preview panes
-  - Cycle through views: Preview → Code → Split → Preview
-
-### [2.4.0] - 2025-11-22
-- **Solarized Theme Support**:
-  - Added Solarized Light theme with warm beige background (#fdf6e3)
-  - Added Solarized Dark theme with deep blue-black background (#002b36)
-  - Theme cycling now includes 5 themes: System → Light → Dark → Solarized Light → Solarized Dark
-  - Theme-aware syntax highlighting: code blocks automatically use Solarized syntax themes when active
-  - Updated theme icons: 🌅 for Solarized Light, 🌃 for Solarized Dark
-  - Unified Solarized blue (#268bd2) for links, focus indicators, and active tab borders
-
-- **PDF Export Functionality**:
-  - Export markdown documents as PDF files with professional formatting
-  - PDF export button (📄) added to toolbar
-  - Save dialog allows custom filename and location
-  - Preserves all markdown formatting: headers, lists, tables, code blocks, images
-  - Syntax-highlighted code blocks in PDF output
-  - Security: Rate limiting, content size validation (10MB max), and input sanitization
 
 ---
 
@@ -232,5 +211,5 @@ npm run test
 
 ---
 
-**mdviewer v2.6.1** - Built with Electron, React, and TypeScript
+**mdviewer v2.6.3** - Built with Electron, React, and TypeScript
 `;
