@@ -15,11 +15,12 @@ export const CALCULATIONS = {
 } as const;
 
 import type { Document } from '../types/document';
+import { DEFAULT_CONTENT } from './defaultContent.js';
 
 export const DEFAULT_DOCUMENT: Document = {
   id: 'default',
-  name: 'Untitled',
-  content: '# Welcome to Markdown Viewer\n\nStart typing or open a file to begin.',
+  name: 'Test Document',
+  content: DEFAULT_CONTENT,
   filePath: null,
 };
 
