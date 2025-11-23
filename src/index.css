@@ -160,9 +160,11 @@ body {
 }
 
 .markdown-preview {
-  padding: 20px;
+  padding: 20px 60px 20px 20px;
   height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
   background-color: var(--bg-color) !important;
   color: var(--text-color) !important;
   transition: background-color 0.3s, color 0.3s;
@@ -237,6 +239,8 @@ body {
 .markdown-preview a {
   color: #268bd2;
   text-decoration: none;
+  word-break: break-all;
+  overflow-wrap: break-word;
 }
 
 .markdown-preview a:hover {
@@ -273,6 +277,30 @@ body {
   overflow: hidden;
 }
 
+/* Scroll position indicator */
+.scroll-indicator {
+  position: absolute;
+  right: 5px;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.scroll-indicator-thumb {
+  position: absolute;
+  right: 0;
+  width: 100%;
+  background-color: rgba(128, 128, 128, 0.4);
+  border-radius: 3px;
+  transition: background-color 0.2s;
+}
+
+.scroll-indicator-thumb:hover {
+  background-color: rgba(128, 128, 128, 0.6);
+}
+
 /* Highlight Layer - sits behind textarea, mirrors its typography */
 .code-editor-highlight-layer {
   position: absolute;
@@ -280,13 +308,14 @@ body {
   left: 0;
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 20px 80px 20px 20px;
   font-family: monospace;
   font-size: 14px;
   line-height: 1.5;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow: auto;
+  box-sizing: border-box;
   pointer-events: none;
   z-index: 1;
   color: transparent;
@@ -311,13 +340,14 @@ body {
   position: relative;
   width: 100%;
   height: 100%;
-  padding: 20px;
+  padding: 20px 80px 20px 20px;
   font-family: monospace;
   font-size: 14px;
   line-height: 1.5;
   border: none;
   resize: none;
   outline: none;
+  box-sizing: border-box;
   background-color: transparent;
   color: var(--editor-text);
   transition: color 0.3s;

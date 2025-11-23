@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.2-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -305,6 +305,17 @@ mdviewer/
 - **IPC Communication**: Secure message passing for file operations
 
 ## 📝 Changelog
+
+### [2.6.3] - 2025-11-23
+- **UI/UX Improvements**:
+  - Added scroll position indicator to Code view - visual bar shows current position in document
+  - Indicator height represents visible content ratio, position shows scroll location
+  - Increased right-side padding from 20px to 80px in Code view to prevent text cutoff by scrollbar
+  - Increased right-side padding from 20px to 60px in Preview view
+  - Added proper box-sizing to ensure padding is calculated correctly
+  - Fixed horizontal scrolling in Preview view with `overflow-x: hidden`
+  - Long URLs now wrap properly in Preview view instead of being cut off
+  - Added `word-break` and `overflow-wrap` to links for better text wrapping
 
 ### [2.6.2] - 2025-11-23
 - **Find & Replace Enhancements**:
