@@ -18,7 +18,11 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
+  const [position, setPosition] = useState({ x: window.innerWidth - 420, y: 10 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const findInputRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   // Focus find input when component mounts
   useEffect(() => {
@@ -57,7 +61,7 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
   useEffect(() => {
     if (currentMatchIndex >= 0 && matches.length > 0 && textareaRef.current) {
       const match = matches[currentMatchIndex];
-      textareaRef.current.focus();
+      // Set selection without stealing focus from find input
       textareaRef.current.setSelectionRange(match.start, match.end);
       textareaRef.current.scrollTop = textareaRef.current.scrollHeight * (match.start / content.length);
     }
@@ -115,9 +119,69 @@ const FindReplace: React.FC<FindReplaceProps> = ({ content, onClose, onReplace, 
     }
   };
 
+  const handleMouseDown = (e: React.MouseEvent): void => {
+    // Don't start dragging if clicking on buttons or inputs
+    if ((e.target as HTMLElement).tagName === 'BUTTON' ||
+        (e.target as HTMLElement).tagName === 'INPUT') {
+      return;
+    }
+
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  const handleMouseMove = (e: MouseEvent): void => {
+    if (!isDragging || !panelRef.current) return;
+
+    const panelWidth = panelRef.current.offsetWidth;
+    const panelHeight = panelRef.current.offsetHeight;
+
+    // Calculate new position
+    let newX = e.clientX - dragOffset.x;
+    let newY = e.clientY - dragOffset.y;
+
+    // Keep panel within viewport bounds
+    newX = Math.max(0, Math.min(newX, window.innerWidth - panelWidth));
+    newY = Math.max(0, Math.min(newY, window.innerHeight - panelHeight));
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handleMouseUp = (): void => {
+    setIsDragging(false);
+  };
+
+  // Add/remove mouse event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragOffset, position]);
+
   return (
-    <div className="find-replace-panel" onKeyDown={handleKeyDown}>
-      <div className="find-replace-header">
+    <div
+      ref={panelRef}
+      className="find-replace-panel"
+      onKeyDown={handleKeyDown}
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        cursor: isDragging ? 'grabbing' : 'default',
+      }}
+    >
+      <div
+        className="find-replace-header"
+        onMouseDown={handleMouseDown}
+        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+      >
         <span className="find-replace-title">Find & Replace</span>
         <button
           className="find-replace-close"

@@ -520,9 +520,7 @@ body {
 
 /* Find & Replace Panel Styles */
 .find-replace-panel {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+  position: fixed;
   background-color: var(--toolbar-bg);
   border: 1px solid var(--toolbar-border);
   border-radius: 6px;
@@ -530,6 +528,7 @@ body {
   z-index: 100;
   min-width: 400px;
   max-width: 500px;
+  user-select: none;
 }
 
 .find-replace-header {
