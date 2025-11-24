@@ -20,7 +20,6 @@ const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
 
       return !isInline && match ? (
         <SyntaxHighlighter
-          useInlineStyles={false}
           language={match[1]}
           PreTag="div"
         >
