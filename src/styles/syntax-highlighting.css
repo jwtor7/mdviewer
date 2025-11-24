@@ -4,6 +4,7 @@
 code[class*="language-"],
 pre[class*="language-"] {
   color: #d4d4d4;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 1em;
   text-align: left;
   white-space: pre;
@@ -18,6 +19,9 @@ pre[class*="language-"] {
   -moz-hyphens: none;
   -ms-hyphens: none;
   hyphens: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-ligatures: none;
 }
 
 /* Prevent unwanted text decorations (strikethrough, underline, etc.) */
