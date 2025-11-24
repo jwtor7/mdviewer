@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
 
 export interface MarkdownPreviewProps {
@@ -21,6 +22,7 @@ const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
       return !isInline && match ? (
         <SyntaxHighlighter
           language={match[1]}
+          style={vscDarkPlus}
           PreTag="div"
         >
           {String(children).replace(/\n$/, '')}
