@@ -123,6 +123,7 @@ export const generatePDFHTML = async (markdownContent: string): Promise<string> 
 <html>
   <head>
     <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src * data:; style-src 'unsafe-inline'; font-src * data:;">
     <style>${getPDFStyles()}</style>
   </head>
   <body>

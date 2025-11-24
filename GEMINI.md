@@ -4,10 +4,10 @@
 **Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
 
 ## Active Task
-**CRITICAL-3: Code Injection in PDF Export**
-- **Goal:** Fix XSS/RCE vulnerability in PDF export functionality (`src/main.ts`).
+**CRITICAL-4: Rate Limiter Memory Leak**
+- **Goal:** Fix memory leak in rate limiter (`src/main.ts`).
 - **Status:** Ready to start.
-- **Note:** CRITICAL-2 (Path Traversal) is FIXED. CRITICAL-1 (CSP) is DEFERRED.
+- **Note:** CRITICAL-2 (Path Traversal) and CRITICAL-3 (PDF Export) are FIXED. CRITICAL-1 (CSP) is DEFERRED.
 
 ---
 
