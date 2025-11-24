@@ -221,8 +221,10 @@ body {
   background-color: rgba(127, 127, 127, 0.15);
   padding: 0.2em 0.4em;
   border-radius: 3px;
-  font-family: monospace;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 0.9em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .markdown-preview pre {
@@ -311,9 +313,11 @@ body {
   width: 100%;
   height: 100%;
   padding: 20px 80px 20px 20px;
-  font-family: monospace;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   white-space: pre-wrap;
   word-wrap: break-word;
   overflow: auto;
@@ -343,7 +347,7 @@ body {
   width: 100%;
   height: 100%;
   padding: 20px 80px 20px 20px;
-  font-family: monospace;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
   font-size: 14px;
   line-height: 1.5;
   border: none;
@@ -354,6 +358,9 @@ body {
   color: var(--editor-text);
   transition: color 0.3s;
   z-index: 2;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-variant-ligatures: none;
 }
 
 .status-bar {
