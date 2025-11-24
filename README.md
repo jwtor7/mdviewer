@@ -326,12 +326,6 @@ mdviewer/
 
 ## 📝 Changelog
 
-### [2.6.5] - 2025-11-23
-- **Documentation**:
-  - Added Feature Roadmap section
-  - Updated Changelog history
-  - Version bump
-
 ### [2.6.6] - 2025-11-23
 - **Bug Fixes:**
   - Fixed syntax highlighting rendering issues in code blocks
