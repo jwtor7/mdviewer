@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron';
+import { contextBridge, ipcRenderer, IpcRendererEvent, webUtils } from 'electron';
 import type { ElectronAPI, FileOpenData } from './types/electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -24,4 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('export-pdf', data),
   saveFile: (data: { content: string; filename: string; filePath: string | null }): Promise<{ success: boolean; filePath?: string; error?: string }> =>
     ipcRenderer.invoke('save-file', data),
+  readFile: (filePath: string): Promise<{ content: string; error?: string }> =>
+    ipcRenderer.invoke('read-file', { filePath }),
+  getPathForFile: (file: File): string => webUtils.getPathForFile(file),
 } satisfies ElectronAPI);

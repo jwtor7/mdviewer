@@ -1,3 +1,4 @@
+/* eslint-disable no-secrets/no-secrets */
 /**
  * Default markdown content loaded on application startup
  * Includes feature roadmap, recent changelog, and test elements for rapid testing
@@ -78,9 +79,9 @@ Welcome to mdviewer! This test document includes the feature roadmap, recent cha
 ### Wide Raw Block (Test Horizontal Scrolling)
 
 \`\`\`typescript
-const veryLongLineOfRawThatExceedsTheViewportWidthAndRequiresHorizontalScrollingToViewTheEntireLineOfRawWhichIsUsefulForTestingScrollBehaviorInBothRawViewAndRenderedMode = "This is a very long string that should create a horizontal scrollbar for testing purposes";
+const veryLongLineOfRawThatExceedsTheViewportWidthAndRequiresHorizontalScrollingToViewTheEntireLineOfRawWhichIsUsefulForTestingScrollBehaviorInBothRawViewAndRenderedMode = "This is a very long string that should create a horizontal scrollbar for testing purposes"; // eslint-disable-line no-secrets/no-secrets
 
-function anotherLongFunctionNameThatExceedsNormalLineLengthsAndIsUsedForTestingHorizontalScrollingBehaviorInRawBlocksWithinTheMarkdownRendered(parameterWithAVeryLongNameForTesting: string): void {
+function anotherLongFunctionNameThatExceedsNormalLineLengthsAndIsUsedForTestingHorizontalScrollingBehaviorInRawBlocksWithinTheMarkdownRendered(parameterWithAVeryLongNameForTesting: string): void { // eslint-disable-line no-secrets/no-secrets
   console.log("Testing horizontal scroll with a very long line of code that goes beyond the normal viewport width");
 }
 \`\`\`

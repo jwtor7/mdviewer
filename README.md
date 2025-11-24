@@ -307,6 +307,10 @@ mdviewer/
 ## 📝 Changelog
 
 ### [2.6.4] - 2025-11-23
+-   **Security Improvements:**
+    *   Fixed critical path traversal vulnerability in drag-and-drop functionality.
+    *   Implemented secure IPC for file reading with strict path validation.
+    *   Enforced file extension checks (.md/.markdown) and size limits for dropped files.
 - **UI/UX Refactoring**:
   - Renamed view modes for improved clarity: "Preview" → "Rendered", "Code" → "Raw"
   - Updated all button labels, tooltips, and keyboard shortcut descriptions

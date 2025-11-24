@@ -4,10 +4,10 @@
 **Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
 
 ## Active Task
-**CRITICAL-2: Path Traversal in Drag-and-Drop**
-- **Goal:** Fix vulnerability in `src/App.tsx` where file paths are accessed without validation.
+**CRITICAL-3: Code Injection in PDF Export**
+- **Goal:** Fix XSS/RCE vulnerability in PDF export functionality (`src/main.ts`).
 - **Status:** Ready to start.
-- **Note:** CRITICAL-1 (CSP unsafe-inline) was attempted but reverted due to UI breakage caused by `react-syntax-highlighter`.
+- **Note:** CRITICAL-2 (Path Traversal) is FIXED. CRITICAL-1 (CSP) is DEFERRED.
 
 ---
 

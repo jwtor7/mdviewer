@@ -45,7 +45,9 @@ export type IPCMessage =
   /** Request to export document as PDF */
   | { channel: 'export-pdf'; data: PDFExportData }
   /** Request to save file to disk */
-  | { channel: 'save-file'; data: SaveFileData };
+  | { channel: 'save-file'; data: SaveFileData }
+  /** Request to read a file securely */
+  | { channel: 'read-file'; data: { filePath: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -56,6 +58,8 @@ export interface ElectronAPI {
   openExternalUrl: (url: string) => Promise<void>;
   exportPDF: (data: PDFExportData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
   saveFile: (data: SaveFileData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
+  readFile: (filePath: string) => Promise<{ content: string; error?: string }>;
+  getPathForFile: (file: File) => string;
 }
 
 declare global {

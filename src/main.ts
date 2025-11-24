@@ -637,6 +637,49 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
   }
 });
 
+ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ content: string; error?: string }> => {
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-read-file')) {
+    console.warn('Rate limit exceeded for read-file');
+    return { content: '', error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { content: '', error: 'Invalid data' };
+  }
+
+  const { filePath } = data as { filePath: unknown };
+
+  if (typeof filePath !== 'string') {
+    return { content: '', error: 'Invalid filePath' };
+  }
+
+  try {
+    // Security: Validate file path to prevent path traversal and enforce allowed extensions
+    if (!isPathSafe(filePath)) {
+      console.warn(`Blocked attempt to read unsafe file: ${filePath}`);
+      return { content: '', error: 'Invalid file type or path' };
+    }
+
+    // Security: Check file size to prevent memory exhaustion
+    const stats = await fsPromises.stat(filePath);
+    if (stats.size > SECURITY_CONFIG.MAX_FILE_SIZE) {
+      const maxSizeMB = SECURITY_CONFIG.MAX_FILE_SIZE / (1024 * 1024);
+      return { content: '', error: `File exceeds maximum size of ${maxSizeMB}MB` };
+    }
+
+    // Read file content
+    const content = await fsPromises.readFile(filePath, 'utf-8');
+    return { content };
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    console.error('Failed to read file:', sanitizeError(error));
+    return { content: '', error: 'Failed to read file' };
+  }
+});
+
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon
 app.on('open-file', (event: Electron.Event, filePath: string) => {

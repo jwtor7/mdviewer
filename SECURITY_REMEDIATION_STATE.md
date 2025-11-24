@@ -14,7 +14,7 @@
 | ID | Issue | Status | Dev Test | Security Test | User Test | Notes |
 |----|-------|--------|----------|---------------|-----------|-------|
 | CRITICAL-1 | CSP `unsafe-inline` Vulnerability | ⏭️ DEFERRED | ✅ | ⚠️ FAILED | ⚠️ FAILED | index.html:6-7 - Requires library replacement |
-| CRITICAL-2 | Path Traversal in Drag-and-Drop | ⏳ NEXT | ❌ | ❌ | ❌ | App.tsx:258-289 - **START HERE** |
+| CRITICAL-2 | Path Traversal in Drag-and-Drop | ✅ FIXED | ✅ | ✅ | ✅ | App.tsx:258-289 - **VERIFIED** |
 | CRITICAL-3 | Code Injection in PDF Export | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:504, 602 |
 | CRITICAL-4 | Rate Limiter Memory Leak | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:83-101 |
 | CRITICAL-5 | Missing IPC Origin Validation | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:285-638 |
@@ -64,27 +64,14 @@
 
 ## Current Task
 
-**Next Issue to Fix:** CRITICAL-2 - Path Traversal in Drag-and-Drop
+**Next Issue to Fix:** CRITICAL-3 - Code Injection in PDF Export
 
 **Issue Details:**
-- **Severity:** CRITICAL (CVSS 8.1)
-- **Location:** `src/App.tsx:258-289` (handleFileDrop function)
-- **Vulnerability:** Renderer process directly accesses file.path without validation
-- **Attack:** Attacker could set file.path to sensitive locations (/etc/passwd, ~/.ssh/id_rsa)
-- **Impact:** Can read arbitrary files accessible to the user
-
-**Fix Required:**
-1. Add path validation in renderer before FileReader operations
-2. Ensure path is within allowed directories (e.g., user's home directory)
-3. Check file extension (.md, .markdown only)
-4. Move file system access to main process via IPC (defense in depth)
-
-**Testing Sequence:**
-1. @mdviewer-lead-dev implements fix
-2. @security-audit-expert validates security (test with malicious paths)
-3. User performs manual testing (drag-and-drop files)
-4. Update this file with results
-5. Move to CRITICAL-3
+- **Severity:** CRITICAL (CVSS 8.0)
+- **Location:** `src/main.ts:504, 602` (generatePDFHTML usage)
+- **Vulnerability:** Unsanitized user input injected into PDF generation HTML
+- **Attack:** XSS in PDF generation context
+- **Impact:** Remote Code Execution (RCE) via PDF renderer
 
 ---
 
@@ -221,6 +208,19 @@ The fix is **SECURE and EFFECTIVE**. The removal of `'unsafe-inline'` completely
   - Added detailed CRITICAL-2 task description
   - Updated Current Task section with fix requirements
 - **Next Session:** Start with CRITICAL-2 (Path Traversal in Drag-and-Drop)
+
+### Session 6: 2025-11-23 (CRITICAL-2 Fix & Verification)
+- **Implemented CRITICAL-2 Fix:**
+  - Moved file reading to main process (`ipcMain.handle('read-file')`)
+  - Implemented strict path validation (`isPathSafe`)
+  - Added `getPathForFile` to preload for correct path resolution
+  - Updated `App.tsx` to use secure IPC
+- **Verification:**
+  - **Dev Test:** Build and Lint passed.
+  - **Security Test:** Validated code prevents traversal and enforces extensions.
+  - **User Test:** ✅ PASSED - User confirmed drag-and-drop works.
+- **Status:** CRITICAL-2 marked as ✅ FIXED
+- **Next:** Proceed to CRITICAL-3 (Code Injection in PDF Export)
 
 ---
 

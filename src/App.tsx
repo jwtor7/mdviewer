@@ -260,13 +260,37 @@ const App: React.FC = () => {
             file.name.endsWith('.md') || file.name.endsWith('.markdown')
         );
 
-        markdownFiles.forEach((file: File) => {
-            const reader = new FileReader();
-            reader.onload = (event: ProgressEvent<FileReader>): void => {
-                const content = event.target?.result as string;
-                // Electron file objects have a 'path' property
-                const filePath = (file as File & { path?: string }).path || null;
-                const existing = filePath ? findDocumentByPath(filePath) : undefined;
+        markdownFiles.forEach(async (file: File) => {
+            // Use secure method to get file path (works in Electron renderer)
+            let filePath: string | null = null;
+
+            if (window.electronAPI?.getPathForFile) {
+                try {
+                    filePath = window.electronAPI.getPathForFile(file);
+                } catch (e) {
+                    console.error('Failed to get path for file', e);
+                }
+            } else {
+                // Fallback for older Electron versions or dev mode if API missing
+                filePath = (file as File & { path?: string }).path || null;
+            }
+
+            if (!filePath || !window.electronAPI?.readFile) {
+                // Fallback for web/dev environment if needed, or show error
+                showError('Cannot read file path');
+                return;
+            }
+
+            try {
+                const result = await window.electronAPI.readFile(filePath);
+
+                if (result.error) {
+                    showError(result.error);
+                    return;
+                }
+
+                const content = result.content;
+                const existing = findDocumentByPath(filePath);
 
                 if (existing) {
                     // Update existing document
@@ -281,11 +305,9 @@ const App: React.FC = () => {
                         filePath,
                     });
                 }
-            };
-            reader.onerror = (): void => {
+            } catch (err) {
                 showError(`Failed to read file: ${file.name}`);
-            };
-            reader.readAsText(file);
+            }
         });
     }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, showError, documents]);
 
@@ -437,8 +459,8 @@ const App: React.FC = () => {
                     viewMode === VIEW_MODES.RENDERED
                         ? 'Markdown preview'
                         : viewMode === VIEW_MODES.SPLIT
-                        ? 'Split view: code and preview'
-                        : 'Markdown editor'
+                            ? 'Split view: code and preview'
+                            : 'Markdown editor'
                 }
             >
                 {showFindReplace && (viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT) && (
@@ -454,7 +476,7 @@ const App: React.FC = () => {
                     />
                 )}
                 {viewMode === VIEW_MODES.RENDERED ? (
-                    <MarkdownPreview content={activeDoc.content} theme={theme} />
+                    <MarkdownPreview content={activeDoc.content} />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
                         ref={textareaRef}
@@ -497,7 +519,7 @@ const App: React.FC = () => {
                             }}
                         />
                         <div className="split-pane split-pane-right" style={{ width: `${100 - splitDividerPosition}%` }}>
-                            <MarkdownPreview content={activeDoc.content} theme={theme} />
+                            <MarkdownPreview content={activeDoc.content} />
                         </div>
                     </div>
                 )}
