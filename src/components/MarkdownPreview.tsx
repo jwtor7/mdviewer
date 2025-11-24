@@ -3,14 +3,31 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize from 'rehype-sanitize';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { solarizedlight, solarizedDarkAtom } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
 
 export interface MarkdownPreviewProps {
   content: string;
+  theme?: 'dark' | 'light' | 'solarized-light' | 'solarized-dark';
 }
 
-const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
+const MarkdownPreview = memo(({ content, theme = 'dark' }: MarkdownPreviewProps) => {
+  // Map theme to syntax highlighting style
+  const getSyntaxStyle = () => {
+    switch (theme) {
+      case 'light':
+        return vs;
+      case 'solarized-light':
+        return solarizedlight;
+      case 'solarized-dark':
+        return solarizedDarkAtom;
+      case 'dark':
+      default:
+        return vscDarkPlus;
+    }
+  };
+
   const components: Components = {
     code(props) {
       const { className, children, ...rest } = props;
@@ -22,7 +39,7 @@ const MarkdownPreview = memo(({ content }: MarkdownPreviewProps) => {
       return !isInline && match ? (
         <SyntaxHighlighter
           language={match[1]}
-          style={vscDarkPlus}
+          style={getSyntaxStyle()}
           PreTag="div"
         >
           {String(children).replace(/\n$/, '')}
