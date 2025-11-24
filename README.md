@@ -589,6 +589,9 @@ mdviewer/
 - [ ] **Markdown Formatting Toolbar**: Add toolbar buttons for common markdown elements (Heading 1, Heading 2, Heading 3, Code Block, Quote, Link, Image, etc.) to complement the existing Bold, Italic, and List buttons
 - [ ] **Markdown Lint**: Real-time linting and style suggestions
 - [ ] **Table Editor**: Visual table editing interface
+- [ ] **Strict CSP Implementation**: Replace `react-syntax-highlighter` with a CSS-class based solution (e.g., Shiki or Prism) to eliminate `unsafe-inline` styles (CRITICAL-1 fix)
+- [ ] **Architecture Hardening**: Move all file system operations to the main process via secure IPC to prevent path traversal vulnerabilities (CRITICAL-2 fix)
+- [ ] **Advanced Security Monitoring**: Implement CSP violation reporting and Subresource Integrity (SRI) checks
 
 ## 🤝🏽 Contributing
 
