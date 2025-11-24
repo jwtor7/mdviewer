@@ -3,11 +3,11 @@
 **Current Focus:** Security Remediation (Phase 1 - CRITICAL Fixes)
 **Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
 
-## Active Task
-**CRITICAL-4: Rate Limiter Memory Leak**
-- **Goal:** Fix memory leak in rate limiter (`src/main.ts`).
-- **Status:** Ready to start.
-- **Note:** CRITICAL-2 (Path Traversal) and CRITICAL-3 (PDF Export) are FIXED. CRITICAL-1 (CSP) is DEFERRED.
+## **Active Task**
+**MAINTENANCE: Version Bump & Cleanup**
+- **Goal:** Refactor default content loading, clean up README, and bump version to 2.6.8.
+- **Status:** In Progress.
+- **Note:** CRITICAL-2, CRITICAL-3, CRITICAL-4, and CRITICAL-5 are FIXED. CRITICAL-1 is DEFERRED.
 
 ---
 

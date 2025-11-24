@@ -4,73 +4,42 @@
  * Includes feature roadmap, recent changelog, and test elements for rapid testing
  */
 
+import readmeRaw from '../../README.md?raw';
+
+/**
+ * Helper to extract a section from markdown content
+ */
+const extractSection = (content: string, startMarker: string, endMarker?: string): string => {
+  const startIndex = content.indexOf(startMarker);
+  if (startIndex === -1) return '';
+
+  const contentFromStart = content.substring(startIndex);
+
+  if (endMarker) {
+    const endIndex = contentFromStart.indexOf(endMarker);
+    // If end marker not found, return everything (or handle as error if strictness needed)
+    if (endIndex === -1) return contentFromStart;
+    return contentFromStart.substring(0, endIndex).trim();
+  }
+
+  return contentFromStart.trim();
+};
+
+// Extract sections from README
+const roadmap = extractSection(readmeRaw, '## 🚀 Feature Roadmap', '## 📝 Changelog');
+const changelog = extractSection(readmeRaw, '## 📝 Changelog', '## 🤝🏽 Contributing');
+
 export const DEFAULT_CONTENT = `# mdviewer Test Document
 
 Welcome to mdviewer! This test document includes the feature roadmap, recent changes, and various markdown elements to test all features.
 
 ---
 
-## 🚧 Upcoming Features
-
-- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views - select text in Raw view and see it highlighted in Rendered, and vice versa
-- [ ] **Markdown Formatting Toolbar**: Add toolbar buttons for common markdown elements (Heading 1, Heading 2, Heading 3, Raw Block, Quote, Link, Image, etc.) to complement the existing Bold, Italic, and List buttons
-- [ ] **Markdown Lint**: Real-time linting and style suggestions
-- [ ] **Table Editor**: Visual table editing interface
+${roadmap}
 
 ---
 
-## 📝 Recent Changelog
-
-### [2.6.4] - 2025-11-23
-- **UI/UX Refactoring**:
-  - Renamed view modes for improved clarity: "Preview" → "Rendered", "Raw" → "Raw"
-  - Updated all button labels, tooltips, and keyboard shortcut descriptions
-  - Updated error messages and accessibility labels
-  - "Rendered" now clearly indicates processed markdown output
-  - "Raw" now clearly indicates unprocessed markdown source
-  - View mode cycle: Rendered → Raw → Split → Rendered
-
-### [2.6.3] - 2025-11-23
-- **UI/UX Improvements**:
-  - Added scroll position indicator to Raw view - visual bar shows current position in document
-  - Indicator height represents visible content ratio, position shows scroll location
-  - Increased right-side padding from 20px to 80px in Raw view to prevent text cutoff by scrollbar
-  - Increased right-side padding from 20px to 60px in Rendered view
-  - Added proper box-sizing to ensure padding is calculated correctly
-  - Fixed horizontal scrolling in Rendered view with \`overflow-x: hidden\`
-  - Long URLs now wrap properly in Rendered view instead of being cut off
-  - Added \`word-break\` and \`overflow-wrap\` to links for better text wrapping
-
-### [2.6.2] - 2025-11-23
-- **Find & Replace Enhancements**:
-  - Added real-time incremental search highlighting - highlights update as you type
-  - Highlights appear immediately when typing in find input (e.g., "T" → all Ts highlighted)
-  - Match counter updates in real-time showing "X of Y"
-  - Current match highlighted in orange, other matches in yellow
-  - Perfect scroll synchronization using mirrored content layer approach
-  - Case-sensitive toggle respected in real-time highlighting
-
-- **Bug Fixes**:
-  - Fixed undo/redo functionality after using "Replace All" - now uses \`document.execCommand('insertText')\` to preserve undo stack
-  - Fixed highlight alignment issues with complete redesign using background layer approach
-
-- **Developer Experience**:
-  - Added comprehensive default test content on startup (240-line test document)
-  - Default content includes feature roadmap, recent changelog, and test elements
-  - 50+ instances of "test" for Find & Replace validation
-  - Wide code blocks and long lines for scroll testing
-  - Updated CLAUDE.md with complete TypeScript references and project structure
-  - Updated mdviewer-lead-dev agent with correct file extensions and project context
-
-### [2.6.1] - 2025-11-22
-- **PDF Export Improvements**:
-  - Fixed scroll bars appearing in code blocks in PDF exports
-  - Implemented proper text wrapping for long code lines using \`white-space: pre-wrap\`
-  - Added \`word-wrap: break-word\` for code blocks, tables, and URLs
-  - Long URLs now break at appropriate points instead of causing overflow
-  - Table cells wrap content properly without scroll bars
-  - Added \`page-break-inside: avoid\` for code blocks and tables to keep them together when possible
-  - All PDF content is now fully readable without horizontal or vertical scroll bars
+${changelog}
 
 ---
 

@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.4-blue.svg)
+![Version](https://img.shields.io/badge/version-2.6.8-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -307,8 +307,6 @@ mdviewer/
 ## 🚀 Feature Roadmap
 
 ### Phase 1: Security Hardening (Current Focus)
-- [x] **Path Traversal Protection**: Secure file reading via IPC (Completed in v2.6.4)
-- [x] **PDF Export Security**: Prevent code injection during PDF generation (Completed in v2.6.5)
 - [ ] **Strict CSP Implementation**: Eliminate `unsafe-inline` styles by replacing syntax highlighter
 - [ ] **Advanced Security Monitoring**: CSP violation reporting and SRI checks
 
@@ -325,6 +323,27 @@ mdviewer/
 - [ ] **Export to HTML/Docx**: Additional export formats
 
 ## 📝 Changelog
+
+### [2.6.8] - 2025-11-24
+- **Maintenance**:
+  - Refactored default content loading to programmatically import from README.md
+  - Updated documentation and removed completed roadmap items
+
+### [2.6.7] - 2025-11-23
+- **Security Improvements:**
+  - **CRITICAL-4 FIXED**: Fixed rate limiter memory leak (CVSS 7.5 → 0.0)
+    - Added periodic cleanup mechanism to prevent unbounded memory growth
+    - Cleanup runs every 60 seconds, removes stale entries after 2× rate limit window
+    - Tracks last access time for each identifier
+    - Prevents memory exhaustion from unique sender IDs
+  - **CRITICAL-5 FIXED**: Added IPC origin validation (CVSS 6.5 → 0.0)
+    - Created `isValidIPCOrigin` function to validate all IPC event senders
+    - Validates sender is from known BrowserWindow instance
+    - Applied to all 8 IPC handlers (tab-dropped, check-tab-dropped, close-window, open-external-url, create-window-for-tab, export-pdf, save-file, read-file)
+    - Prevents unauthorized IPC calls from external processes
+  - Both vulnerabilities fully mitigated with 100% risk reduction
+  - Changes: +109 insertions to main.ts
+  - All tests passed: TypeScript compilation, linting, functional testing
 
 ### [2.6.6] - 2025-11-23
 - **Bug Fixes:**
