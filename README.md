@@ -308,8 +308,8 @@ mdviewer/
 
 ### Phase 1: Security Hardening (Current Focus)
 - [x] **Path Traversal Protection**: Secure file reading via IPC (Completed in v2.6.4)
+- [x] **PDF Export Security**: Prevent code injection during PDF generation (Completed in v2.6.5)
 - [ ] **Strict CSP Implementation**: Eliminate `unsafe-inline` styles by replacing syntax highlighter
-- [ ] **PDF Export Security**: Prevent code injection during PDF generation
 - [ ] **Advanced Security Monitoring**: CSP violation reporting and SRI checks
 
 ### Phase 2: Editor Enhancements
@@ -331,6 +331,23 @@ mdviewer/
   - Added Feature Roadmap section
   - Updated Changelog history
   - Version bump
+
+### [2.6.6] - 2025-11-23
+- **Bug Fixes:**
+  - Fixed syntax highlighting rendering issues in code blocks
+  - Restored theme-aware syntax highlighting for all 4 themes (dark, light, solarized-light, solarized-dark)
+  - Fixed monospace font rendering across all code elements
+  - Code blocks now use proper inline styles from react-syntax-highlighter
+
+### [2.6.5] - 2025-11-23
+- **Security Improvements:**
+  - **CRITICAL-3 FIXED**: Added strict Content Security Policy to PDF export HTML
+  - CSP blocks all scripts, objects, and iframes in generated PDFs (`default-src 'none'`)
+  - Defense-in-depth: CSP layer added on top of existing `rehype-sanitize` protection
+  - Prevents code injection and XSS attacks in PDF generation
+- **Documentation:**
+  - Added Feature Roadmap section to README
+  - Updated changelog with proper version tracking
 
 ### [2.6.4] - 2025-11-23
 -   **Security Improvements:**
