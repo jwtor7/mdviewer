@@ -75,6 +75,7 @@ const sanitizeError = (error: Error | NodeJS.ErrnoException): string => {
 /**
  * Security utility: Creates a rate limiter for IPC handlers.
  * Prevents resource exhaustion attacks by limiting the number of calls per time window.
+ * Includes automatic cleanup to prevent memory leaks from abandoned identifiers.
  *
  * @param maxCalls - Maximum number of calls allowed in the time window
  * @param windowMs - Time window in milliseconds
@@ -82,10 +83,38 @@ const sanitizeError = (error: Error | NodeJS.ErrnoException): string => {
  */
 const createRateLimiter = (maxCalls: number, windowMs: number) => {
   const calls = new Map<string, number[]>();
+  const lastAccess = new Map<string, number>();
+  const CLEANUP_INTERVAL = 60000; // 60 seconds
+
+  // Security: Periodically remove stale entries to prevent memory leak (CRITICAL-4 fix)
+  setInterval(() => {
+    const now = Date.now();
+    const staleIdentifiers: string[] = [];
+
+    // Find identifiers that haven't been accessed for 2x the window time
+    for (const [identifier, lastAccessTime] of lastAccess.entries()) {
+      if (now - lastAccessTime > windowMs * 2) {
+        staleIdentifiers.push(identifier);
+      }
+    }
+
+    // Remove stale entries from both maps
+    for (const identifier of staleIdentifiers) {
+      calls.delete(identifier);
+      lastAccess.delete(identifier);
+    }
+
+    if (staleIdentifiers.length > 0) {
+      console.log(`Rate limiter cleanup: removed ${staleIdentifiers.length} stale entries`);
+    }
+  }, CLEANUP_INTERVAL);
 
   return (identifier: string): boolean => {
     const now = Date.now();
     const timestamps = calls.get(identifier) || [];
+
+    // Security: Track last access time for cleanup (CRITICAL-4 fix)
+    lastAccess.set(identifier, now);
 
     // Remove old timestamps outside the time window
     const recentCalls = timestamps.filter(t => now - t < windowMs);
@@ -99,6 +128,38 @@ const createRateLimiter = (maxCalls: number, windowMs: number) => {
     return true; // Allow
   };
 };
+
+/**
+ * Security utility: Validates that an IPC event originated from a known BrowserWindow.
+ * Prevents unauthorized IPC calls from external processes or compromised contexts.
+ * 
+ * @param event - The IPC event to validate
+ * @returns true if the sender is from a known window, false otherwise
+ */
+const isValidIPCOrigin = (event: IpcMainInvokeEvent): boolean => {
+  try {
+    const senderWindow = BrowserWindow.fromWebContents(event.sender);
+
+    // Verify sender is associated with a valid BrowserWindow we created
+    if (!senderWindow || senderWindow.isDestroyed()) {
+      console.error('IPC call from invalid or destroyed window');
+      return false;
+    }
+
+    // Verify the window is in our list of known windows
+    const allWindows = BrowserWindow.getAllWindows();
+    if (!allWindows.includes(senderWindow)) {
+      console.error('IPC call from unknown window');
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error('IPC origin validation error:', error);
+    return false;
+  }
+};
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -283,6 +344,12 @@ const rateLimiter = createRateLimiter(
 const droppedTabs = new Map<string, NodeJS.Timeout>();
 
 ipcMain.handle('tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boolean => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected tab-dropped from invalid origin');
+    return false;
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-tab-dropped')) {
@@ -317,6 +384,12 @@ ipcMain.handle('tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boole
 });
 
 ipcMain.handle('check-tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boolean => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected check-tab-dropped from invalid origin');
+    return false;
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-check-tab-dropped')) {
@@ -328,6 +401,12 @@ ipcMain.handle('check-tab-dropped', (event: IpcMainInvokeEvent, dragId: string):
 });
 
 ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected close-window from invalid origin');
+    return;
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-close-window')) {
@@ -342,6 +421,12 @@ ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
 });
 
 ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: string): Promise<void> => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected open-external-url from invalid origin');
+    throw new Error('Invalid IPC origin');
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-open-external-url')) {
@@ -389,6 +474,12 @@ ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: strin
 });
 
 ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknown): { success: boolean; error?: string } => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected create-window-for-tab from invalid origin');
+    return { success: false, error: 'Invalid IPC origin' };
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-create-window-for-tab')) {
@@ -445,6 +536,12 @@ ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknow
 });
 
 ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected export-pdf from invalid origin');
+    return { success: false, error: 'Invalid IPC origin' };
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-export-pdf')) {
@@ -531,6 +628,12 @@ ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): P
 });
 
 ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected save-file from invalid origin');
+    return { success: false, error: 'Invalid IPC origin' };
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-save-file')) {
@@ -638,6 +741,12 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
 });
 
 ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ content: string; error?: string }> => {
+  // Security: Validate IPC origin (CRITICAL-5 fix)
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected read-file from invalid origin');
+    return { content: '', error: 'Invalid IPC origin' };
+  }
+
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-read-file')) {
