@@ -304,9 +304,35 @@ mdviewer/
 - **Renderer Process**: Sandboxed React app with no direct Node.js access
 - **IPC Communication**: Secure message passing for file operations
 
+## 🚀 Feature Roadmap
+
+### Phase 1: Security Hardening (Current Focus)
+- [x] **Path Traversal Protection**: Secure file reading via IPC (Completed in v2.6.4)
+- [ ] **Strict CSP Implementation**: Eliminate `unsafe-inline` styles by replacing syntax highlighter
+- [ ] **PDF Export Security**: Prevent code injection during PDF generation
+- [ ] **Advanced Security Monitoring**: CSP violation reporting and SRI checks
+
+### Phase 2: Editor Enhancements
+- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
+- [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links, Images
+- [ ] **Table Editor**: Visual interface for creating and editing Markdown tables
+- [ ] **Markdown Lint**: Real-time style suggestions and error checking
+
+### Phase 3: Professional Features
+- [ ] **Presentation Mode**: Turn Markdown into slides
+- [ ] **Cloud Sync**: Optional integration with iCloud/Dropbox
+- [ ] **Plugin System**: Allow community extensions
+- [ ] **Export to HTML/Docx**: Additional export formats
+
 ## 📝 Changelog
 
 ### [2.6.5] - 2025-11-23
+- **Documentation**:
+  - Added Feature Roadmap section
+  - Updated Changelog history
+  - Version bump
+
+### [2.6.4] - 2025-11-23
 -   **Security Improvements:**
     *   Fixed critical path traversal vulnerability in drag-and-drop functionality.
     *   Implemented secure IPC for file reading with strict path validation.
@@ -587,15 +613,7 @@ mdviewer/
 - Rendered/Raw view toggle
 - Syntax highlighting
 
-## 🚧 Upcoming Features
 
-- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views - select text in Raw view and see it highlighted in Rendered view, and vice versa
-- [ ] **Markdown Formatting Toolbar**: Add toolbar buttons for common markdown elements (Heading 1, Heading 2, Heading 3, Code Block, Quote, Link, Image, etc.) to complement the existing Bold, Italic, and List buttons
-- [ ] **Markdown Lint**: Real-time linting and style suggestions
-- [ ] **Table Editor**: Visual table editing interface
-- [ ] **Strict CSP Implementation**: Replace `react-syntax-highlighter` with a CSS-class based solution (e.g., Shiki or Prism) to eliminate `unsafe-inline` styles (CRITICAL-1 fix)
-- [ ] **Architecture Hardening**: Move all file system operations to the main process via secure IPC to prevent path traversal vulnerabilities (CRITICAL-2 fix)
-- [ ] **Advanced Security Monitoring**: Implement CSP violation reporting and Subresource Integrity (SRI) checks
 
 ## 🤝🏽 Contributing
 
