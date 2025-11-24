@@ -476,7 +476,7 @@ const App: React.FC = () => {
                     />
                 )}
                 {viewMode === VIEW_MODES.RENDERED ? (
-                    <MarkdownPreview content={activeDoc.content} />
+                    <MarkdownPreview content={activeDoc.content} theme={theme} />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
                         ref={textareaRef}
@@ -519,7 +519,7 @@ const App: React.FC = () => {
                             }}
                         />
                         <div className="split-pane split-pane-right" style={{ width: `${100 - splitDividerPosition}%` }}>
-                            <MarkdownPreview content={activeDoc.content} />
+                            <MarkdownPreview content={activeDoc.content} theme={theme} />
                         </div>
                     </div>
                 )}
