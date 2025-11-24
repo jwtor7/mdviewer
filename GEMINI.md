@@ -1,13 +1,13 @@
 # Project Context: Security Remediation
 
-**Current Focus:** Security Remediation (Phase 1 - CRITICAL Fixes)
+**Current Focus:** Security Remediation (Phase 1 - Data Leakage Prevention)
 **Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
 
 ## **Active Task**
-**FEATURE: Copy to Clipboard**
-- **Goal:** Implement secure copy-to-clipboard for code blocks and bump version to 2.7.0.
-- **Status:** Completed.
-- **Note:** CRITICAL-2, CRITICAL-3, CRITICAL-4, and CRITICAL-5 are FIXED. CRITICAL-1 is DEFERRED.
+**SECURITY: PDF CSP Data Leakage (H-3)**
+- **Goal:** Prevent data leakage via CSS background-image URLs in PDF export (Remove 'unsafe-inline').
+- **Status:** Pending.
+- **Note:** Priorities updated based on Security Report v2.0 (2025-11-24). Focus is on Data Leakage Prevention.
 
 ---
 
