@@ -1,3 +1,16 @@
+# Project Context: Security Remediation
+
+**Current Focus:** Security Remediation (Phase 1 - CRITICAL Fixes)
+**Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
+
+## Active Task
+**CRITICAL-2: Path Traversal in Drag-and-Drop**
+- **Goal:** Fix vulnerability in `src/App.tsx` where file paths are accessed without validation.
+- **Status:** Ready to start.
+- **Note:** CRITICAL-1 (CSP unsafe-inline) was attempted but reverted due to UI breakage caused by `react-syntax-highlighter`.
+
+---
+
 # Git Workflow
 
 ## Critical Rules
