@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.6.8-blue.svg)
+![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -323,6 +323,14 @@ mdviewer/
 - [ ] **Export to HTML/Docx**: Additional export formats
 
 ## 📝 Changelog
+
+### [2.7.0] - 2025-11-24
+- **New Features**:
+  - **Copy to Clipboard**: Added a copy button to all code blocks
+    - Appears on hover in the bottom-right corner
+    - Semi-transparent design that works with all themes
+    - Visual feedback (checkmark) upon successful copy
+    - Secure implementation using standard Clipboard API
 
 ### [2.6.8] - 2025-11-24
 - **Maintenance**:

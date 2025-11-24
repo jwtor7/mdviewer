@@ -4,9 +4,9 @@
 **Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
 
 ## **Active Task**
-**MAINTENANCE: Version Bump & Cleanup**
-- **Goal:** Refactor default content loading, clean up README, and bump version to 2.6.8.
-- **Status:** In Progress.
+**FEATURE: Copy to Clipboard**
+- **Goal:** Implement secure copy-to-clipboard for code blocks and bump version to 2.7.0.
+- **Status:** Completed.
 - **Note:** CRITICAL-2, CRITICAL-3, CRITICAL-4, and CRITICAL-5 are FIXED. CRITICAL-1 is DEFERRED.
 
 ---
