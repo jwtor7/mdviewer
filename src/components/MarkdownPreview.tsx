@@ -6,10 +6,11 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { solarizedlight, solarizedDarkAtom } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import type { Components } from 'react-markdown';
+import type { ThemeMode } from '../constants/index.js';
 
 export interface MarkdownPreviewProps {
   content: string;
-  theme?: 'dark' | 'light' | 'solarized-light' | 'solarized-dark';
+  theme?: ThemeMode;
 }
 
 const MarkdownPreview = memo(({ content, theme = 'dark' }: MarkdownPreviewProps) => {
@@ -23,6 +24,7 @@ const MarkdownPreview = memo(({ content, theme = 'dark' }: MarkdownPreviewProps)
       case 'solarized-dark':
         return solarizedDarkAtom;
       case 'dark':
+      case 'system': // Default system to dark theme
       default:
         return vscDarkPlus;
     }
