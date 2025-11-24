@@ -20,6 +20,12 @@ pre[class*="language-"] {
   hyphens: none;
 }
 
+/* Prevent unwanted text decorations (strikethrough, underline, etc.) */
+code[class*="language-"] *,
+pre[class*="language-"] * {
+  text-decoration: none !important;
+}
+
 /* VS Code Dark+ (Default Dark Theme) */
 [data-theme='dark'] code[class*="language-"],
 [data-theme='dark'] pre[class*="language-"] {
@@ -280,9 +286,11 @@ pre[class*="language-"] {
 .token.bold {
   font-weight: bold;
 }
+
 .token.italic {
   font-style: italic;
 }
+
 .token.entity {
   cursor: help;
 }
