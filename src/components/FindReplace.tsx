@@ -269,21 +269,23 @@ const FindReplace: React.FC<FindReplaceProps> = ({
     }
   }, [isDragging, dragOffset, position]);
 
+  // Update CSS custom properties for position (CSP-compliant)
+  useEffect(() => {
+    if (panelRef.current) {
+      panelRef.current.style.setProperty('--panel-x', `${position.x}px`);
+      panelRef.current.style.setProperty('--panel-y', `${position.y}px`);
+    }
+  }, [position]);
+
   return (
     <div
       ref={panelRef}
-      className="find-replace-panel"
+      className={`find-replace-panel${isDragging ? ' is-dragging' : ''}`}
       onKeyDown={handleKeyDown}
-      style={{
-        left: `${position.x}px`,
-        top: `${position.y}px`,
-        cursor: isDragging ? 'grabbing' : 'default',
-      }}
     >
       <div
         className="find-replace-header"
         onMouseDown={handleMouseDown}
-        style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
       >
         <span className="find-replace-title">Find & Replace</span>
         <button

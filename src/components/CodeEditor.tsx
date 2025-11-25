@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, useEffect, useRef, useState } from 'react';
+import React, { forwardRef, memo, useEffect, useRef } from 'react';
 
 export interface CodeEditorProps {
   content: string;
@@ -8,15 +8,16 @@ export interface CodeEditorProps {
 
 const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
   ({ content, onChange, highlightedContent }, ref) => {
-    const [scrollIndicator, setScrollIndicator] = useState({ top: 0, height: 0 });
     const internalRef = useRef<HTMLTextAreaElement>(null);
+    const thumbRef = useRef<HTMLDivElement>(null);
 
     // Use internal ref or forwarded ref
     const textareaRef = (ref as React.RefObject<HTMLTextAreaElement>) || internalRef;
 
     useEffect(() => {
       const textarea = textareaRef.current;
-      if (!textarea) return;
+      const thumb = thumbRef.current;
+      if (!textarea || !thumb) return;
 
       const updateScrollIndicator = () => {
         const { scrollTop, scrollHeight, clientHeight } = textarea;
@@ -31,10 +32,9 @@ const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
         const maxThumbTop = clientHeight - thumbHeight;
         const thumbTop = maxThumbTop * scrollPercentage;
 
-        setScrollIndicator({
-          top: thumbTop,
-          height: thumbHeight
-        });
+        // Update CSS custom properties (CSP-compliant)
+        thumb.style.setProperty('--thumb-top', `${thumbTop}px`);
+        thumb.style.setProperty('--thumb-height', `${thumbHeight}px`);
       };
 
       // Update on scroll
@@ -67,13 +67,7 @@ const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
           aria-label="Markdown source code editor"
         />
         <div className="scroll-indicator">
-          <div
-            className="scroll-indicator-thumb"
-            style={{
-              top: `${scrollIndicator.top}px`,
-              height: `${scrollIndicator.height}px`
-            }}
-          />
+          <div ref={thumbRef} className="scroll-indicator-thumb" />
         </div>
       </div>
     );

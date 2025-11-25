@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
 import MarkdownPreview from './components/MarkdownPreview';
 import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
@@ -30,6 +30,14 @@ const App: React.FC = () => {
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
     const [highlightedContent, setHighlightedContent] = useState<React.ReactNode | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const splitViewRef = useRef<HTMLDivElement>(null);
+
+    // Update CSS custom property for split pane position (CSP-compliant)
+    useEffect(() => {
+        if (splitViewRef.current) {
+            splitViewRef.current.style.setProperty('--split-position', `${splitDividerPosition}%`);
+        }
+    }, [splitDividerPosition]);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
     useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument);
@@ -485,8 +493,8 @@ const App: React.FC = () => {
                         highlightedContent={highlightedContent}
                     />
                 ) : (
-                    <div className="split-view">
-                        <div className="split-pane split-pane-left" style={{ width: `${splitDividerPosition}%` }}>
+                    <div ref={splitViewRef} className="split-view">
+                        <div className="split-pane split-pane-left">
                             <CodeEditor
                                 ref={textareaRef}
                                 content={activeDoc.content}
@@ -518,7 +526,7 @@ const App: React.FC = () => {
                                 document.addEventListener('mouseup', handleMouseUp);
                             }}
                         />
-                        <div className="split-pane split-pane-right" style={{ width: `${100 - splitDividerPosition}%` }}>
+                        <div className="split-pane split-pane-right">
                             <MarkdownPreview content={activeDoc.content} theme={theme} />
                         </div>
                     </div>

@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 
 interface CodeBlockProps {
-    language: string;
-    style: any;
-    children: string;
+    children: React.ReactNode;  // Pre-highlighted content from rehype-highlight
+    raw: string;                // Raw text for copying
 }
 
-const CodeBlock: React.FC<CodeBlockProps> = ({ language, style, children }) => {
+const CodeBlock: React.FC<CodeBlockProps> = ({ children, raw }) => {
     const [copied, setCopied] = useState(false);
 
     const handleCopy = async () => {
         try {
-            await navigator.clipboard.writeText(children);
+            await navigator.clipboard.writeText(raw);
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch (err) {
@@ -39,14 +37,7 @@ const CodeBlock: React.FC<CodeBlockProps> = ({ language, style, children }) => {
                     </svg>
                 )}
             </button>
-            <SyntaxHighlighter
-                language={language}
-                style={style}
-                PreTag="div"
-                customStyle={{ margin: 0, borderRadius: '5px' }}
-            >
-                {children}
-            </SyntaxHighlighter>
+            {children}
         </div>
     );
 };

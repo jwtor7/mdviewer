@@ -307,7 +307,7 @@ mdviewer/
 ## 🚀 Feature Roadmap
 
 ### Phase 1: Security Hardening (Current Focus)
-- [ ] **Strict CSP Implementation**: Eliminate `unsafe-inline` styles by replacing syntax highlighter
+- [x] **Strict CSP Implementation**: Eliminated `unsafe-inline` styles in production builds (v2.7.1)
 - [ ] **Advanced Security Monitoring**: CSP violation reporting and SRI checks
 
 ### Phase 2: Editor Enhancements
@@ -323,6 +323,15 @@ mdviewer/
 - [ ] **Export to HTML/Docx**: Additional export formats
 
 ## 📝 Changelog
+
+### [2.7.1] - 2025-11-24
+- **Security Improvements**:
+  - **Strict CSP in Production**: Eliminated `unsafe-inline` from style-src directive
+    - Replaced `react-syntax-highlighter` (inline styles) with `rehype-highlight` (CSS classes)
+    - Converted all component inline styles to CSS custom properties
+    - Production builds now enforce strict CSP: `style-src 'self'`
+    - Added highlight.js CSS themes for all 4 color schemes
+  - Note: Development mode retains `unsafe-inline` for Vite HMR compatibility
 
 ### [2.7.0] - 2025-11-24
 - **New Features**:

@@ -7,6 +7,33 @@
   --editor-text: #d4d4d4;
   --btn-hover: #3e4451;
   --btn-active: #3e4451;
+  /* Syntax Highlighting - VS Code Dark+ theme */
+  --hljs-bg: #1e1e1e;
+  --hljs-color: #d4d4d4;
+  --hljs-keyword: #569cd6;
+  --hljs-built-in: #4ec9b0;
+  --hljs-type: #4ec9b0;
+  --hljs-literal: #569cd6;
+  --hljs-number: #b5cea8;
+  --hljs-string: #ce9178;
+  --hljs-regexp: #d16969;
+  --hljs-symbol: #b5cea8;
+  --hljs-comment: #6a9955;
+  --hljs-function: #dcdcaa;
+  --hljs-class: #4ec9b0;
+  --hljs-variable: #9cdcfe;
+  --hljs-attr: #9cdcfe;
+  --hljs-tag: #569cd6;
+  --hljs-name: #4fc1ff;
+  --hljs-selector: #d7ba7d;
+  --hljs-meta: #c586c0;
+  --hljs-title: #dcdcaa;
+  --hljs-section: #dcdcaa;
+  --hljs-link: #569cd6;
+  --hljs-operator: #d4d4d4;
+  --hljs-punctuation: #d4d4d4;
+  --hljs-addition-bg: rgba(40, 167, 69, 0.2);
+  --hljs-deletion-bg: rgba(220, 53, 69, 0.2);
 }
 
 [data-theme='light'] {
@@ -18,6 +45,33 @@
   --editor-text: #333333;
   --btn-hover: #e0e0e0;
   --btn-active: #d0d0d0;
+  /* Syntax Highlighting - VS Code Light theme */
+  --hljs-bg: #ffffff;
+  --hljs-color: #000000;
+  --hljs-keyword: #0000ff;
+  --hljs-built-in: #267f99;
+  --hljs-type: #267f99;
+  --hljs-literal: #0000ff;
+  --hljs-number: #098658;
+  --hljs-string: #a31515;
+  --hljs-regexp: #811f3f;
+  --hljs-symbol: #098658;
+  --hljs-comment: #008000;
+  --hljs-function: #795e26;
+  --hljs-class: #267f99;
+  --hljs-variable: #001080;
+  --hljs-attr: #ff0000;
+  --hljs-tag: #800000;
+  --hljs-name: #800000;
+  --hljs-selector: #800000;
+  --hljs-meta: #af00db;
+  --hljs-title: #795e26;
+  --hljs-section: #795e26;
+  --hljs-link: #0000ff;
+  --hljs-operator: #000000;
+  --hljs-punctuation: #000000;
+  --hljs-addition-bg: rgba(40, 167, 69, 0.2);
+  --hljs-deletion-bg: rgba(220, 53, 69, 0.2);
 }
 
 [data-theme='solarized-light'] {
@@ -29,6 +83,33 @@
   --editor-text: #657b83;
   --btn-hover: #eee8d5;
   --btn-active: #93a1a1;
+  /* Syntax Highlighting - Solarized Light theme */
+  --hljs-bg: #fdf6e3;
+  --hljs-color: #657b83;
+  --hljs-keyword: #859900;
+  --hljs-built-in: #b58900;
+  --hljs-type: #b58900;
+  --hljs-literal: #2aa198;
+  --hljs-number: #2aa198;
+  --hljs-string: #2aa198;
+  --hljs-regexp: #dc322f;
+  --hljs-symbol: #cb4b16;
+  --hljs-comment: #93a1a1;
+  --hljs-function: #268bd2;
+  --hljs-class: #b58900;
+  --hljs-variable: #268bd2;
+  --hljs-attr: #b58900;
+  --hljs-tag: #268bd2;
+  --hljs-name: #268bd2;
+  --hljs-selector: #859900;
+  --hljs-meta: #d33682;
+  --hljs-title: #268bd2;
+  --hljs-section: #268bd2;
+  --hljs-link: #268bd2;
+  --hljs-operator: #657b83;
+  --hljs-punctuation: #657b83;
+  --hljs-addition-bg: rgba(133, 153, 0, 0.2);
+  --hljs-deletion-bg: rgba(220, 50, 47, 0.2);
 }
 
 [data-theme='solarized-dark'] {
@@ -40,7 +121,202 @@
   --editor-text: #839496;
   --btn-hover: #073642;
   --btn-active: #586e75;
+  /* Syntax Highlighting - Solarized Dark theme */
+  --hljs-bg: #002b36;
+  --hljs-color: #839496;
+  --hljs-keyword: #859900;
+  --hljs-built-in: #b58900;
+  --hljs-type: #b58900;
+  --hljs-literal: #2aa198;
+  --hljs-number: #2aa198;
+  --hljs-string: #2aa198;
+  --hljs-regexp: #dc322f;
+  --hljs-symbol: #cb4b16;
+  --hljs-comment: #586e75;
+  --hljs-function: #268bd2;
+  --hljs-class: #b58900;
+  --hljs-variable: #268bd2;
+  --hljs-attr: #b58900;
+  --hljs-tag: #268bd2;
+  --hljs-name: #268bd2;
+  --hljs-selector: #859900;
+  --hljs-meta: #d33682;
+  --hljs-title: #268bd2;
+  --hljs-section: #268bd2;
+  --hljs-link: #268bd2;
+  --hljs-operator: #839496;
+  --hljs-punctuation: #839496;
+  --hljs-addition-bg: rgba(133, 153, 0, 0.2);
+  --hljs-deletion-bg: rgba(220, 50, 47, 0.2);
 }
+
+/* ============================================
+   highlight.js Syntax Highlighting Styles
+   ============================================ */
+
+/* Base code block styling */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 1em;
+  background: var(--hljs-bg);
+  color: var(--hljs-color);
+  border-radius: 5px;
+  margin: 0;
+}
+
+pre code.hljs {
+  padding: 1em;
+}
+
+code.hljs {
+  padding: 3px 5px;
+}
+
+/* Keywords, control flow */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal {
+  color: var(--hljs-keyword);
+}
+
+/* Built-in types and objects */
+.hljs-built_in,
+.hljs-type {
+  color: var(--hljs-built-in);
+}
+
+/* Numbers */
+.hljs-number {
+  color: var(--hljs-number);
+}
+
+/* Strings */
+.hljs-string,
+.hljs-doctag,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: var(--hljs-string);
+}
+
+/* Regular expressions */
+.hljs-regexp {
+  color: var(--hljs-regexp);
+}
+
+/* Symbols */
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--hljs-symbol);
+}
+
+/* Comments */
+.hljs-comment,
+.hljs-quote {
+  color: var(--hljs-comment);
+  font-style: italic;
+}
+
+/* Function names */
+.hljs-function {
+  color: var(--hljs-function);
+}
+
+/* Class names */
+.hljs-class {
+  color: var(--hljs-class);
+}
+
+/* Variables, parameters */
+.hljs-variable,
+.hljs-params {
+  color: var(--hljs-variable);
+}
+
+/* Attributes */
+.hljs-attr,
+.hljs-attribute {
+  color: var(--hljs-attr);
+}
+
+/* HTML/XML tags */
+.hljs-tag {
+  color: var(--hljs-tag);
+}
+
+/* Tag names, identifiers */
+.hljs-name {
+  color: var(--hljs-name);
+}
+
+/* CSS selectors */
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-selector-attr,
+.hljs-selector-pseudo {
+  color: var(--hljs-selector);
+}
+
+/* Meta information, preprocessor */
+.hljs-meta,
+.hljs-meta-keyword {
+  color: var(--hljs-meta);
+}
+
+/* Titles, function declarations */
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.class_.inherited__,
+.hljs-title.function_ {
+  color: var(--hljs-title);
+}
+
+/* Section headers */
+.hljs-section {
+  color: var(--hljs-section);
+}
+
+/* Links */
+.hljs-link {
+  color: var(--hljs-link);
+  text-decoration: underline;
+}
+
+/* Operators, punctuation */
+.hljs-operator {
+  color: var(--hljs-operator);
+}
+
+.hljs-punctuation {
+  color: var(--hljs-punctuation);
+}
+
+/* Emphasis */
+.hljs-emphasis {
+  font-style: italic;
+}
+
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Diff additions/deletions */
+.hljs-addition {
+  background-color: var(--hljs-addition-bg);
+}
+
+.hljs-deletion {
+  background-color: var(--hljs-deletion-bg);
+}
+
+/* Substrings */
+.hljs-subst {
+  color: var(--hljs-color);
+}
+
+/* ============================================
+   End highlight.js Styles
+   ============================================ */
 
 body {
   margin: 0;
@@ -238,7 +514,8 @@ body {
 
 .markdown-preview a {
   color: #268bd2;
-  text-decoration: none;
+  text-decoration: underline;
+  cursor: pointer;
   word-break: break-all;
   overflow-wrap: break-word;
 }
@@ -292,6 +569,8 @@ body {
   position: absolute;
   right: 0;
   width: 100%;
+  top: var(--thumb-top, 0);
+  height: var(--thumb-height, 30px);
   background-color: rgba(128, 128, 128, 0.4);
   border-radius: 3px;
   transition: background-color 0.2s;
@@ -564,6 +843,7 @@ body {
 
 /* Split View Styles */
 .split-view {
+  --split-position: 50%;  /* default value, updated via JS */
   display: flex;
   width: 100%;
   height: 100%;
@@ -574,6 +854,14 @@ body {
   overflow: hidden;
   position: relative;
   height: 100%;
+}
+
+.split-pane-left {
+  width: var(--split-position);
+}
+
+.split-pane-right {
+  width: calc(100% - var(--split-position) - 4px);  /* 4px = divider width */
 }
 
 .split-pane-left .code-editor,
@@ -596,6 +884,8 @@ body {
 /* Find & Replace Panel Styles */
 .find-replace-panel {
   position: fixed;
+  left: var(--panel-x, calc(100vw - 420px));
+  top: var(--panel-y, 10px);
   background-color: var(--toolbar-bg);
   border: 1px solid var(--toolbar-border);
   border-radius: 6px;
@@ -604,6 +894,11 @@ body {
   min-width: 400px;
   max-width: 500px;
   user-select: none;
+  cursor: default;
+}
+
+.find-replace-panel.is-dragging {
+  cursor: grabbing;
 }
 
 .find-replace-header {
@@ -612,6 +907,11 @@ body {
   align-items: center;
   padding: 10px 15px;
   border-bottom: 1px solid var(--toolbar-border);
+  cursor: grab;
+}
+
+.find-replace-panel.is-dragging .find-replace-header {
+  cursor: grabbing;
 }
 
 .find-replace-title {
