@@ -182,13 +182,14 @@ npm run test
 ## 🎯 Quick Testing Guide
 
 1. **Find & Replace**: Press \`Cmd+F\` to open Find & Replace panel, search for "test" (appears 50+ times)
-2. **View Modes**: Press \`Cmd+E\` to cycle through Rendered → Raw → Split modes
+2. **View Modes**: Press \`Cmd+E\` to cycle through Rendered → Raw → Split → Text modes
 3. **Themes**: Press \`Cmd+T\` to cycle through all 5 themes
 4. **Horizontal Scrolling**: Switch to Raw view to test wide code blocks and long lines
-5. **PDF Export**: Press \`Cmd+S\` and save as \`.pdf\` to test PDF generation
-6. **Copy**: Test "Copy to Clipboard" in both Rendered mode (rich HTML) and Raw mode (plain text)
+5. **Text Export**: Press \`Cmd+S\` and save as \`.txt\` to export plain text (markdown stripped)
+6. **PDF Export**: Press \`Cmd+S\` and save as \`.pdf\` to test PDF generation
+7. **Copy**: Test "Copy to Clipboard" in both Rendered mode (rich HTML) and Raw mode (plain text)
 
 ---
 
-**mdviewer v2.6.4** - Built with Electron, React, and TypeScript
+**mdviewer v2.7.3** - Built with Electron, React, and TypeScript
 `;

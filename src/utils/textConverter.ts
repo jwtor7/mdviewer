@@ -88,8 +88,8 @@ const convertNode = (node: Content, depth: number = 0): string => {
         if (node.ordered) {
           return `${index + 1}. ${content}`;
         }
-        // Bullet list - use bullet character
-        return `\u2022 ${content}`;
+        // Bullet list - use hyphen
+        return `- ${content}`;
       });
       return `${items.join('\n')}\n\n`;
     }

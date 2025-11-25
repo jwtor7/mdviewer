@@ -324,6 +324,23 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.3] - 2025-11-25
+- **New Features**:
+  - **Text View Mode**: Added fourth view mode for plain text display
+    - Strips markdown formatting for clean, readable text
+    - Headings converted to UPPERCASE (H1) or title case (H2+)
+    - Tables export as tab-separated values (paste into Excel/Sheets)
+    - Horizontal rules rendered as line of box-drawing characters
+  - **Save as .txt**: Export documents as plain text files with markdown stripped
+
+### [2.7.2] - 2025-11-25
+- **Security Improvements**:
+  - **H-3 FIXED**: Fixed PDF Export Data Leakage vulnerability
+    - Changed CSP from `img-src *` to `img-src 'self' data: blob:`
+    - Changed CSP from `font-src *` to `font-src 'self' data:`
+    - Blocks external tracking pixels and font requests during PDF export
+    - Enforces offline-first design for PDF generation
+
 ### [2.7.1] - 2025-11-24
 - **Security Improvements**:
   - **Strict CSP in Production**: Eliminated `unsafe-inline` from style-src directive
