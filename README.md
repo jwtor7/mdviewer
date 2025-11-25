@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.7.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -41,6 +41,7 @@
 ### 🎨 Viewing & Editing
 - **Triple View Modes**: Toggle between Rendered, Raw, and Split view (side-by-side)
 - **Split View**: View rendered preview and raw source simultaneously with resizable divider
+- **Synchronized Selection**: Select text in Raw view and see it highlighted in Rendered view (Split mode only)
 - **GitHub Flavored Markdown**: Full GFM support with tables, task lists, and strikethrough
 - **Syntax Highlighting**: Beautiful code blocks with VS Code Dark+ theme
 - **Live Preview**: Instant rendering as you type
@@ -55,7 +56,7 @@
 - **Quick Formatting Buttons**: Bold, Italic, and List formatting
 - **Find & Replace**: Powerful search with case-sensitive option, match navigation, and bulk replace
 - **Rich Text Copy**: Copy rendered HTML or raw Markdown to clipboard
-- **Save As**: Save documents as Markdown (.md) or PDF (.pdf) with unified file picker dialog
+- **Save As**: Save documents as Markdown (.md), PDF (.pdf), Word (.docx), or Text (.txt) with unified file picker dialog
 - **Keyboard Shortcuts**: Efficient text editing with familiar shortcuts
 - **Selection Preservation**: Smart cursor positioning after formatting
 
@@ -67,7 +68,7 @@
 
 ### ⌨️ Keyboard Shortcuts
 - `Cmd+O` / `Ctrl+O` - Open file dialog
-- `Cmd+S` / `Ctrl+S` - Save As (Markdown or PDF)
+- `Cmd+S` / `Ctrl+S` - Save As (Markdown, PDF, Word, or Text)
 - `Cmd+F` / `Ctrl+F` - Find & Replace
 - `Cmd+B` / `Ctrl+B` - Bold formatting
 - `Cmd+I` / `Ctrl+I` - Italic formatting
@@ -307,13 +308,86 @@ mdviewer/
 ## 🚀 Feature Roadmap
 
 - [ ] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
-- [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
-- [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links
-- [ ] **Export to Docx**: Export documents as Microsoft Word format
+- [x] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
+- [x] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links
+- [x] **Export to Docx**: Export documents as Microsoft Word format
 - [ ] **Code Signing**: Sign application for trusted distribution
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.8.0] - 2025-11-25
+- **New Feature: Export to Microsoft Word (DOCX)**:
+  - Added Word document export capability via the Save As dialog
+  - New `.docx` format option appears in file type dropdown alongside Markdown, PDF, and Text
+  - Comprehensive markdown-to-Word conversion supporting:
+    - **Headings**: All 6 heading levels (H1-H6) with proper Word heading styles
+    - **Text Formatting**: Bold, italic, and combined formatting preserved
+    - **Lists**: Both ordered and unordered lists with proper indentation
+    - **Code Blocks**: Monospace font with syntax language labels and gray background
+    - **Inline Code**: Courier New font with monospace styling
+    - **Tables**: Full table support with borders and proper cell formatting
+    - **Blockquotes**: Indented with left border and italic styling
+    - **Links**: Displayed as text with URL in parentheses
+    - **Horizontal Rules**: Rendered as centered line separators
+  - Implementation details:
+    - Created new `docxRenderer.ts` utility using the `docx` npm package
+    - Parses markdown via unified/remark AST (same pipeline as PDF rendering)
+    - Converts AST nodes to native Word document elements (Paragraph, Table, TextRun)
+    - Generates valid `.docx` files that open correctly in Microsoft Word, Pages, Google Docs
+    - Proper page margins (1 inch all sides) and professional formatting
+  - Integration:
+    - Updated `main.ts` save-file IPC handler to detect `.docx` extension
+    - Added to file filters in save dialog: "Word Documents (.docx)"
+    - Follows same security validation as PDF/TXT exports (size limits, rate limiting)
+  - Dependencies:
+    - Added `docx@^9.5.1` package for Word document generation
+    - Zero breaking changes to existing save functionality
+  - User Experience:
+    - Same Save As dialog workflow as PDF/TXT exports
+    - Success/error notifications via existing error handler
+    - No additional UI changes required - seamlessly integrated
+
+### [2.7.13] - 2025-11-25
+- **New Feature: Advanced Formatting Toolbar**:
+  - Added comprehensive formatting toolbar with new buttons for headings, code blocks, blockquotes, and links
+  - **Headings Dropdown**: H▾ button opens dropdown menu with all 6 heading levels (H1-H6)
+    - Visual preview of each heading size in the dropdown menu
+    - Applies heading to entire line, replacing existing heading markers if present
+    - Smart line-based formatting that preserves text content
+  - **Code Block Button**: &lt;/&gt; button wraps selected text in triple backticks
+    - Inserts empty code block with cursor positioned inside if no selection
+    - Perfect for adding code snippets to documentation
+  - **Blockquote Button**: "" button prefixes selected lines with `>`
+    - Supports multi-line selections, applying `>` to each line
+    - Inserts `> ` with cursor ready for typing if no selection
+  - **Link Button**: 🔗 button creates `[text](url)` markdown links
+    - Wraps selected text and auto-selects "url" placeholder for easy editing
+    - Creates template with "text" selected if no selection
+  - All new buttons follow existing toolbar patterns:
+    - Disabled in Rendered and Text view modes (only active in Raw and Split)
+    - Consistent styling with existing Bold, Italic, List buttons
+    - Proper ARIA labels and tooltips for accessibility
+  - Dropdown menu features:
+    - Click-outside-to-close functionality
+    - Smooth fade-in animation
+    - Theme-aware styling (dark/light/solarized)
+    - Keyboard accessible with proper ARIA roles
+  - Extended `useTextFormatting` hook to support all new format types
+  - Smart cursor positioning after formatting for optimal UX
+
+### [2.7.12] - 2025-11-25
+- **New Feature: Synchronized Text Selection**:
+  - Added bidirectional text highlighting between Raw and Rendered views in Split mode
+  - When you select text in the Raw view (CodeEditor), the corresponding text is highlighted in the Rendered view (MarkdownPreview)
+  - Visual feedback with distinct blue pulsing highlight (different from yellow search highlights)
+  - Content-based matching that ignores markdown syntax (bold markers, italics, etc.)
+  - Intelligent matching with minimum 3 characters or complete text match requirement
+  - Only active in Split view mode to avoid interference with other view modes
+  - Implemented with React state management (no DOM manipulation)
+  - New CSS class `sync-highlight` with animated pulse effect
+  - Selection tracking via `onSelectionChange` callback in CodeEditor component
+  - Updates MarkdownPreview props to accept `syncSelection` range
 
 ### [2.7.11] - 2025-11-25
 - **Security Improvements**:
