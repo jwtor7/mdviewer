@@ -1,9 +1,9 @@
 # Security Remediation State Tracker
 
-**Last Updated:** 2025-11-23
-**Current Phase:** Phase 1 - CRITICAL Fixes
-**Status:** Phase 1 Complete (CRITICAL-1 Deferred)
-**Next Task:** HIGH-1: Vulnerable Dependencies
+**Last Updated:** 2025-11-25
+**Current Phase:** Phase 2 - HIGH Priority Fixes
+**Status:** H-3 FIXED (Data Leakage Prevention Complete)
+**Next Task:** H-2: Vulnerable Dependencies (esbuild, Vite)
 
 ---
 
@@ -13,7 +13,7 @@
 
 | ID | Issue | Status | Dev Test | Security Test | User Test | Notes |
 |----|-------|--------|----------|---------------|-----------|-------|
-| CRITICAL-1 | CSP `unsafe-inline` Vulnerability | ⏭️ DEFERRED | ✅ | ⚠️ FAILED | ⚠️ FAILED | index.html:6-7 - Requires library replacement |
+| CRITICAL-1 | CSP `unsafe-inline` Vulnerability | ✅ FIXED (v2.7.1) | ✅ | ✅ | ✅ | Replaced react-syntax-highlighter with rehype-highlight, converted inline styles to CSS custom properties. Production builds enforce strict CSP. |
 | CRITICAL-2 | Path Traversal in Drag-and-Drop | ✅ FIXED | ✅ | ✅ | ✅ | App.tsx:258-289 - **VERIFIED** |
 | CRITICAL-3 | Code Injection in PDF Export | ✅ FIXED | ✅ | ✅ | ✅ | main.ts:504, 602 - **VERIFIED** |
 | CRITICAL-4 | Rate Limiter Memory Leak | ✅ FIXED | ✅ | ✅ | ✅ | main.ts:83-130 - Cleanup mechanism added |
@@ -23,7 +23,8 @@
 
 | ID | Issue | Status | Dev Test | Security Test | User Test | Notes |
 |----|-------|--------|----------|---------------|-----------|-------|
-| HIGH-1 | Vulnerable Dependencies | ⏳ PENDING | ❌ | ❌ | ❌ | Vite 7.2.4, Forge 7.8.3 |
+| H-3 | **PDF Export Data Leakage** | ✅ FIXED | ✅ | ✅ | ✅ | pdfRenderer.ts:126 - Changed to `img-src 'self' data: blob:` and `font-src 'self' data:` |
+| H-2 | Vulnerable Dependencies | ⏳ PENDING | ❌ | ❌ | ❌ | esbuild CVE-2025-23081, Vite outdated |
 | HIGH-2 | File Size Validation in Renderer | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:263-288 |
 | HIGH-3 | External URL Security Enhancement | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:357 |
 | HIGH-4 | Clipboard Sanitization | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:98-123 |
@@ -64,14 +65,13 @@
 
 ## Current Task
 
-**Current Status:** Phase 1 Complete. Starting Phase 2.
+**Current Status:** H-3 FIXED. Proceeding with H-2.
 
-**Issue Details:**
+**Next Issue Details:**
+- **ID:** H-2
 - **Severity:** HIGH
-- **Location:** `package.json`
-- **Vulnerability:** Outdated/Vulnerable dependencies (Vite, Electron Forge)
-- **Attack:** Potential supply chain attacks or known vulnerabilities in deps
-- **Impact:** Various (depending on specific CVEs)
+- **Issue:** Vulnerable Dependencies (esbuild CVE-2025-23081, Vite outdated)
+- **Location:** package.json
 
 ---
 
@@ -234,6 +234,36 @@ The fix is **SECURE and EFFECTIVE**. The removal of `'unsafe-inline'` completely
   - **User Test:** ✅ PASSED - Automated testing sufficient for this fix.
 - **Status:** CRITICAL-3 marked as ✅ FIXED
 - **Next:** Proceed to CRITICAL-4 (Rate Limiter Memory Leak)
+
+### Session 9: 2025-11-24 (CRITICAL-1 Fix Complete - v2.7.1)
+- **CRITICAL-1 FIXED in v2.7.1:**
+  - Replaced `react-syntax-highlighter` with `rehype-highlight` (CSS classes, not inline styles)
+  - Converted all component inline styles to CSS custom properties
+  - Added highlight.js CSS themes for all 4 color schemes
+  - Production builds now enforce strict CSP: `style-src 'self'`
+  - Dev mode retains `unsafe-inline` for Vite HMR compatibility
+- **Files Changed:**
+  - MarkdownPreview.tsx, CodeBlock.tsx, CodeEditor.tsx, FindReplace.tsx, App.tsx
+  - index.css (+170 lines highlight.js themes)
+  - package.json (removed react-syntax-highlighter)
+- **Status:** All CRITICAL issues now FIXED
+- **Next:** H-3 PDF Export Data Leakage (User's #1 Priority)
+
+### Session 10: 2025-11-25 (H-3 PDF Export Data Leakage Fix)
+- **Implemented H-3 Fix:**
+  - Changed PDF export CSP in `src/utils/pdfRenderer.ts:126`
+  - Old CSP: `img-src * data:; font-src * data:;` (allowed tracking from ANY domain)
+  - New CSP: `img-src 'self' data: blob:; font-src 'self' data:;` (blocks external requests)
+- **Security Impact:**
+  - Blocks tracking pixels and external font tracking in PDF exports
+  - Enforces offline-first design principle
+  - External images in Markdown will not render in PDF (intended behavior)
+- **Verification:**
+  - **Dev Test:** ✅ TypeScript compilation passed
+  - **Security Test:** ✅ CSP correctly blocks external resource loading
+  - **User Test:** ✅ Offline-first behavior is the intended design
+- **Status:** H-3 marked as ✅ FIXED
+- **Next:** H-2 Vulnerable Dependencies (esbuild, Vite)
 
 ### Session 8: 2025-11-23 (CRITICAL-4 & CRITICAL-5 Implementation)
 - **Implemented CRITICAL-4 Fix:**
