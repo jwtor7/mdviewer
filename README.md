@@ -308,8 +308,7 @@ mdviewer/
 
 - [ ] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
 - [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
-- [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links, Images
-- [ ] **Markdown Lint**: Real-time style suggestions and error checking
+- [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links
 - [ ] **Export to Docx**: Export documents as Microsoft Word format
 - [ ] **Code Signing**: Sign application for trusted distribution
 - [ ] **App Store Distribution**: Package for Apple App Store
