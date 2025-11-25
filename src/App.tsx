@@ -7,6 +7,7 @@ import TextPreview from './components/TextPreview';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
 import { VIEW_MODES, RENDERER_SECURITY, type ViewMode } from './constants/index';
 import { convertMarkdownToText } from './utils/textConverter';
+import { sanitizeHtmlForClipboard, sanitizeTextForClipboard } from './utils/clipboardSanitizer';
 import type { Document, DraggableDocument } from './types/document';
 import { calculateTextStats } from './utils/textCalculations';
 import pkg from '../package.json';
@@ -114,17 +115,27 @@ const App: React.FC = () => {
     const handleCopy = useCallback(async (): Promise<void> => {
         try {
             if (viewMode === VIEW_MODES.RAW) {
-                await navigator.clipboard.writeText(activeDoc.content);
+                // Security: Sanitize text to remove control characters
+                const sanitizedText = sanitizeTextForClipboard(activeDoc.content);
+                await navigator.clipboard.writeText(sanitizedText);
             } else if (viewMode === VIEW_MODES.TEXT) {
-                // Copy plain text conversion
+                // Copy plain text conversion with sanitization
                 const plainText = convertMarkdownToText(activeDoc.content);
-                await navigator.clipboard.writeText(plainText);
+                const sanitizedText = sanitizeTextForClipboard(plainText);
+                await navigator.clipboard.writeText(sanitizedText);
             } else {
+                // Rendered or Split mode: Copy HTML with sanitization
                 const previewElement = document.querySelector('.markdown-preview') as HTMLElement | null;
                 if (previewElement) {
                     try {
-                        const htmlBlob = new Blob([previewElement.innerHTML], { type: 'text/html' });
-                        const textBlob = new Blob([previewElement.innerText], { type: 'text/plain' });
+                        // Security: Sanitize HTML before copying to clipboard (HIGH-4 fix)
+                        // This removes dangerous elements (script, iframe, etc.),
+                        // event handlers (onclick, onerror, etc.), and unsafe URLs
+                        const sanitizedHtml = sanitizeHtmlForClipboard(previewElement.innerHTML);
+                        const sanitizedText = sanitizeTextForClipboard(previewElement.innerText);
+
+                        const htmlBlob = new Blob([sanitizedHtml], { type: 'text/html' });
+                        const textBlob = new Blob([sanitizedText], { type: 'text/plain' });
                         const data = [new ClipboardItem({
                             'text/html': htmlBlob,
                             'text/plain': textBlob
@@ -132,8 +143,9 @@ const App: React.FC = () => {
                         await navigator.clipboard.write(data);
                     } catch (richCopyErr) {
                         // Fallback to plain text if rich text copy fails
-                        // This error will propagate to outer catch if plain text also fails
-                        await navigator.clipboard.writeText(previewElement.innerText);
+                        // Security: Still sanitize the text fallback
+                        const sanitizedText = sanitizeTextForClipboard(previewElement.innerText);
+                        await navigator.clipboard.writeText(sanitizedText);
                     }
                 }
             }

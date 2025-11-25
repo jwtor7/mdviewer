@@ -322,6 +322,27 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.7] - 2025-11-25
+- **Security Improvements**:
+  - **HIGH-4 FIXED**: Implemented clipboard sanitization for secure copy operations
+    - Created `clipboardSanitizer.ts` utility with comprehensive HTML sanitization
+    - **HTML Sanitization**:
+      - Removes dangerous elements: `script`, `iframe`, `object`, `embed`, `form`, `style`, etc.
+      - Strips event handlers: `onclick`, `onerror`, `onload`, and all `on*` attributes
+      - Removes `style` attributes (prevents CSS-based attacks)
+      - Removes `data-*` attributes (prevents malicious data payloads)
+      - Validates URL protocols in `href`/`src` (blocks `javascript:`, `vbscript:`, `data:`, `file:`, etc.)
+      - Adds `rel="noopener noreferrer"` to links for security
+    - **Text Sanitization**:
+      - Removes null bytes and control characters
+      - Ensures safe plain text for clipboard operations
+    - Applied to all clipboard operations:
+      - Raw mode: Sanitizes markdown text
+      - Text mode: Sanitizes converted plain text
+      - Rendered/Split mode: Sanitizes HTML and text representations
+    - Defense-in-depth: Even if DOM manipulation bypasses rendering sanitization, clipboard content is safe
+    - Rich text copy still works: Formatting (bold, italic, links, tables) preserved in sanitized HTML
+
 ### [2.7.6] - 2025-11-25
 - **Security Improvements**:
   - **HIGH-3 FIXED**: Enhanced external URL security
