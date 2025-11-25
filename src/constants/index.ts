@@ -67,3 +67,30 @@ export const RENDERER_SECURITY = {
   // Human-readable size for error messages
   MAX_CONTENT_SIZE_MB: 10,
 } as const;
+
+// External URL Security Configuration
+// Controls which URLs can be opened from markdown links
+export const URL_SECURITY = {
+  // Only these protocols are allowed for external links
+  ALLOWED_PROTOCOLS: ['https:', 'http:'] as const,
+
+  // Explicitly blocked protocols (for security logging and documentation)
+  // These are dangerous protocols that could:
+  // - Execute code: javascript:, vbscript:
+  // - Access local files: file://
+  // - Embed malicious content: data:
+  // - Trigger system handlers: ms-*, com.*, tel:, mailto: (excluding safe ones)
+  BLOCKED_PROTOCOLS: [
+    'javascript:',  // XSS attack vector
+    'vbscript:',    // Windows script execution
+    'file:',        // Local file access
+    'data:',        // Inline content injection
+    'blob:',        // Memory object access
+    'about:',       // Browser internals
+    'chrome:',      // Chrome internals
+    'chrome-extension:', // Extension access
+  ] as const,
+
+  // Maximum URL length to prevent DoS via extremely long URLs
+  MAX_URL_LENGTH: 2048,
+} as const;

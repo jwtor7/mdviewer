@@ -3,7 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
-import { WINDOW_CONFIG, SECURITY_CONFIG } from './constants/index.js';
+import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY } from './constants/index.js';
 import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
@@ -131,9 +131,76 @@ const createRateLimiter = (maxCalls: number, windowMs: number) => {
 };
 
 /**
+ * Security utility: Validates and sanitizes external URLs before opening.
+ * Implements defense-in-depth against malicious URLs that could:
+ * - Execute code (javascript:, vbscript:)
+ * - Access local files (file://)
+ * - Inject content (data:, blob:)
+ * - Exploit browser internals (about:, chrome:)
+ *
+ * @param url - The URL string to validate
+ * @returns Object with isValid boolean, sanitizedUrl, and error message if invalid
+ */
+const validateExternalUrl = (url: string): { isValid: boolean; sanitizedUrl?: string; error?: string } => {
+  // Security: Check URL length to prevent DoS via extremely long URLs
+  if (url.length > URL_SECURITY.MAX_URL_LENGTH) {
+    return {
+      isValid: false,
+      error: `URL exceeds maximum length of ${URL_SECURITY.MAX_URL_LENGTH} characters`
+    };
+  }
+
+  // Security: Trim whitespace and normalize the URL
+  const trimmedUrl = url.trim();
+
+  // Security: Block empty URLs
+  if (!trimmedUrl) {
+    return { isValid: false, error: 'URL cannot be empty' };
+  }
+
+  try {
+    // Security: Parse URL to validate format and extract protocol
+    const parsedUrl = new URL(trimmedUrl);
+
+    // Security: Get lowercase protocol for comparison
+    const protocol = parsedUrl.protocol.toLowerCase();
+
+    // Security: Check against explicit blocklist first (for logging purposes)
+    const blockedProtocols = URL_SECURITY.BLOCKED_PROTOCOLS as readonly string[];
+    if (blockedProtocols.includes(protocol)) {
+      console.warn(`[SECURITY] Blocked dangerous URL protocol: ${protocol}`);
+      return {
+        isValid: false,
+        error: `Protocol "${protocol}" is not allowed for security reasons`
+      };
+    }
+
+    // Security: Only allow explicitly permitted protocols (allowlist approach)
+    const allowedProtocols = URL_SECURITY.ALLOWED_PROTOCOLS as readonly string[];
+    if (!allowedProtocols.includes(protocol)) {
+      console.warn(`[SECURITY] Blocked URL with unknown protocol: ${protocol}`);
+      return {
+        isValid: false,
+        error: 'Only HTTP and HTTPS URLs are allowed'
+      };
+    }
+
+    // Security: Return the normalized URL (parsed and re-stringified)
+    // This ensures consistent format and prevents encoding tricks
+    return {
+      isValid: true,
+      sanitizedUrl: parsedUrl.href
+    };
+  } catch {
+    // Security: Invalid URL format
+    return { isValid: false, error: 'Invalid URL format' };
+  }
+};
+
+/**
  * Security utility: Validates that an IPC event originated from a known BrowserWindow.
  * Prevents unauthorized IPC calls from external processes or compromised contexts.
- * 
+ *
  * @param event - The IPC event to validate
  * @returns true if the sender is from a known window, false otherwise
  */
@@ -424,34 +491,42 @@ ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
 ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: string): Promise<void> => {
   // Security: Validate IPC origin (CRITICAL-5 fix)
   if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected open-external-url from invalid origin');
+    console.warn('[SECURITY] Rejected open-external-url from invalid origin');
     throw new Error('Invalid IPC origin');
   }
 
   // Security: Apply rate limiting
   const senderId = event.sender.id.toString();
   if (!rateLimiter(senderId + '-open-external-url')) {
-    console.warn('Rate limit exceeded for open-external-url');
+    console.warn('[SECURITY] Rate limit exceeded for open-external-url');
     throw new Error('Rate limit exceeded');
   }
 
-  // Security: Validate URL format and protocol
+  // Security: Validate URL type
+  if (typeof url !== 'string') {
+    console.warn('[SECURITY] Rejected open-external-url with non-string URL');
+    throw new Error('URL must be a string');
+  }
+
+  // Security: Comprehensive URL validation (HIGH-3 fix)
+  // Uses allowlist approach with explicit blocklist for logging
+  const validation = validateExternalUrl(url);
+  if (!validation.isValid || !validation.sanitizedUrl) {
+    console.warn(`[SECURITY] Blocked external URL: ${validation.error}`);
+    throw new Error(validation.error || 'Invalid URL');
+  }
+
+  const sanitizedUrl = validation.sanitizedUrl;
+
+  // Get the window to show the dialog
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) {
+    throw new Error('Window not found');
+  }
+
   try {
-    const parsedUrl = new URL(url);
-
-    // Only allow http and https protocols
-    if (!['http:', 'https:'].includes(parsedUrl.protocol)) {
-      console.warn(`Blocked attempt to open URL with invalid protocol: ${parsedUrl.protocol}`);
-      throw new Error('Only HTTP and HTTPS URLs are allowed');
-    }
-
-    // Get the window to show the dialog
-    const win = BrowserWindow.fromWebContents(event.sender);
-    if (!win) {
-      throw new Error('Window not found');
-    }
-
-    // Show confirmation dialog
+    // Security: Show confirmation dialog before opening external URL
+    // This prevents unintended navigation from malicious markdown content
     const result = await dialog.showMessageBox(win, {
       type: 'question',
       buttons: ['Open in Browser', 'Cancel'],
@@ -459,18 +534,22 @@ ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: strin
       cancelId: 1,
       title: 'Open External Link',
       message: 'Do you want to open this link in your default browser?',
-      detail: url,
+      detail: sanitizedUrl,
     });
 
     // If user clicked "Open in Browser" (index 0)
     if (result.response === 0) {
-      await shell.openExternal(url);
-      console.log(`Opened external URL: ${parsedUrl.origin}`);
+      // Security: Use sanitized URL (normalized by URL parser)
+      await shell.openExternal(sanitizedUrl);
+      const parsedUrl = new URL(sanitizedUrl);
+      console.log(`[SECURITY] Opened external URL: ${parsedUrl.origin}${parsedUrl.pathname}`);
+    } else {
+      console.log('[SECURITY] User cancelled external URL open');
     }
   } catch (err) {
     const error = err as Error;
-    console.error('Failed to open external URL:', error.message);
-    throw error;
+    console.error('[SECURITY] Failed to open external URL:', error.message);
+    throw new Error('Failed to open URL in browser');
   }
 });
 

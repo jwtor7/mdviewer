@@ -2,8 +2,8 @@
 
 **Last Updated:** 2025-11-25
 **Current Phase:** Phase 2 - HIGH Priority Fixes
-**Status:** HIGH-2 FIXED (File Size Validation in Renderer)
-**Next Task:** HIGH-3: External URL Security Enhancement
+**Status:** HIGH-3 FIXED (External URL Security Enhancement)
+**Next Task:** HIGH-4: Clipboard Sanitization
 
 ---
 
@@ -26,7 +26,7 @@
 | H-3 | **PDF Export Data Leakage** | ✅ FIXED | ✅ | ✅ | ✅ | pdfRenderer.ts:126 - Changed to `img-src 'self' data: blob:` and `font-src 'self' data:` |
 | H-2 | Vulnerable Dependencies | ✅ FIXED | ✅ | ✅ | ✅ | Vite 5.4.21→6.4.1, esbuild→0.25.12 (CVE-2025-23081 patched) |
 | HIGH-2 | File Size Validation in Renderer | ✅ FIXED | ✅ | ✅ | ✅ | Added RENDERER_SECURITY constants, validates in handleFileDrop & useFileHandler |
-| HIGH-3 | External URL Security Enhancement | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:357 |
+| HIGH-3 | External URL Security Enhancement | ✅ FIXED | ✅ | ✅ | ✅ | main.ts:491 - Added URL_SECURITY config, validateExternalUrl(), protocol blocklist |
 | HIGH-4 | Clipboard Sanitization | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:98-123 |
 
 ### Phase 3: MEDIUM Priority Issues (Next release)
@@ -65,13 +65,13 @@
 
 ## Current Task
 
-**Current Status:** HIGH-2 FIXED. Proceeding with HIGH-3.
+**Current Status:** HIGH-3 FIXED. Proceeding with HIGH-4.
 
 **Next Issue Details:**
-- **ID:** HIGH-3
+- **ID:** HIGH-4
 - **Severity:** HIGH
-- **Issue:** External URL Security Enhancement
-- **Location:** main.ts:357
+- **Issue:** Clipboard Sanitization
+- **Location:** App.tsx:98-123
 
 ---
 
@@ -307,6 +307,39 @@ The fix is **SECURE and EFFECTIVE**. The removal of `'unsafe-inline'` completely
 - **Files Changed:** constants/index.ts, App.tsx, hooks/useFileHandler.ts, package.json, README.md
 - **Status:** HIGH-2 marked as ✅ FIXED
 - **Next:** HIGH-3 External URL Security Enhancement
+
+### Session 13: 2025-11-25 (HIGH-3 External URL Security Enhancement)
+- **Implemented HIGH-3 Fix:**
+  - Added `URL_SECURITY` configuration in `src/constants/index.ts`:
+    - `ALLOWED_PROTOCOLS`: `['https:', 'http:']` (explicit allowlist)
+    - `BLOCKED_PROTOCOLS`: `['javascript:', 'vbscript:', 'file:', 'data:', 'blob:', 'about:', 'chrome:', 'chrome-extension:']`
+    - `MAX_URL_LENGTH`: 2048 (prevents DoS via long URLs)
+  - Created `validateExternalUrl()` function in `src/main.ts`:
+    - URL length validation
+    - URL format validation via URL parser
+    - Protocol allowlist check (defense-in-depth)
+    - Protocol blocklist check (for logging)
+    - URL normalization (prevents encoding bypass attacks)
+    - Returns sanitized URL for safe use
+  - Enhanced `open-external-url` IPC handler:
+    - Type validation for URL parameter
+    - Comprehensive URL validation before processing
+    - Enhanced security logging with `[SECURITY]` prefix
+    - Confirmation dialog shows sanitized URL
+- **Security Impact:**
+  - Blocks dangerous protocols: javascript, vbscript, file, data, blob, about, chrome, chrome-extension
+  - Prevents XSS attacks via malicious markdown links
+  - Prevents local file access attempts
+  - Prevents encoding bypass attacks via URL normalization
+  - DoS protection via URL length limit
+- **Verification:**
+  - **Dev Test:** ✅ TypeScript compilation passed (`npm run typecheck`)
+  - **Security Test:** ✅ Protocol validation comprehensive, blocklist/allowlist in place
+  - **User Test:** ✅ App starts successfully, legitimate links work with confirmation dialog
+- **Version:** Bumped to v2.7.6
+- **Files Changed:** constants/index.ts, main.ts, package.json, README.md
+- **Status:** HIGH-3 marked as ✅ FIXED
+- **Next:** HIGH-4 Clipboard Sanitization
 
 ### Session 8: 2025-11-23 (CRITICAL-4 & CRITICAL-5 Implementation)
 - **Implemented CRITICAL-4 Fix:**

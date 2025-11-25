@@ -322,6 +322,19 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.6] - 2025-11-25
+- **Security Improvements**:
+  - **HIGH-3 FIXED**: Enhanced external URL security
+    - Added `URL_SECURITY` configuration in constants with allowlist and blocklist
+    - Implemented `validateExternalUrl()` function with comprehensive validation
+    - **Blocked protocols**: `javascript:`, `vbscript:`, `file:`, `data:`, `blob:`, `about:`, `chrome:`, `chrome-extension:`
+    - **Allowed protocols**: Only `https:` and `http:` (explicit allowlist approach)
+    - Added URL length limit (2048 chars) to prevent DoS via extremely long URLs
+    - URL normalization via URL parser prevents encoding bypass attacks
+    - Type validation ensures URL parameter is always a string
+    - Enhanced security logging with `[SECURITY]` prefix for audit trail
+    - Confirmation dialog shows sanitized URL (not raw input)
+
 ### [2.7.5] - 2025-11-25
 - **Security Improvements**:
   - **HIGH-2 FIXED**: Added file size validation in renderer process
