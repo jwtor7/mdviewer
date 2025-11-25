@@ -6,6 +6,7 @@ import { promises as fsPromises } from 'node:fs';
 import { WINDOW_CONFIG, SECURITY_CONFIG } from './constants/index.js';
 import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
+import { convertMarkdownToText } from './utils/textConverter.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -668,13 +669,14 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { success: false, error: 'Window not found' };
     }
 
-    // Show save dialog with both Markdown and PDF options
+    // Show save dialog with Markdown, PDF, and TXT options
     const result = await dialog.showSaveDialog(parentWindow, {
       title: 'Save As',
       defaultPath: filePath || filename,
       filters: [
         { name: 'Markdown Files', extensions: ['md', 'markdown'] },
         { name: 'PDF Files', extensions: ['pdf'] },
+        { name: 'Text Files', extensions: ['txt'] },
         { name: 'All Files', extensions: ['*'] }
       ]
     });
@@ -728,6 +730,16 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       } catch (pdfErr) {
         console.error('PDF export error:', pdfErr);
         return { success: false, error: 'Failed to export PDF' };
+      }
+    } else if (ext === '.txt') {
+      // Save as plain text (convert markdown to text)
+      try {
+        const plainText = convertMarkdownToText(content);
+        await fsPromises.writeFile(result.filePath, plainText, 'utf-8');
+        return { success: true, filePath: result.filePath };
+      } catch (txtErr) {
+        console.error('Text export error:', txtErr);
+        return { success: false, error: 'Failed to export text file' };
       }
     } else {
       // Save as Markdown (default)

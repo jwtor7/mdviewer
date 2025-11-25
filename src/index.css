@@ -1066,3 +1066,27 @@ body {
   color: white;
   border-color: #28a745;
 }
+
+/* Text Preview Styles */
+.text-preview {
+  padding: 20px 60px 20px 20px;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  box-sizing: border-box;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.text-preview-content {
+  font-family: monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+}

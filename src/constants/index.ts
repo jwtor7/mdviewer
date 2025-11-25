@@ -36,6 +36,7 @@ export const VIEW_MODES = {
   RENDERED: 'rendered',
   RAW: 'raw',
   SPLIT: 'split',
+  TEXT: 'text',
 } as const;
 
 export type ThemeMode = typeof THEME_MODES[keyof typeof THEME_MODES];

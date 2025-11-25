@@ -3,8 +3,10 @@ import MarkdownPreview from './components/MarkdownPreview';
 import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
+import TextPreview from './components/TextPreview';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
 import { VIEW_MODES, type ViewMode } from './constants/index';
+import { convertMarkdownToText } from './utils/textConverter';
 import type { Document, DraggableDocument } from './types/document';
 import { calculateTextStats } from './utils/textCalculations';
 import pkg from '../package.json';
@@ -58,8 +60,13 @@ const App: React.FC = () => {
 
             if (result.success) {
                 // Show format-specific success message based on file extension
-                const isPDF = result.filePath?.toLowerCase().endsWith('.pdf') || false;
-                const message = isPDF ? 'PDF exported successfully!' : 'Markdown saved successfully!';
+                const filePath = result.filePath?.toLowerCase() || '';
+                let message = 'Markdown saved successfully!';
+                if (filePath.endsWith('.pdf')) {
+                    message = 'PDF exported successfully!';
+                } else if (filePath.endsWith('.txt')) {
+                    message = 'Text file saved successfully!';
+                }
                 showError(message, 'info');
             } else {
                 if (result.error !== 'Cancelled') {
@@ -74,7 +81,7 @@ const App: React.FC = () => {
     // Handle find
     const handleFind = useCallback((): void => {
         // Only show find/replace in RAW or SPLIT view
-        if (viewMode === VIEW_MODES.RENDERED) {
+        if (viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT) {
             showError('Find & Replace is only available in Raw or Split view', 'info');
             return;
         }
@@ -89,6 +96,7 @@ const App: React.FC = () => {
             setViewMode(prev => {
                 if (prev === VIEW_MODES.RENDERED) return VIEW_MODES.RAW;
                 if (prev === VIEW_MODES.RAW) return VIEW_MODES.SPLIT;
+                if (prev === VIEW_MODES.SPLIT) return VIEW_MODES.TEXT;
                 return VIEW_MODES.RENDERED;
             });
         }, []),
@@ -107,6 +115,10 @@ const App: React.FC = () => {
         try {
             if (viewMode === VIEW_MODES.RAW) {
                 await navigator.clipboard.writeText(activeDoc.content);
+            } else if (viewMode === VIEW_MODES.TEXT) {
+                // Copy plain text conversion
+                const plainText = convertMarkdownToText(activeDoc.content);
+                await navigator.clipboard.writeText(plainText);
             } else {
                 const previewElement = document.querySelector('.markdown-preview') as HTMLElement | null;
                 if (previewElement) {
@@ -364,7 +376,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('bold')}
                         title="Bold (Cmd+B)"
                         aria-label="Format selected text as bold"
-                        disabled={viewMode === VIEW_MODES.RENDERED}
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
                     >
                         <b>B</b>
                     </button>
@@ -373,7 +385,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('italic')}
                         title="Italic (Cmd+I)"
                         aria-label="Format selected text as italic"
-                        disabled={viewMode === VIEW_MODES.RENDERED}
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
                     >
                         <i>I</i>
                     </button>
@@ -382,7 +394,7 @@ const App: React.FC = () => {
                         onClick={() => handleFormat('list')}
                         title="List"
                         aria-label="Format selected text as list item"
-                        disabled={viewMode === VIEW_MODES.RENDERED}
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
                     >
                         •
                     </button>
@@ -392,7 +404,7 @@ const App: React.FC = () => {
                         className="icon-btn"
                         onClick={handleCopy}
                         title="Copy (Cmd+C)"
-                        aria-label={viewMode === VIEW_MODES.RAW ? 'Copy raw markdown' : 'Copy rendered content'}
+                        aria-label={viewMode === VIEW_MODES.RAW ? 'Copy raw markdown' : viewMode === VIEW_MODES.TEXT ? 'Copy plain text' : 'Copy rendered content'}
                     >
                         📋
                     </button>
@@ -400,8 +412,8 @@ const App: React.FC = () => {
                     <button
                         className="icon-btn"
                         onClick={handleSave}
-                        title="Save As... (Markdown or PDF) (Cmd+S)"
-                        aria-label="Save document as Markdown or PDF"
+                        title="Save As... (Markdown, PDF, or TXT) (Cmd+S)"
+                        aria-label="Save document as Markdown, PDF, or TXT"
                     >
                         💾
                     </button>
@@ -411,7 +423,7 @@ const App: React.FC = () => {
                         onClick={handleFind}
                         title="Find & Replace (Cmd+F)"
                         aria-label="Open find and replace"
-                        disabled={viewMode === VIEW_MODES.RENDERED}
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
                     >
                         🔍
                     </button>
@@ -456,6 +468,16 @@ const App: React.FC = () => {
                         >
                             Split
                         </button>
+                        <button
+                            className={`toggle-btn ${viewMode === VIEW_MODES.TEXT ? 'active' : ''}`}
+                            onClick={() => setViewMode(VIEW_MODES.TEXT)}
+                            title="Text Mode (Cmd+E to cycle)"
+                            role="tab"
+                            aria-selected={viewMode === VIEW_MODES.TEXT}
+                            aria-controls="content-area"
+                        >
+                            Text
+                        </button>
                     </div>
                 </div>
             </div>
@@ -468,7 +490,9 @@ const App: React.FC = () => {
                         ? 'Markdown preview'
                         : viewMode === VIEW_MODES.SPLIT
                             ? 'Split view: code and preview'
-                            : 'Markdown editor'
+                            : viewMode === VIEW_MODES.TEXT
+                                ? 'Plain text preview'
+                                : 'Markdown editor'
                 }
             >
                 {showFindReplace && (viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT) && (
@@ -492,6 +516,8 @@ const App: React.FC = () => {
                         onChange={updateContent}
                         highlightedContent={highlightedContent}
                     />
+                ) : viewMode === VIEW_MODES.TEXT ? (
+                    <TextPreview content={activeDoc.content} />
                 ) : (
                     <div ref={splitViewRef} className="split-view">
                         <div className="split-pane split-pane-left">
