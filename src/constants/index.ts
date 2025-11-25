@@ -58,3 +58,12 @@ export const SECURITY_CONFIG = {
     WINDOW_MS: 1000, // Rate limit window in milliseconds
   },
 } as const;
+
+// Renderer-side security limits (for validation before processing)
+export const RENDERER_SECURITY = {
+  // Maximum content size to process in renderer (10MB matches IPC limit)
+  // Prevents memory exhaustion from malicious drag-drop or IPC data
+  MAX_CONTENT_LENGTH: 10 * 1024 * 1024, // 10MB in characters
+  // Human-readable size for error messages
+  MAX_CONTENT_SIZE_MB: 10,
+} as const;

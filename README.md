@@ -322,6 +322,17 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.5] - 2025-11-25
+- **Security Improvements**:
+  - **HIGH-2 FIXED**: Added file size validation in renderer process
+    - Added `RENDERER_SECURITY` constants for content size limits (10MB)
+    - Validates content size in `handleFileDrop` for dropped tabs
+    - Validates content size in `handleFileDrop` for dropped files
+    - Validates content size in `useFileHandler` for IPC `file-open` events
+    - Defense-in-depth: Renderer validates even though main process already does
+    - Shows user-friendly error messages when files exceed size limit
+    - Prevents memory exhaustion from malicious or very large content
+
 ### [2.7.4] - 2025-11-25
 - **Security Improvements**:
   - **H-2 FIXED**: Fixed esbuild CVE-2025-23081 vulnerability (GHSA-67mh-4wv8-2f99)

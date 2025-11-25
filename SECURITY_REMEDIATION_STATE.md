@@ -2,8 +2,8 @@
 
 **Last Updated:** 2025-11-25
 **Current Phase:** Phase 2 - HIGH Priority Fixes
-**Status:** H-2 FIXED (Vulnerable Dependencies Patched)
-**Next Task:** HIGH-2: File Size Validation in Renderer
+**Status:** HIGH-2 FIXED (File Size Validation in Renderer)
+**Next Task:** HIGH-3: External URL Security Enhancement
 
 ---
 
@@ -25,7 +25,7 @@
 |----|-------|--------|----------|---------------|-----------|-------|
 | H-3 | **PDF Export Data Leakage** | ✅ FIXED | ✅ | ✅ | ✅ | pdfRenderer.ts:126 - Changed to `img-src 'self' data: blob:` and `font-src 'self' data:` |
 | H-2 | Vulnerable Dependencies | ✅ FIXED | ✅ | ✅ | ✅ | Vite 5.4.21→6.4.1, esbuild→0.25.12 (CVE-2025-23081 patched) |
-| HIGH-2 | File Size Validation in Renderer | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:263-288 |
+| HIGH-2 | File Size Validation in Renderer | ✅ FIXED | ✅ | ✅ | ✅ | Added RENDERER_SECURITY constants, validates in handleFileDrop & useFileHandler |
 | HIGH-3 | External URL Security Enhancement | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:357 |
 | HIGH-4 | Clipboard Sanitization | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:98-123 |
 
@@ -65,13 +65,13 @@
 
 ## Current Task
 
-**Current Status:** H-2 FIXED. Proceeding with HIGH-2.
+**Current Status:** HIGH-2 FIXED. Proceeding with HIGH-3.
 
 **Next Issue Details:**
-- **ID:** HIGH-2
+- **ID:** HIGH-3
 - **Severity:** HIGH
-- **Issue:** File Size Validation in Renderer
-- **Location:** App.tsx:263-288
+- **Issue:** External URL Security Enhancement
+- **Location:** main.ts:357
 
 ---
 
@@ -282,6 +282,31 @@ The fix is **SECURE and EFFECTIVE**. The removal of `'unsafe-inline'` completely
 - **Version:** Bumped to v2.7.4
 - **Status:** H-2 marked as ✅ FIXED
 - **Next:** HIGH-2 File Size Validation in Renderer
+
+### Session 12: 2025-11-25 (HIGH-2 File Size Validation in Renderer)
+- **Implemented HIGH-2 Fix:**
+  - Added `RENDERER_SECURITY` constants in `src/constants/index.ts`:
+    - `MAX_CONTENT_LENGTH`: 10MB (matches IPC limit from SECURITY_CONFIG)
+    - `MAX_CONTENT_SIZE_MB`: Human-readable value for error messages
+  - Added size validation in `src/App.tsx` `handleFileDrop`:
+    - Validates content size when receiving dropped tabs (lines 239-243)
+    - Validates content size when receiving dropped files via IPC (lines 320-325)
+  - Added size validation in `src/hooks/useFileHandler.ts`:
+    - Validates content size from `file-open` IPC events (lines 29-34)
+    - Added `showError` callback parameter to display user-friendly errors
+- **Security Impact:**
+  - Defense-in-depth: Renderer validates content even though main process already does
+  - Prevents memory exhaustion from malicious drag-drop content between windows
+  - Prevents processing of extremely large files that could freeze the renderer
+  - User sees clear error message when content exceeds 10MB limit
+- **Verification:**
+  - **Dev Test:** ✅ TypeScript compilation passed (`npm run typecheck`)
+  - **Security Test:** ✅ All three entry points now validate content size
+  - **User Test:** ✅ App starts successfully, no breaking changes
+- **Version:** Bumped to v2.7.5
+- **Files Changed:** constants/index.ts, App.tsx, hooks/useFileHandler.ts, package.json, README.md
+- **Status:** HIGH-2 marked as ✅ FIXED
+- **Next:** HIGH-3 External URL Security Enhancement
 
 ### Session 8: 2025-11-23 (CRITICAL-4 & CRITICAL-5 Implementation)
 - **Implemented CRITICAL-4 Fix:**

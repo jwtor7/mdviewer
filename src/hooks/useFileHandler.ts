@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { DEFAULT_DOCUMENT } from '../constants/index.js';
+import { DEFAULT_DOCUMENT, RENDERER_SECURITY } from '../constants/index.js';
 import type { Document } from '../types/document.js';
 import type { FileOpenData } from '../types/electron.js';
 import type { DocumentUpdate } from './useDocuments.js';
@@ -10,7 +10,8 @@ export const useFileHandler = (
   findDocumentByPath: (filePath: string) => Document | undefined,
   setActiveTabId: (id: string) => void,
   documents: Document[],
-  closeTab: (id: string) => void
+  closeTab: (id: string) => void,
+  showError: (message: string) => void
 ): void => {
   useEffect(() => {
     // Listen for file content from main process
@@ -24,6 +25,13 @@ export const useFileHandler = (
         const filePath = isFileOpenData(value) ? value.filePath : null;
         const fileContent = isFileOpenData(value) ? value.content : value;
         const fileName = isFileOpenData(value) ? value.name : 'Untitled';
+
+        // Security: Defense-in-depth validation of content size (HIGH-2 fix)
+        // Main process already validates, but renderer should also verify
+        if (fileContent.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
+          showError(`File too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
+          return;
+        }
 
         // Check if document with this path already exists
         const existing = filePath ? findDocumentByPath(filePath) : undefined;
@@ -63,5 +71,5 @@ export const useFileHandler = (
       // Cleanup listener on unmount or dependency change
       return cleanup;
     }
-  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab]);
+  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError]);
 };

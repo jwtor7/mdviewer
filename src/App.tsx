@@ -5,7 +5,7 @@ import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
 import TextPreview from './components/TextPreview';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
-import { VIEW_MODES, type ViewMode } from './constants/index';
+import { VIEW_MODES, RENDERER_SECURITY, type ViewMode } from './constants/index';
 import { convertMarkdownToText } from './utils/textConverter';
 import type { Document, DraggableDocument } from './types/document';
 import { calculateTextStats } from './utils/textCalculations';
@@ -42,7 +42,7 @@ const App: React.FC = () => {
     }, [splitDividerPosition]);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
-    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument);
+    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError);
 
     // Handle save
     const handleSave = useCallback(async (): Promise<void> => {
@@ -236,6 +236,12 @@ const App: React.FC = () => {
                 const doc = JSON.parse(textData) as DraggableDocument;
 
                 if (doc.id && doc.content && doc.filePath) {
+                    // Security: Validate content size before processing (HIGH-2 fix)
+                    if (doc.content.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
+                        showError(`Content too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
+                        return;
+                    }
+
                     // It's a tab!
 
                     // Notify main process that this tab was dropped/handled
@@ -310,6 +316,14 @@ const App: React.FC = () => {
                 }
 
                 const content = result.content;
+
+                // Security: Defense-in-depth validation of content size (HIGH-2 fix)
+                // Main process already validates, but renderer should also verify
+                if (content.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
+                    showError(`File too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
+                    return;
+                }
+
                 const existing = findDocumentByPath(filePath);
 
                 if (existing) {
