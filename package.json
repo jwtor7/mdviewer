@@ -1,7 +1,7 @@
 {
   "name": "mdviewer",
   "productName": "mdviewer",
-  "version": "2.7.3",
+  "version": "2.7.4",
   "description": "A feature-rich, accessible Markdown Viewer for macOS",
   "main": ".vite/build/main.js",
   "build": {
@@ -52,7 +52,7 @@
     "eslint-plugin-no-secrets": "^2.2.1",
     "eslint-plugin-security": "^3.0.1",
     "typescript": "^5.9.3",
-    "vite": "^5.4.21"
+    "vite": "^6.4.1"
   },
   "dependencies": {
     "electron-squirrel-startup": "^1.0.1",

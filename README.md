@@ -324,6 +324,14 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.4] - 2025-11-25
+- **Security Improvements**:
+  - **H-2 FIXED**: Fixed esbuild CVE-2025-23081 vulnerability (GHSA-67mh-4wv8-2f99)
+    - Upgraded Vite from v5.4.21 to v6.4.1
+    - Updated esbuild from v0.24.x to v0.25.12 (patched version >= 0.25.0)
+    - Vulnerability allowed malicious websites to read source code from dev server via CORS bypass
+    - Risk was moderate for development environments (build tooling, not runtime)
+
 ### [2.7.3] - 2025-11-25
 - **New Features**:
   - **Text View Mode**: Added fourth view mode for plain text display

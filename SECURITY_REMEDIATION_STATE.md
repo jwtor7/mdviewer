@@ -2,8 +2,8 @@
 
 **Last Updated:** 2025-11-25
 **Current Phase:** Phase 2 - HIGH Priority Fixes
-**Status:** H-3 FIXED (Data Leakage Prevention Complete)
-**Next Task:** H-2: Vulnerable Dependencies (esbuild, Vite)
+**Status:** H-2 FIXED (Vulnerable Dependencies Patched)
+**Next Task:** HIGH-2: File Size Validation in Renderer
 
 ---
 
@@ -24,7 +24,7 @@
 | ID | Issue | Status | Dev Test | Security Test | User Test | Notes |
 |----|-------|--------|----------|---------------|-----------|-------|
 | H-3 | **PDF Export Data Leakage** | ✅ FIXED | ✅ | ✅ | ✅ | pdfRenderer.ts:126 - Changed to `img-src 'self' data: blob:` and `font-src 'self' data:` |
-| H-2 | Vulnerable Dependencies | ⏳ PENDING | ❌ | ❌ | ❌ | esbuild CVE-2025-23081, Vite outdated |
+| H-2 | Vulnerable Dependencies | ✅ FIXED | ✅ | ✅ | ✅ | Vite 5.4.21→6.4.1, esbuild→0.25.12 (CVE-2025-23081 patched) |
 | HIGH-2 | File Size Validation in Renderer | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:263-288 |
 | HIGH-3 | External URL Security Enhancement | ⏳ PENDING | ❌ | ❌ | ❌ | main.ts:357 |
 | HIGH-4 | Clipboard Sanitization | ⏳ PENDING | ❌ | ❌ | ❌ | App.tsx:98-123 |
@@ -65,13 +65,13 @@
 
 ## Current Task
 
-**Current Status:** H-3 FIXED. Proceeding with H-2.
+**Current Status:** H-2 FIXED. Proceeding with HIGH-2.
 
 **Next Issue Details:**
-- **ID:** H-2
+- **ID:** HIGH-2
 - **Severity:** HIGH
-- **Issue:** Vulnerable Dependencies (esbuild CVE-2025-23081, Vite outdated)
-- **Location:** package.json
+- **Issue:** File Size Validation in Renderer
+- **Location:** App.tsx:263-288
 
 ---
 
@@ -264,6 +264,24 @@ The fix is **SECURE and EFFECTIVE**. The removal of `'unsafe-inline'` completely
   - **User Test:** ✅ Offline-first behavior is the intended design
 - **Status:** H-3 marked as ✅ FIXED
 - **Next:** H-2 Vulnerable Dependencies (esbuild, Vite)
+
+### Session 11: 2025-11-25 (H-2 Vulnerable Dependencies Fix)
+- **Implemented H-2 Fix:**
+  - Upgraded Vite from v5.4.21 to v6.4.1 in package.json
+  - This updates transitive dependency esbuild from 0.24.x to 0.25.12
+  - Patched CVE-2025-23081 / GHSA-67mh-4wv8-2f99 (moderate severity)
+- **Vulnerability Details:**
+  - esbuild <= 0.24.2 had overly permissive CORS (`Access-Control-Allow-Origin: *`)
+  - Allowed malicious websites to read source code from local dev server
+  - Risk was moderate for development environments (build tooling only)
+- **Verification:**
+  - **Dev Test:** ✅ TypeScript compilation passed (`npm run typecheck`)
+  - **Security Test:** ✅ `npm audit` shows no esbuild/Vite vulnerabilities
+  - **User Test:** ✅ App starts successfully, no breaking changes encountered
+- **Breaking Changes:** None - Vite 6.x is compatible with existing configs
+- **Version:** Bumped to v2.7.4
+- **Status:** H-2 marked as ✅ FIXED
+- **Next:** HIGH-2 File Size Validation in Renderer
 
 ### Session 8: 2025-11-23 (CRITICAL-4 & CRITICAL-5 Implementation)
 - **Implemented CRITICAL-4 Fix:**
