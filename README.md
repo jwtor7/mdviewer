@@ -307,8 +307,6 @@ mdviewer/
 ## 🚀 Feature Roadmap
 
 ### Phase 1: Security Hardening (Current Focus)
-- [x] **Strict CSP Implementation**: Eliminated `unsafe-inline` styles in production builds (v2.7.1)
-- [ ] **Advanced Security Monitoring**: CSP violation reporting and SRI checks
 
 ### Phase 2: Editor Enhancements
 - [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
