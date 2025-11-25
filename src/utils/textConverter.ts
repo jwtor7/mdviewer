@@ -13,6 +13,113 @@ import type { Root, Content, Parent, PhrasingContent, TableCell, TableRow } from
 // Horizontal rule character (box drawing character for clean appearance)
 const HORIZONTAL_RULE = '\u2500'.repeat(40);
 
+// Box-drawing characters for ASCII tables
+const BOX = {
+  topLeft: '\u250C',     // ┌
+  topRight: '\u2510',    // ┐
+  bottomLeft: '\u2514',  // └
+  bottomRight: '\u2518', // ┘
+  horizontal: '\u2500',  // ─
+  vertical: '\u2502',    // │
+  topT: '\u252C',        // ┬
+  bottomT: '\u2534',     // ┴
+  leftT: '\u251C',       // ├
+  rightT: '\u2524',      // ┤
+  cross: '\u253C',       // ┼
+};
+
+/**
+ * Calculate the maximum width for each column in a table
+ */
+const getColumnWidths = (rows: TableRow[], extractFn: (cell: TableCell) => string): number[] => {
+  if (rows.length === 0) return [];
+
+  const columnCount = rows[0].children.length;
+  const widths: number[] = new Array(columnCount).fill(0);
+
+  for (const row of rows) {
+    const cells = row.children as TableCell[];
+    cells.forEach((cell, index) => {
+      if (index < columnCount) {
+        const text = extractFn(cell);
+        widths[index] = Math.max(widths[index], text.length);
+      }
+    });
+  }
+
+  // Ensure minimum width of 1 for each column
+  return widths.map(w => Math.max(w, 1));
+};
+
+/**
+ * Create a separator line for the table (top, middle, or bottom)
+ */
+const createSeparator = (
+  widths: number[],
+  type: 'top' | 'middle' | 'bottom'
+): string => {
+  if (widths.length === 0) return '';
+
+  const left = type === 'top' ? BOX.topLeft : type === 'middle' ? BOX.leftT : BOX.bottomLeft;
+  const right = type === 'top' ? BOX.topRight : type === 'middle' ? BOX.rightT : BOX.bottomRight;
+  const joint = type === 'top' ? BOX.topT : type === 'middle' ? BOX.cross : BOX.bottomT;
+
+  const segments = widths.map(w => BOX.horizontal.repeat(w + 2));
+  return left + segments.join(joint) + right;
+};
+
+/**
+ * Create a data row with cell content padded to column widths
+ */
+const createTableRow = (
+  cells: TableCell[],
+  widths: number[],
+  extractFn: (cell: TableCell) => string
+): string => {
+  const paddedCells = widths.map((width, index) => {
+    const cell = cells[index];
+    const text = cell ? extractFn(cell) : '';
+    return ' ' + text.padEnd(width) + ' ';
+  });
+  return BOX.vertical + paddedCells.join(BOX.vertical) + BOX.vertical;
+};
+
+/**
+ * Convert a table to ASCII box-drawing format
+ */
+const convertTableToAscii = (rows: TableRow[], extractFn: (node: Content | Root) => string): string => {
+  if (rows.length === 0) return '';
+
+  // Type-safe extract function for TableCell
+  const extractCell = (cell: TableCell): string => extractFn(cell);
+
+  const widths = getColumnWidths(rows, extractCell);
+  if (widths.length === 0) return '';
+
+  const lines: string[] = [];
+
+  // Top border
+  lines.push(createSeparator(widths, 'top'));
+
+  // Header row (first row)
+  const headerCells = rows[0].children as TableCell[];
+  lines.push(createTableRow(headerCells, widths, extractCell));
+
+  // Header separator
+  lines.push(createSeparator(widths, 'middle'));
+
+  // Data rows
+  for (let i = 1; i < rows.length; i++) {
+    const dataCells = rows[i].children as TableCell[];
+    lines.push(createTableRow(dataCells, widths, extractCell));
+  }
+
+  // Bottom border
+  lines.push(createSeparator(widths, 'bottom'));
+
+  return lines.join('\n');
+};
+
 /**
  * Extract plain text from a node's children recursively
  */
@@ -115,13 +222,10 @@ const convertNode = (node: Content, depth: number = 0): string => {
       return `\n${HORIZONTAL_RULE}\n\n`;
 
     case 'table': {
-      // Convert table to tab-separated values for Excel/Sheets pasting
+      // Convert table to ASCII box-drawing format
       const rows = node.children as TableRow[];
-      const tsv = rows.map(row => {
-        const cells = row.children as TableCell[];
-        return cells.map(cell => extractText(cell)).join('\t');
-      }).join('\n');
-      return `\n${tsv}\n\n`;
+      const asciiTable = convertTableToAscii(rows, extractText);
+      return asciiTable ? `\n${asciiTable}\n\n` : '';
     }
 
     case 'html':

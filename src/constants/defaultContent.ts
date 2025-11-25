@@ -191,5 +191,5 @@ npm run test
 
 ---
 
-**mdviewer v2.7.3** - Built with Electron, React, and TypeScript
+**mdviewer v2.7.9** - Built with Electron, React, and TypeScript
 `;

@@ -316,6 +316,13 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.9] - 2025-11-25
+- **Text View Enhancement**:
+  - Tables now render as ASCII box-drawing format instead of TSV
+  - Uses Unicode box-drawing characters for clean, readable table borders
+  - Proper column width calculation with content-aware padding
+  - Header row separated from data rows with distinct border line
+
 ### [2.7.8] - 2025-11-25
 - **Security Improvements**:
   - **MEDIUM-2 FIXED**: Implemented file integrity validation for markdown files
