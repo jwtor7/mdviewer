@@ -284,7 +284,8 @@ const createMenu = (): void => {
       submenu: [
         { role: 'reload' },
         { role: 'forceReload' },
-        { role: 'toggleDevTools' },
+        // Security: Only show DevTools in development mode (MEDIUM-6 fix)
+        ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' as const }]),
         { type: 'separator' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },

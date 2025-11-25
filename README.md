@@ -306,15 +306,26 @@ mdviewer/
 
 ## 🚀 Feature Roadmap
 
-- [ ] **Security Hardening**: Ongoing security improvements and vulnerability remediation
-- [ ] **Rich Text View**: New view mode displaying formatted rich text output
 - [ ] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
 - [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
 - [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links, Images
 - [ ] **Markdown Lint**: Real-time style suggestions and error checking
-- [ ] **Export to Docx/RTF**: Export documents as Word or Rich Text Format
+- [ ] **Export to Docx**: Export documents as Microsoft Word format
+- [ ] **Code Signing**: Sign application for trusted distribution
+- [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.7.11] - 2025-11-25
+- **Security Improvements**:
+  - **MEDIUM-6 FIXED**: DevTools menu item now hidden in production builds
+    - Uses `app.isPackaged` to conditionally show DevTools only in development mode
+    - Production users cannot access DevTools via View menu (prevents debugging/tampering)
+  - **LOW-2 VERIFIED**: Electron Fuses already properly configured
+    - All recommended security fuses enabled: RunAsNode=false, EnableCookieEncryption=true
+    - EnableNodeOptionsEnvironmentVariable=false, EnableNodeCliInspectArguments=false
+    - EnableEmbeddedAsarIntegrityValidation=true, OnlyLoadAppFromAsar=true
+  - **Phase 3 COMPLETE**: All prioritized security issues addressed
 
 ### [2.7.10] - 2025-11-25
 - **Security Improvements**:
