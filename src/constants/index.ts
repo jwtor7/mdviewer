@@ -94,3 +94,15 @@ export const URL_SECURITY = {
   // Maximum URL length to prevent DoS via extremely long URLs
   MAX_URL_LENGTH: 2048,
 } as const;
+
+// File Integrity Validation Configuration
+// Controls validation of file content to prevent binary/corrupted files
+export const FILE_INTEGRITY = {
+  // Maximum ratio of control characters to total content (10%)
+  // Text files typically have < 1%, binary files have much higher ratios
+  MAX_CONTROL_CHAR_RATIO: 0.1,
+
+  // Control characters that are allowed in text files
+  // These are normal whitespace/formatting characters
+  ALLOWED_CONTROL_CHARS: ['\n', '\r', '\t'] as const,
+} as const;

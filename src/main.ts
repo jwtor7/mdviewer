@@ -7,6 +7,7 @@ import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY } from './constants/index.
 import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
+import { validateFileContent } from './utils/fileValidator.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -381,14 +382,25 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
       return;
     }
 
-    // Read file content
-    const data = await fsPromises.readFile(filepath, 'utf-8');
+    // Security: Read file as Buffer first for integrity validation (MEDIUM-2 fix)
+    const buffer = await fsPromises.readFile(filepath);
 
-    // Send to renderer if window is still valid
+    // Security: Validate file content integrity (UTF-8, BOM, binary detection)
+    const validation = validateFileContent(buffer);
+    if (!validation.valid || !validation.content) {
+      console.warn(`[SECURITY] File integrity validation failed for: ${path.basename(filepath)}`);
+      dialog.showErrorBox(
+        'Invalid File Content',
+        validation.error || 'File content could not be validated.'
+      );
+      return;
+    }
+
+    // Send validated content to renderer if window is still valid
     if (targetWindow && !targetWindow.isDestroyed()) {
       const fileData: FileOpenData = {
         filePath: filepath,
-        content: data,
+        content: validation.content,
         name: path.basename(filepath)
       };
       targetWindow.webContents.send('file-open', fileData);
@@ -870,9 +882,17 @@ ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { content: '', error: `File exceeds maximum size of ${maxSizeMB}MB` };
     }
 
-    // Read file content
-    const content = await fsPromises.readFile(filePath, 'utf-8');
-    return { content };
+    // Security: Read file as Buffer first for integrity validation (MEDIUM-2 fix)
+    const buffer = await fsPromises.readFile(filePath);
+
+    // Security: Validate file content integrity (UTF-8, BOM, binary detection)
+    const validation = validateFileContent(buffer);
+    if (!validation.valid || !validation.content) {
+      console.warn(`[SECURITY] File integrity validation failed for: ${path.basename(filePath)}`);
+      return { content: '', error: validation.error || 'File content could not be validated' };
+    }
+
+    return { content: validation.content };
   } catch (err) {
     const error = err as NodeJS.ErrnoException;
     console.error('Failed to read file:', sanitizeError(error));

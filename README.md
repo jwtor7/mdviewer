@@ -316,6 +316,27 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.8] - 2025-11-25
+- **Security Improvements**:
+  - **MEDIUM-2 FIXED**: Implemented file integrity validation for markdown files
+    - Created `fileValidator.ts` utility with comprehensive content validation
+    - **UTF-8 Validation**: Manual byte-level validation ensures files are valid UTF-8
+      - Catches encoding issues that Node.js might silently replace with replacement characters
+      - Prevents corrupted files from being processed
+    - **BOM Handling**: Automatically strips UTF-8 Byte Order Mark (0xEF 0xBB 0xBF)
+      - Files with BOM from Windows editors open correctly
+    - **Binary Detection**: Prevents binary files masquerading as markdown
+      - Detects null bytes (definitive binary indicator)
+      - Checks control character ratio (binary files have excessive control chars)
+      - Configurable via `FILE_INTEGRITY.MAX_CONTROL_CHAR_RATIO` (default: 10%)
+      - Allowed control chars: `\n`, `\r`, `\t` (normal text formatting)
+    - Applied to both entry points:
+      - `openFile()` function (File menu, drag-drop on app icon)
+      - `read-file` IPC handler (drag-drop in window)
+    - User-friendly error dialogs for invalid files
+    - Security logging with `[SECURITY]` prefix for audit trails
+  - Added `FILE_INTEGRITY` security configuration to constants
+
 ### [2.7.7] - 2025-11-25
 - **Security Improvements**:
   - **HIGH-4 FIXED**: Implemented clipboard sanitization for secure copy operations
