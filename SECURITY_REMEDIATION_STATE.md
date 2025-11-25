@@ -331,6 +331,7 @@ and start with the next pending CRITICAL issue (CRITICAL-2).
 
 ## Notes
 
+- **tmp package vulnerability (LOW):** 5 low-severity issues in `tmp` package (GHSA-52f5-9888-hmc6) via electron-forge → @inquirer/prompts dependency chain. Dev-time only, affects build CLI prompts. Cannot fix without downgrading electron-forge. Waiting for upstream patch.
 - **CRITICAL-1 is deferred:** Requires replacing react-syntax-highlighter library (~4-5 hours work)
   - Will be addressed in future session after completing CRITICAL 2-5
   - App is functional with vulnerability present (reverted to original state)
