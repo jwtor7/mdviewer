@@ -306,19 +306,13 @@ mdviewer/
 
 ## 🚀 Feature Roadmap
 
-### Phase 1: Security Hardening (Current Focus)
-
-### Phase 2: Editor Enhancements
+- [ ] **Security Hardening**: Ongoing security improvements and vulnerability remediation
+- [ ] **Rich Text View**: New view mode displaying formatted rich text output
+- [ ] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
 - [ ] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
 - [ ] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links, Images
-- [ ] **Table Editor**: Visual interface for creating and editing Markdown tables
 - [ ] **Markdown Lint**: Real-time style suggestions and error checking
-
-### Phase 3: Professional Features
-- [ ] **Presentation Mode**: Turn Markdown into slides
-- [ ] **Cloud Sync**: Optional integration with iCloud/Dropbox
-- [ ] **Plugin System**: Allow community extensions
-- [ ] **Export to HTML/Docx**: Additional export formats
+- [ ] **Export to Docx/RTF**: Export documents as Word or Rich Text Format
 
 ## 📝 Changelog
 
