@@ -57,12 +57,12 @@ const isPathSafe = (filepath: string): boolean => {
  * @returns A safe error message string
  */
 const sanitizeError = (error: Error | NodeJS.ErrnoException): string => {
-  // In production, return generic error message
-  if (process.env.NODE_ENV === 'production' || !app.isPackaged) {
+  // In production (packaged app), return generic error message to prevent information disclosure
+  if (app.isPackaged) {
     return 'An error occurred while processing the file';
   }
 
-  // In development, return message but sanitize paths
+  // In development (npm start), return detailed error with sanitized paths for debugging
   let message = error.message;
 
   // Remove absolute paths, keep only basenames

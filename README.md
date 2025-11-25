@@ -316,6 +316,16 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.7.10] - 2025-11-25
+- **Security Improvements**:
+  - **MEDIUM-3 FIXED**: Corrected inverted error sanitization logic in main process
+    - Fixed condition in `sanitizeError()` function that was returning generic errors in both production AND development
+    - Bug: `if (process.env.NODE_ENV === 'production' || !app.isPackaged)` was always true in development
+    - Fix: Changed to `if (app.isPackaged)` which correctly distinguishes environments
+    - Production (packaged app): Returns generic error message (secure, prevents information disclosure)
+    - Development (npm start): Returns detailed error with sanitized paths (helpful for debugging)
+    - The `app.isPackaged` check is the authoritative source for build environment detection
+
 ### [2.7.9] - 2025-11-25
 - **Text View Enhancement**:
   - Tables now render as ASCII box-drawing format instead of TSV
