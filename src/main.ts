@@ -269,6 +269,7 @@ let openWindowCount = 0; // Track number of open windows for security limits
 const MAX_RECENT_FILES = 10;
 let recentFiles: string[] = [];
 
+
 /**
  * Gets the path to the recent files storage JSON file.
  * Stored in the app's userData directory for persistence across sessions.
@@ -341,6 +342,7 @@ const clearRecentFiles = (): void => {
   saveRecentFiles();
   createMenu();
 };
+
 
 const createMenu = (): void => {
   // Build recent files submenu items
@@ -490,6 +492,53 @@ const createWindow = (initialFile: string | null = null): BrowserWindow => {
 
   // Security: Track window count
   openWindowCount++;
+
+  // Handle window close event to check for unsaved changes
+  win.on('close', async (e) => {
+    // Ask renderer for unsaved documents
+    try {
+      const unsavedDocs = await win.webContents.executeJavaScript(`
+        (function() {
+          if (window.electronAPI && window.electronAPI.getUnsavedDocuments) {
+            // Access React app state via a global we'll set up
+            if (window.__APP_GET_UNSAVED_DOCS__) {
+              return window.__APP_GET_UNSAVED_DOCS__();
+            }
+          }
+          return [];
+        })()
+      `);
+
+      if (unsavedDocs && unsavedDocs.length > 0) {
+        e.preventDefault(); // Prevent close for now
+
+        const result = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Save All', "Don't Save", 'Cancel'],
+          defaultId: 0,
+          cancelId: 2,
+          title: 'Unsaved Changes',
+          message: `You have ${unsavedDocs.length} unsaved document(s).`,
+          detail: `Documents: ${unsavedDocs.join(', ')}\n\nDo you want to save them before quitting?`,
+        });
+
+        if (result.response === 2) {
+          // Cancel - don't close
+          return;
+        } else if (result.response === 0) {
+          // Save All - trigger save in renderer then close
+          win.webContents.send('save-all-and-quit');
+          // The renderer will call closeWindow when done
+        } else {
+          // Don't Save - force close
+          win.destroy();
+        }
+      }
+    } catch (err) {
+      console.error('Error checking unsaved documents:', err);
+      // If we can't check, allow close
+    }
+  });
 
   // Clear mainWindow reference when this window is closed
   win.on('closed', () => {
@@ -1080,6 +1129,68 @@ ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
     console.error('Failed to read file:', sanitizeError(error));
     return { content: '', error: 'Failed to read file' };
   }
+});
+
+ipcMain.handle('show-unsaved-dialog', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected show-unsaved-dialog from invalid origin');
+    return { response: 'cancel' };
+  }
+
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-show-unsaved-dialog')) {
+    console.warn('Rate limit exceeded for show-unsaved-dialog');
+    return { response: 'cancel' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { response: 'cancel' };
+  }
+
+  const { filename } = data as { filename: unknown };
+
+  if (typeof filename !== 'string') {
+    return { response: 'cancel' };
+  }
+
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (!win) {
+    return { response: 'cancel' };
+  }
+
+  try {
+    const result = await dialog.showMessageBox(win, {
+      type: 'warning',
+      buttons: ['Save', "Don't Save", 'Cancel'],
+      defaultId: 0,
+      cancelId: 2,
+      title: 'Unsaved Changes',
+      message: `Do you want to save changes to "${filename}"?`,
+      detail: 'Your changes will be lost if you don\'t save them.',
+    });
+
+    if (result.response === 0) return { response: 'save' };
+    if (result.response === 1) return { response: 'dont-save' };
+    return { response: 'cancel' };
+  } catch (err) {
+    console.error('Show unsaved dialog error:', err);
+    return { response: 'cancel' };
+  }
+});
+
+ipcMain.handle('get-unsaved-documents', (event: IpcMainInvokeEvent): string[] => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected get-unsaved-documents from invalid origin');
+    return [];
+  }
+
+  // This will be implemented in the renderer - this handler just needs to exist
+  // The renderer will send back the list via a different mechanism
+  return [];
 });
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)

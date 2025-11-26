@@ -24,6 +24,7 @@ const App: React.FC = () => {
         updateExistingDocument,
         findDocumentByPath,
         closeTab: closeDocument,
+        markDocumentSaved,
         undo,
         redo,
         canUndo,
@@ -109,6 +110,9 @@ const App: React.FC = () => {
                         name: filename
                     });
                 }
+
+                // Mark document as saved (clear dirty flag)
+                markDocumentSaved(activeDoc.id);
             } else {
                 if (result.error !== 'Cancelled') {
                     showError(result.error || 'Failed to save file');
@@ -117,7 +121,44 @@ const App: React.FC = () => {
         } catch (err) {
             showError('Failed to save file');
         }
-    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument]);
+    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument, markDocumentSaved]);
+
+    // Expose function to get unsaved documents for window close handling
+    useEffect(() => {
+        (window as typeof window & { __APP_GET_UNSAVED_DOCS__?: () => string[] }).__APP_GET_UNSAVED_DOCS__ = () => {
+            return documents.filter(d => d.dirty).map(d => d.name);
+        };
+
+        return () => {
+            delete (window as typeof window & { __APP_GET_UNSAVED_DOCS__?: () => string[] }).__APP_GET_UNSAVED_DOCS__;
+        };
+    }, [documents]);
+
+    // Handle save-all-and-quit event from main process
+    useEffect(() => {
+        if (!window.electronAPI?.onSaveAllAndQuit) return;
+
+        const cleanup = window.electronAPI.onSaveAllAndQuit(async () => {
+            // Save all dirty documents
+            const dirtyDocs = documents.filter(d => d.dirty);
+
+            for (const doc of dirtyDocs) {
+                // Switch to the document
+                setActiveTabId(doc.id);
+                // Wait a bit for state to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+                // Save it
+                await handleSave();
+            }
+
+            // After all saves, close the window
+            if (window.electronAPI?.closeWindow) {
+                window.electronAPI.closeWindow();
+            }
+        });
+
+        return cleanup;
+    }, [documents, handleSave, setActiveTabId]);
 
     // Wire up file handlers (open, new, save from menu)
     useFileHandler(
@@ -232,9 +273,37 @@ const App: React.FC = () => {
     // Track the current drag operation ID
     const dragIdRef = useRef<string | null>(null);
 
-    const handleCloseTab = (e: React.MouseEvent<HTMLButtonElement>, id: string): void => {
+    const handleCloseTab = async (e: React.MouseEvent<HTMLButtonElement>, id: string): Promise<void> => {
         e.stopPropagation();
-        closeDocument(id);
+
+        // Check if document has unsaved changes
+        const doc = documents.find(d => d.id === id);
+        if (doc?.dirty && window.electronAPI?.showUnsavedDialog) {
+            try {
+                const result = await window.electronAPI.showUnsavedDialog(doc.name);
+
+                if (result.response === 'cancel') {
+                    return; // Don't close
+                } else if (result.response === 'save') {
+                    // Save first, then close
+                    // Switch to the document to save it
+                    if (id !== activeTabId) {
+                        setActiveTabId(id);
+                    }
+                    await handleSave();
+                    // Close after save
+                    closeDocument(id);
+                } else {
+                    // Don't save, just close
+                    closeDocument(id);
+                }
+            } catch (err) {
+                showError('Failed to show unsaved changes dialog');
+                return;
+            }
+        } else {
+            closeDocument(id);
+        }
     };
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document): void => {

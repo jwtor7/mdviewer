@@ -47,12 +47,17 @@ export type IPCMessage =
   /** Request to save file to disk */
   | { channel: 'save-file'; data: SaveFileData }
   /** Request to read a file securely */
-  | { channel: 'read-file'; data: { filePath: string } };
+  | { channel: 'read-file'; data: { filePath: string } }
+  /** Show confirmation dialog for unsaved changes */
+  | { channel: 'show-unsaved-dialog'; data: { filename: string } }
+  /** Get list of unsaved document names */
+  | { channel: 'get-unsaved-documents'; data: void };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
   onFileNew: (callback: () => void) => () => void;
   onFileSave: (callback: () => void) => () => void;
+  onSaveAllAndQuit: (callback: () => void) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;
   notifyTabDropped: (dragId: string) => Promise<boolean>;
   checkTabDropped: (dragId: string) => Promise<boolean>;
@@ -62,6 +67,8 @@ export interface ElectronAPI {
   saveFile: (data: SaveFileData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
   readFile: (filePath: string) => Promise<{ content: string; error?: string }>;
   getPathForFile: (file: File) => string;
+  showUnsavedDialog: (filename: string) => Promise<{ response: 'save' | 'dont-save' | 'cancel' }>;
+  getUnsavedDocuments: () => Promise<string[]>;
 }
 
 declare global {

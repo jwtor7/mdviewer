@@ -26,6 +26,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('file-save', handler);
     };
   },
+  onSaveAllAndQuit: (callback: () => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent): void => callback();
+    ipcRenderer.on('save-all-and-quit', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('save-all-and-quit', handler);
+    };
+  },
   createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
   notifyTabDropped: (dragId: string): Promise<boolean> =>
@@ -43,4 +51,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath: string): Promise<{ content: string; error?: string }> =>
     ipcRenderer.invoke('read-file', { filePath }),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
+  showUnsavedDialog: (filename: string): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> =>
+    ipcRenderer.invoke('show-unsaved-dialog', { filename }),
+  getUnsavedDocuments: (): Promise<string[]> =>
+    ipcRenderer.invoke('get-unsaved-documents'),
 } satisfies ElectronAPI);
