@@ -45,31 +45,31 @@
   --editor-text: #333333;
   --btn-hover: #e0e0e0;
   --btn-active: #d0d0d0;
-  /* Syntax Highlighting - VS Code Light theme */
-  --hljs-bg: #ffffff;
-  --hljs-color: #000000;
-  --hljs-keyword: #0000ff;
-  --hljs-built-in: #267f99;
-  --hljs-type: #267f99;
-  --hljs-literal: #0000ff;
-  --hljs-number: #098658;
-  --hljs-string: #a31515;
-  --hljs-regexp: #811f3f;
-  --hljs-symbol: #098658;
-  --hljs-comment: #008000;
-  --hljs-function: #795e26;
-  --hljs-class: #267f99;
-  --hljs-variable: #001080;
-  --hljs-attr: #ff0000;
-  --hljs-tag: #800000;
-  --hljs-name: #800000;
-  --hljs-selector: #800000;
-  --hljs-meta: #af00db;
-  --hljs-title: #795e26;
-  --hljs-section: #795e26;
-  --hljs-link: #0000ff;
-  --hljs-operator: #000000;
-  --hljs-punctuation: #000000;
+  /* Syntax Highlighting - Light theme with improved contrast */
+  --hljs-bg: #f5f5f5;
+  --hljs-color: #1f1f1f;
+  --hljs-keyword: #0033b3;
+  --hljs-built-in: #00627a;
+  --hljs-type: #00627a;
+  --hljs-literal: #0033b3;
+  --hljs-number: #1750eb;
+  --hljs-string: #067d17;
+  --hljs-regexp: #871094;
+  --hljs-symbol: #9e880d;
+  --hljs-comment: #8c8c8c;
+  --hljs-function: #00627a;
+  --hljs-class: #00627a;
+  --hljs-variable: #871094;
+  --hljs-attr: #174ad4;
+  --hljs-tag: #0033b3;
+  --hljs-name: #871094;
+  --hljs-selector: #871094;
+  --hljs-meta: #871094;
+  --hljs-title: #00627a;
+  --hljs-section: #00627a;
+  --hljs-link: #0033b3;
+  --hljs-operator: #1f1f1f;
+  --hljs-punctuation: #1f1f1f;
   --hljs-addition-bg: rgba(40, 167, 69, 0.2);
   --hljs-deletion-bg: rgba(220, 53, 69, 0.2);
 }
@@ -500,7 +500,7 @@ body {
 }
 
 .markdown-preview pre {
-  background-color: #1e1e1e;
+  background-color: var(--hljs-bg);
   padding: 1em;
   border-radius: 5px;
   overflow-x: auto;
@@ -544,6 +544,95 @@ body {
 
 .markdown-preview th {
   background-color: rgba(127, 127, 127, 0.1);
+}
+
+/* Task List Checkboxes - GitHub Flavored Markdown */
+.markdown-preview input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--text-color);
+  border-radius: 3px;
+  background-color: transparent;
+  margin-right: 8px;
+  vertical-align: middle;
+  cursor: default;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.markdown-preview input[type="checkbox"]:checked {
+  background-color: #268bd2;
+  border-color: #268bd2;
+}
+
+.markdown-preview input[type="checkbox"]:checked::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Task list item styling */
+.markdown-preview li:has(> input[type="checkbox"]) {
+  list-style-type: none;
+  margin-left: -1.5em;
+  display: flex;
+  align-items: flex-start;
+}
+
+.markdown-preview li:has(> input[type="checkbox"]) > input[type="checkbox"] {
+  margin-top: 0.3em;
+}
+
+/* Light theme checkbox adjustments */
+[data-theme='light'] .markdown-preview input[type="checkbox"] {
+  border-color: #555555;
+}
+
+[data-theme='light'] .markdown-preview input[type="checkbox"]:checked {
+  background-color: #0066cc;
+  border-color: #0066cc;
+}
+
+/* Solarized Light checkbox adjustments */
+[data-theme='solarized-light'] .markdown-preview input[type="checkbox"] {
+  border-color: #586e75;
+}
+
+[data-theme='solarized-light'] .markdown-preview input[type="checkbox"]:checked {
+  background-color: #268bd2;
+  border-color: #268bd2;
+}
+
+/* Solarized Dark checkbox adjustments */
+[data-theme='solarized-dark'] .markdown-preview input[type="checkbox"] {
+  border-color: #93a1a1;
+}
+
+/* Search Highlights - for Rendered and Text views */
+.markdown-preview mark.search-highlight,
+.text-preview mark.search-highlight {
+  background-color: rgba(255, 255, 0, 0.4);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+}
+
+.markdown-preview mark.search-highlight-current,
+.text-preview mark.search-highlight-current {
+  background-color: rgba(255, 165, 0, 0.6);
+  color: inherit;
+  padding: 0;
+  border-radius: 2px;
+  border: 1px solid rgba(255, 165, 0, 0.9);
+  box-shadow: 0 0 4px rgba(255, 165, 0, 0.5);
 }
 
 /* Code Editor Wrapper - contains both highlight layer and textarea */
@@ -1089,4 +1178,97 @@ body {
   padding: 0;
   background: transparent;
   color: inherit;
+}
+/* Headings Dropdown Menu Styles */
+.headings-dropdown-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.headings-dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background-color: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.headings-menu-item {
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  display: block;
+  transition: background-color 0.15s;
+}
+
+.headings-menu-item:hover {
+  background-color: var(--btn-hover);
+}
+
+.headings-menu-item:focus {
+  outline: none;
+  background-color: var(--btn-hover);
+}
+
+.heading-preview {
+  display: block;
+  font-weight: bold;
+  line-height: 1.3;
+}
+
+.h1-preview {
+  font-size: 20px;
+}
+
+.h2-preview {
+  font-size: 18px;
+}
+
+.h3-preview {
+  font-size: 16px;
+}
+
+.h4-preview {
+  font-size: 14px;
+}
+
+.h5-preview {
+  font-size: 13px;
+}
+
+.h6-preview {
+  font-size: 12px;
+}
+
+/* Light theme adjustments for headings dropdown */
+[data-theme='light'] .headings-dropdown-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Solarized Light theme adjustments */
+[data-theme='solarized-light'] .headings-dropdown-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }

@@ -7,6 +7,8 @@ export interface UseKeyboardShortcutsProps {
   onToggleTheme: () => void;
   onSave?: () => void;
   onFind?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -16,6 +18,8 @@ export const useKeyboardShortcuts = ({
   onToggleTheme,
   onSave,
   onFind,
+  onUndo,
+  onRedo,
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -51,9 +55,24 @@ export const useKeyboardShortcuts = ({
         e.preventDefault();
         onFind();
       }
+      // Cmd/Ctrl + Z: Undo
+      if (isMod && e.key === 'z' && !e.shiftKey && onUndo) {
+        e.preventDefault();
+        onUndo();
+      }
+      // Cmd/Ctrl + Shift + Z: Redo
+      if (isMod && e.key === 'z' && e.shiftKey && onRedo) {
+        e.preventDefault();
+        onRedo();
+      }
+      // Cmd/Ctrl + Y: Redo (Windows convention)
+      if (isMod && e.key === 'y' && onRedo) {
+        e.preventDefault();
+        onRedo();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind]);
+  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind, onUndo, onRedo]);
 };

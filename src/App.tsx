@@ -24,6 +24,10 @@ const App: React.FC = () => {
         updateExistingDocument,
         findDocumentByPath,
         closeTab: closeDocument,
+        undo,
+        redo,
+        canUndo,
+        canRedo,
     } = useDocuments();
 
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
@@ -32,8 +36,13 @@ const App: React.FC = () => {
     const [showFindReplace, setShowFindReplace] = useState(false);
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
     const [highlightedContent, setHighlightedContent] = useState<React.ReactNode | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
+    const [searchCurrentMatch, setSearchCurrentMatch] = useState(0);
+    const [showHeadingsMenu, setShowHeadingsMenu] = useState(false);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const splitViewRef = useRef<HTMLDivElement>(null);
+    const headingsMenuRef = useRef<HTMLDivElement>(null);
 
     // Update CSS custom property for split pane position (CSP-compliant)
     useEffect(() => {
@@ -42,8 +51,31 @@ const App: React.FC = () => {
         }
     }, [splitDividerPosition]);
 
+    // Close headings menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent): void => {
+            if (showHeadingsMenu && headingsMenuRef.current && !headingsMenuRef.current.contains(event.target as Node)) {
+                setShowHeadingsMenu(false);
+            }
+        };
+
+        if (showHeadingsMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [showHeadingsMenu]);
+
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
     useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError);
+
+    // Handle heading format with menu close
+    const handleHeadingFormat = useCallback((level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'): void => {
+        handleFormat(level);
+        setShowHeadingsMenu(false);
+    }, [handleFormat]);
 
     // Handle save
     const handleSave = useCallback(async (): Promise<void> => {
@@ -79,15 +111,23 @@ const App: React.FC = () => {
         }
     }, [activeDoc.content, activeDoc.name, activeDoc.filePath, showError]);
 
-    // Handle find
+    // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
-        // Only show find/replace in RAW or SPLIT view
-        if (viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT) {
-            showError('Find & Replace is only available in Raw or Split view', 'info');
-            return;
-        }
         setShowFindReplace(true);
-    }, [viewMode, showError]);
+    }, []);
+
+    // Handle search highlight updates from FindReplace component
+    const handleRenderedHighlight = useCallback((term: string, caseSensitive: boolean, matchIndex: number): void => {
+        setSearchTerm(term);
+        setSearchCaseSensitive(caseSensitive);
+        setSearchCurrentMatch(matchIndex);
+    }, []);
+
+    const handleTextHighlight = useCallback((term: string, caseSensitive: boolean, matchIndex: number): void => {
+        setSearchTerm(term);
+        setSearchCaseSensitive(caseSensitive);
+        setSearchCurrentMatch(matchIndex);
+    }, []);
 
     // Keyboard shortcuts
     useKeyboardShortcuts({
@@ -104,6 +144,8 @@ const App: React.FC = () => {
         onToggleTheme: handleThemeToggle,
         onSave: handleSave,
         onFind: handleFind,
+        onUndo: undo,
+        onRedo: redo,
     });
 
     // Performance: Memoize text statistics
@@ -426,6 +468,91 @@ const App: React.FC = () => {
                     </button>
                     <div className="toolbar-divider" role="separator"></div>
 
+                    <div className="headings-dropdown-wrapper" ref={headingsMenuRef}>
+                        <button
+                            className="icon-btn"
+                            onClick={() => setShowHeadingsMenu(!showHeadingsMenu)}
+                            title="Headings"
+                            aria-label="Insert heading"
+                            aria-expanded={showHeadingsMenu}
+                            aria-haspopup="true"
+                            disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
+                        >
+                            H▾
+                        </button>
+                        {showHeadingsMenu && (
+                            <div className="headings-dropdown-menu" role="menu">
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h1')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h1-preview">Heading 1</span>
+                                </button>
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h2')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h2-preview">Heading 2</span>
+                                </button>
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h3')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h3-preview">Heading 3</span>
+                                </button>
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h4')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h4-preview">Heading 4</span>
+                                </button>
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h5')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h5-preview">Heading 5</span>
+                                </button>
+                                <button
+                                    className="headings-menu-item"
+                                    onClick={() => handleHeadingFormat('h6')}
+                                    role="menuitem"
+                                    tabIndex={0}
+                                >
+                                    <span className="heading-preview h6-preview">Heading 6</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                    <button
+                        className="icon-btn"
+                        onClick={() => handleFormat('code')}
+                        title="Code Block"
+                        aria-label="Insert code block"
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
+                    >
+                        &lt;/&gt;
+                    </button>
+                    <button
+                        className="icon-btn"
+                        onClick={() => handleFormat('quote')}
+                        title="Blockquote"
+                        aria-label="Insert blockquote"
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
+                    >
+                        &ldquo;&rdquo;
+                    </button>
+                    <div className="toolbar-divider" role="separator"></div>
+
                     <button
                         className="icon-btn"
                         onClick={handleCopy}
@@ -447,9 +574,8 @@ const App: React.FC = () => {
                     <button
                         className="icon-btn"
                         onClick={handleFind}
-                        title="Find & Replace (Cmd+F)"
-                        aria-label="Open find and replace"
-                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
+                        title="Find (Cmd+F)"
+                        aria-label="Open find panel"
                     >
                         🔍
                     </button>
@@ -521,20 +647,30 @@ const App: React.FC = () => {
                                 : 'Markdown editor'
                 }
             >
-                {showFindReplace && (viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT) && (
+                {showFindReplace && (
                     <FindReplace
                         content={activeDoc.content}
                         onClose={() => {
                             setShowFindReplace(false);
                             setHighlightedContent(null);
+                            setSearchTerm('');
                         }}
                         onReplace={updateContent}
                         textareaRef={textareaRef}
                         onHighlightedContentChange={setHighlightedContent}
+                        viewMode={viewMode}
+                        onRenderedHighlight={handleRenderedHighlight}
+                        onTextHighlight={handleTextHighlight}
                     />
                 )}
                 {viewMode === VIEW_MODES.RENDERED ? (
-                    <MarkdownPreview content={activeDoc.content} theme={theme} />
+                    <MarkdownPreview
+                        content={activeDoc.content}
+                        theme={theme}
+                        searchTerm={searchTerm}
+                        caseSensitive={searchCaseSensitive}
+                        currentMatchIndex={searchCurrentMatch}
+                    />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
                         ref={textareaRef}
@@ -543,7 +679,12 @@ const App: React.FC = () => {
                         highlightedContent={highlightedContent}
                     />
                 ) : viewMode === VIEW_MODES.TEXT ? (
-                    <TextPreview content={activeDoc.content} />
+                    <TextPreview
+                        content={activeDoc.content}
+                        searchTerm={searchTerm}
+                        caseSensitive={searchCaseSensitive}
+                        currentMatchIndex={searchCurrentMatch}
+                    />
                 ) : (
                     <div ref={splitViewRef} className="split-view">
                         <div className="split-pane split-pane-left">
@@ -560,10 +701,11 @@ const App: React.FC = () => {
                                 e.preventDefault();
                                 const startX = e.clientX;
                                 const startWidth = splitDividerPosition;
+                                // Capture container width at mousedown time (not during mousemove)
+                                const containerWidth = (e.currentTarget as HTMLElement).parentElement?.clientWidth || 1;
 
                                 const handleMouseMove = (moveEvent: MouseEvent): void => {
                                     const deltaX = moveEvent.clientX - startX;
-                                    const containerWidth = (e.currentTarget as HTMLElement).parentElement?.clientWidth || 1;
                                     const deltaPercent = (deltaX / containerWidth) * 100;
                                     const newWidth = Math.min(Math.max(20, startWidth + deltaPercent), 80);
                                     setSplitDividerPosition(newWidth);
@@ -579,7 +721,13 @@ const App: React.FC = () => {
                             }}
                         />
                         <div className="split-pane split-pane-right">
-                            <MarkdownPreview content={activeDoc.content} theme={theme} />
+                            <MarkdownPreview
+                                content={activeDoc.content}
+                                theme={theme}
+                                searchTerm={searchTerm}
+                                caseSensitive={searchCaseSensitive}
+                                currentMatchIndex={searchCurrentMatch}
+                            />
                         </div>
                     </div>
                 )}

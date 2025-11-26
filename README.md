@@ -307,16 +307,30 @@ mdviewer/
 
 ## 🚀 Feature Roadmap
 
-- [ ] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
-- [x] **Synchronized Text Selection**: Bidirectional highlighting between Raw and Rendered views
-- [x] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes, Links
+- [x] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
+- [x] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes
 - [x] **Export to Docx**: Export documents as Microsoft Word format
+- [x] **Undo/Redo**: Custom history system with Cmd+Z/Cmd+Shift+Z shortcuts
 - [ ] **Code Signing**: Sign application for trusted distribution
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
 
 ### [2.8.0] - 2025-11-25
+- **New Feature: Find in Any View**:
+  - Search for text across all view modes: Rendered, Raw, Split, and Text
+  - React-based highlighting in Rendered/Text views (no DOM manipulation)
+  - Maintains match navigation and current match highlighting across all views
+  - Seamless integration with existing Find & Replace panel
+- **New Feature: Custom Undo/Redo History**:
+  - Per-document undo/redo history with Cmd+Z and Cmd+Shift+Z (or Cmd+Y) shortcuts
+  - Debounced history entries (300ms) to group rapid typing into single undo steps
+  - Maximum 100 history entries per document
+  - History cleaned up when tabs are closed
+- **UI Improvements**:
+  - Fixed code block background in light themes (now uses CSS variable)
+  - Improved checkbox contrast across all themes with custom styling
+  - Fixed split view divider dragging (was broken due to stale event reference)
 - **New Feature: Export to Microsoft Word (DOCX)**:
   - Added Word document export capability via the Save As dialog
   - New `.docx` format option appears in file type dropdown alongside Markdown, PDF, and Text

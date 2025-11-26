@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import type { ViewMode } from '../constants/index';
 
 export interface FindReplaceProps {
   content: string;
@@ -6,6 +7,9 @@ export interface FindReplaceProps {
   onReplace: (newContent: string) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   onHighlightedContentChange: (content: React.ReactNode | null) => void;
+  viewMode: ViewMode;
+  onRenderedHighlight?: (searchTerm: string, caseSensitive: boolean, currentMatchIndex: number) => void;
+  onTextHighlight?: (searchTerm: string, caseSensitive: boolean, currentMatchIndex: number) => void;
 }
 
 interface Match {
@@ -18,7 +22,10 @@ const FindReplace: React.FC<FindReplaceProps> = ({
   onClose,
   onReplace,
   textareaRef,
-  onHighlightedContentChange
+  onHighlightedContentChange,
+  viewMode,
+  onRenderedHighlight,
+  onTextHighlight
 }) => {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
@@ -64,42 +71,59 @@ const FindReplace: React.FC<FindReplaceProps> = ({
     setCurrentMatchIndex(foundMatches.length > 0 ? 0 : -1);
   }, [findText, content, caseSensitive]);
 
-  // Generate highlighted content for the CodeEditor
+  // Generate highlighted content for the CodeEditor (Raw and Split views)
   useEffect(() => {
-    if (!findText || matches.length === 0) {
-      onHighlightedContentChange(null);
-      return;
-    }
-
-    // Build highlighted content with <mark> tags
-    const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
-
-    matches.forEach((match, idx) => {
-      // Add text before match
-      if (match.start > lastIndex) {
-        parts.push(content.substring(lastIndex, match.start));
+    if (viewMode === 'raw' || viewMode === 'split') {
+      if (!findText || matches.length === 0) {
+        onHighlightedContentChange(null);
+        return;
       }
 
-      // Add highlighted match
-      const matchText = content.substring(match.start, match.end);
-      const isCurrent = idx === currentMatchIndex;
-      parts.push(
-        <mark key={`match-${idx}`} className={isCurrent ? 'current-match' : ''}>
-          {matchText}
-        </mark>
-      );
+      // Build highlighted content with <mark> tags
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
 
-      lastIndex = match.end;
-    });
+      matches.forEach((match, idx) => {
+        // Add text before match
+        if (match.start > lastIndex) {
+          parts.push(content.substring(lastIndex, match.start));
+        }
 
-    // Add remaining text
-    if (lastIndex < content.length) {
-      parts.push(content.substring(lastIndex));
+        // Add highlighted match
+        const matchText = content.substring(match.start, match.end);
+        const isCurrent = idx === currentMatchIndex;
+        parts.push(
+          <mark key={`match-${idx}`} className={isCurrent ? 'current-match' : ''}>
+            {matchText}
+          </mark>
+        );
+
+        lastIndex = match.end;
+      });
+
+      // Add remaining text
+      if (lastIndex < content.length) {
+        parts.push(content.substring(lastIndex));
+      }
+
+      onHighlightedContentChange(<>{parts}</>);
+    } else {
+      onHighlightedContentChange(null);
     }
+  }, [matches, currentMatchIndex, content, findText, onHighlightedContentChange, viewMode]);
 
-    onHighlightedContentChange(<>{parts}</>);
-  }, [matches, currentMatchIndex, content, findText, onHighlightedContentChange]);
+  // Notify parent components about highlighting needs for Rendered and Text views
+  useEffect(() => {
+    if (viewMode === 'rendered') {
+      if (onRenderedHighlight && findText) {
+        onRenderedHighlight(findText, caseSensitive, currentMatchIndex);
+      }
+    } else if (viewMode === 'text') {
+      if (onTextHighlight && findText) {
+        onTextHighlight(findText, caseSensitive, currentMatchIndex);
+      }
+    }
+  }, [findText, caseSensitive, currentMatchIndex, viewMode, onRenderedHighlight, onTextHighlight]);
 
   // Scroll to current match and sync highlight layer
   useEffect(() => {
@@ -160,6 +184,8 @@ const FindReplace: React.FC<FindReplaceProps> = ({
   };
 
   const handleReplaceCurrent = (): void => {
+    // Only allow replace in Raw and Split views
+    if (viewMode !== 'raw' && viewMode !== 'split') return;
     if (currentMatchIndex < 0 || matches.length === 0 || !textareaRef.current) return;
 
     const match = matches[currentMatchIndex];
@@ -185,6 +211,8 @@ const FindReplace: React.FC<FindReplaceProps> = ({
   };
 
   const handleReplaceAll = (): void => {
+    // Only allow replace in Raw and Split views
+    if (viewMode !== 'raw' && viewMode !== 'split') return;
     if (!findText || matches.length === 0 || !textareaRef.current) return;
 
     const textarea = textareaRef.current;
@@ -334,36 +362,38 @@ const FindReplace: React.FC<FindReplaceProps> = ({
           </div>
         </div>
 
-        <div className="find-replace-row">
-          <input
-            type="text"
-            className="find-replace-input"
-            placeholder="Replace"
-            value={replaceText}
-            onChange={(e) => setReplaceText(e.target.value)}
-            aria-label="Replace text"
-          />
-          <div className="find-replace-buttons">
-            <button
-              className="find-replace-btn"
-              onClick={handleReplaceCurrent}
-              disabled={matches.length === 0}
-              title="Replace current match"
-              aria-label="Replace current match"
-            >
-              Replace
-            </button>
-            <button
-              className="find-replace-btn"
-              onClick={handleReplaceAll}
-              disabled={matches.length === 0}
-              title="Replace all matches"
-              aria-label="Replace all matches"
-            >
-              Replace All
-            </button>
+        {(viewMode === 'raw' || viewMode === 'split') && (
+          <div className="find-replace-row">
+            <input
+              type="text"
+              className="find-replace-input"
+              placeholder="Replace"
+              value={replaceText}
+              onChange={(e) => setReplaceText(e.target.value)}
+              aria-label="Replace text"
+            />
+            <div className="find-replace-buttons">
+              <button
+                className="find-replace-btn"
+                onClick={handleReplaceCurrent}
+                disabled={matches.length === 0}
+                title="Replace current match"
+                aria-label="Replace current match"
+              >
+                Replace
+              </button>
+              <button
+                className="find-replace-btn"
+                onClick={handleReplaceAll}
+                disabled={matches.length === 0}
+                title="Replace all matches"
+                aria-label="Replace all matches"
+              >
+                Replace All
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="find-replace-options">
           <label className="find-replace-checkbox">
