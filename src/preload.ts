@@ -18,6 +18,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('file-new', handler);
     };
   },
+  onFileSave: (callback: () => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent): void => callback();
+    ipcRenderer.on('file-save', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('file-save', handler);
+    };
+  },
   createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
   notifyTabDropped: (dragId: string): Promise<boolean> =>

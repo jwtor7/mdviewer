@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.0-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.4-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -314,6 +314,10 @@ mdviewer/
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.8.4] - 2025-11-26
+- **New Feature: File → Save menu item** with Cmd+S accelerator
+- **Improved Save Dialog**: New/untitled files now default to ~/Documents/ directory
 
 ### [2.8.3] - 2025-11-26
 - **UI Improvements**:

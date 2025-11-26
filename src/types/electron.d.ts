@@ -52,6 +52,7 @@ export type IPCMessage =
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
   onFileNew: (callback: () => void) => () => void;
+  onFileSave: (callback: () => void) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;
   notifyTabDropped: (dragId: string) => Promise<boolean>;
   checkTabDropped: (dragId: string) => Promise<boolean>;

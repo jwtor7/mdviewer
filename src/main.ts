@@ -3,6 +3,7 @@ import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
+import os from 'node:os';
 import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY } from './constants/index.js';
 import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
@@ -229,6 +230,31 @@ const isValidIPCOrigin = (event: IpcMainInvokeEvent): boolean => {
   }
 };
 
+/**
+ * Gets the default directory for save dialogs.
+ * Attempts to use ~/Documents/ if it exists, otherwise falls back to home directory.
+ *
+ * @returns The default directory path
+ */
+const getDefaultSaveDirectory = (): string => {
+  try {
+    const homeDir = os.homedir();
+    const documentsDir = path.join(homeDir, 'Documents');
+
+    // Check if Documents directory exists
+    if (fs.existsSync(documentsDir)) {
+      return documentsDir;
+    }
+
+    // Fall back to home directory
+    return homeDir;
+  } catch (error) {
+    console.error('Error determining default save directory:', error);
+    // Ultimate fallback to current working directory
+    return process.cwd();
+  }
+};
+
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
 if (started) {
@@ -269,6 +295,15 @@ const createMenu = (): void => {
             if (!result.canceled && result.filePaths.length > 0) {
               openFile(result.filePaths[0]);
             }
+          }
+        },
+        { type: 'separator' },
+        {
+          label: 'Save',
+          accelerator: 'CmdOrCtrl+S',
+          click: (): void => {
+            if (!mainWindow || mainWindow.isDestroyed()) return;
+            mainWindow.webContents.send('file-save');
           }
         },
         { type: 'separator' },
@@ -769,10 +804,16 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { success: false, error: 'Window not found' };
     }
 
+    // Determine default path
+    // For new/untitled files (filePath is null), ALWAYS default to ~/Documents/
+    // This overrides macOS's remembered last directory behavior
+    const defaultDir = getDefaultSaveDirectory();
+    const defaultPath = filePath ? filePath : path.join(defaultDir, filename);
+
     // Show save dialog with Markdown, PDF, and TXT options
     const result = await dialog.showSaveDialog(parentWindow, {
       title: 'Save As',
-      defaultPath: filePath || filename,
+      defaultPath: defaultPath,
       filters: [
         { name: 'Markdown Files', extensions: ['md', 'markdown'] },
         { name: 'PDF Files', extensions: ['pdf'] },

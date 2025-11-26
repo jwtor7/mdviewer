@@ -69,7 +69,6 @@ const App: React.FC = () => {
     }, [showHeadingsMenu]);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
-    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError);
 
     // Handle heading format with menu close
     const handleHeadingFormat = useCallback((level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'): void => {
@@ -110,6 +109,9 @@ const App: React.FC = () => {
             showError('Failed to save file');
         }
     }, [activeDoc.content, activeDoc.name, activeDoc.filePath, showError]);
+
+    // Wire up file handlers (open, new, save from menu)
+    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError, handleSave);
 
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {

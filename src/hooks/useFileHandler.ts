@@ -11,7 +11,8 @@ export const useFileHandler = (
   setActiveTabId: (id: string) => void,
   documents: Document[],
   closeTab: (id: string) => void,
-  showError: (message: string) => void
+  showError: (message: string) => void,
+  onSave?: () => void
 ): void => {
   useEffect(() => {
     // Listen for file content from main process
@@ -95,11 +96,17 @@ export const useFileHandler = (
         });
       });
 
+      // Listen for file-save event from main process (File → Save menu)
+      const cleanupFileSave = onSave ? window.electronAPI.onFileSave(() => {
+        onSave();
+      }) : null;
+
       // Cleanup listeners on unmount or dependency change
       return () => {
         cleanupFileOpen();
         cleanupFileNew();
+        if (cleanupFileSave) cleanupFileSave();
       };
     }
-  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError]);
+  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError, onSave]);
 };
