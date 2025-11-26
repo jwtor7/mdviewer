@@ -565,8 +565,8 @@ const App: React.FC = () => {
                     <button
                         className="icon-btn"
                         onClick={handleSave}
-                        title="Save As... (Markdown, PDF, or TXT) (Cmd+S)"
-                        aria-label="Save document as Markdown, PDF, or TXT"
+                        title="Save As... (Markdown, PDF, or Text) (Cmd+S)"
+                        aria-label="Save document as Markdown, PDF, or Text"
                     >
                         💾
                     </button>

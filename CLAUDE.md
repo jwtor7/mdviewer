@@ -288,3 +288,4 @@ npm install
 4. **Restart for main/preload changes**: HMR only works for renderer code
 5. **Use keyboard shortcuts**: `Cmd+O` to open files quickly during testing
 - remember to update the default content with the current roadmap and changelog
+- whenever coding needs to be done in this project, @agent-mdviewer-lead-dev handles the coding task

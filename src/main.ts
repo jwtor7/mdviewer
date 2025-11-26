@@ -8,7 +8,6 @@ import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
-import { convertMarkdownToDocx } from './utils/docxRenderer.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -762,14 +761,13 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { success: false, error: 'Window not found' };
     }
 
-    // Show save dialog with Markdown, PDF, DOCX, and TXT options
+    // Show save dialog with Markdown, PDF, and TXT options
     const result = await dialog.showSaveDialog(parentWindow, {
       title: 'Save As',
       defaultPath: filePath || filename,
       filters: [
         { name: 'Markdown Files', extensions: ['md', 'markdown'] },
         { name: 'PDF Files', extensions: ['pdf'] },
-        { name: 'Word Documents', extensions: ['docx'] },
         { name: 'Text Files', extensions: ['txt'] },
         { name: 'All Files', extensions: ['*'] }
       ]
@@ -824,16 +822,6 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       } catch (pdfErr) {
         console.error('PDF export error:', pdfErr);
         return { success: false, error: 'Failed to export PDF' };
-      }
-    } else if (ext === '.docx') {
-      // Export as DOCX using docx library
-      try {
-        const docxBuffer = await convertMarkdownToDocx(content);
-        await fsPromises.writeFile(result.filePath, docxBuffer);
-        return { success: true, filePath: result.filePath };
-      } catch (docxErr) {
-        console.error('DOCX export error:', docxErr);
-        return { success: false, error: 'Failed to export Word document' };
       }
     } else if (ext === '.txt') {
       // Save as plain text (convert markdown to text)

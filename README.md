@@ -56,7 +56,7 @@
 - **Quick Formatting Buttons**: Bold, Italic, and List formatting
 - **Find & Replace**: Powerful search with case-sensitive option, match navigation, and bulk replace
 - **Rich Text Copy**: Copy rendered HTML or raw Markdown to clipboard
-- **Save As**: Save documents as Markdown (.md), PDF (.pdf), Word (.docx), or Text (.txt) with unified file picker dialog
+- **Save As**: Save documents as Markdown (.md), PDF (.pdf), or Text (.txt) with unified file picker dialog
 - **Keyboard Shortcuts**: Efficient text editing with familiar shortcuts
 - **Selection Preservation**: Smart cursor positioning after formatting
 
@@ -309,12 +309,16 @@ mdviewer/
 
 - [x] **Find in Any View**: Search for text across all view modes (Rendered, Raw, Split, Text)
 - [x] **Advanced Formatting Toolbar**: Headings, Code Blocks, Quotes
-- [x] **Export to Docx**: Export documents as Microsoft Word format
 - [x] **Undo/Redo**: Custom history system with Cmd+Z/Cmd+Shift+Z shortcuts
 - [ ] **Code Signing**: Sign application for trusted distribution
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.8.1] - 2025-11-25
+- **Removed**: DOCX export feature removed to simplify codebase
+  - Save dialog now offers Markdown, PDF, and Text formats only
+  - Removed `docx` dependency (~170 transitive dependencies)
 
 ### [2.8.0] - 2025-11-25
 - **New Feature: Find in Any View**:
@@ -331,36 +335,6 @@ mdviewer/
   - Fixed code block background in light themes (now uses CSS variable)
   - Improved checkbox contrast across all themes with custom styling
   - Fixed split view divider dragging (was broken due to stale event reference)
-- **New Feature: Export to Microsoft Word (DOCX)**:
-  - Added Word document export capability via the Save As dialog
-  - New `.docx` format option appears in file type dropdown alongside Markdown, PDF, and Text
-  - Comprehensive markdown-to-Word conversion supporting:
-    - **Headings**: All 6 heading levels (H1-H6) with proper Word heading styles
-    - **Text Formatting**: Bold, italic, and combined formatting preserved
-    - **Lists**: Both ordered and unordered lists with proper indentation
-    - **Code Blocks**: Monospace font with syntax language labels and gray background
-    - **Inline Code**: Courier New font with monospace styling
-    - **Tables**: Full table support with borders and proper cell formatting
-    - **Blockquotes**: Indented with left border and italic styling
-    - **Links**: Displayed as text with URL in parentheses
-    - **Horizontal Rules**: Rendered as centered line separators
-  - Implementation details:
-    - Created new `docxRenderer.ts` utility using the `docx` npm package
-    - Parses markdown via unified/remark AST (same pipeline as PDF rendering)
-    - Converts AST nodes to native Word document elements (Paragraph, Table, TextRun)
-    - Generates valid `.docx` files that open correctly in Microsoft Word, Pages, Google Docs
-    - Proper page margins (1 inch all sides) and professional formatting
-  - Integration:
-    - Updated `main.ts` save-file IPC handler to detect `.docx` extension
-    - Added to file filters in save dialog: "Word Documents (.docx)"
-    - Follows same security validation as PDF/TXT exports (size limits, rate limiting)
-  - Dependencies:
-    - Added `docx@^9.5.1` package for Word document generation
-    - Zero breaking changes to existing save functionality
-  - User Experience:
-    - Same Save As dialog workflow as PDF/TXT exports
-    - Success/error notifications via existing error handler
-    - No additional UI changes required - seamlessly integrated
 
 ### [2.7.13] - 2025-11-25
 - **New Feature: Advanced Formatting Toolbar**:
