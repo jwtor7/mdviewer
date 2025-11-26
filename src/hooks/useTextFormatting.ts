@@ -1,7 +1,7 @@
 import type { RefObject } from 'react';
 import { CALCULATIONS, VIEW_MODES, type ViewMode } from '../constants/index.js';
 
-type FormatType = 'bold' | 'italic' | 'list' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'code' | 'quote';
+type FormatType = 'bold' | 'italic' | 'list' | 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'code' | 'quote' | 'hr';
 
 export interface UseTextFormattingReturn {
   handleFormat: (type: FormatType) => void;
@@ -97,6 +97,12 @@ export const useTextFormatting = (
           newText = '> ';
           cursorOffset = newText.length;
         }
+        break;
+      }
+      case 'hr': {
+        // For horizontal rule, insert --- on its own line with spacing
+        newText = '\n\n---\n\n';
+        cursorOffset = newText.length;
         break;
       }
       default:

@@ -315,6 +315,12 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.8.3] - 2025-11-26
+- **UI Improvements**:
+  - Added horizontal rule button (―) to formatting toolbar
+  - Removed "Markdown Viewer" title from toolbar for cleaner look
+  - Right-aligned view mode buttons (Rendered/Raw/Split/Text) on toolbar
+
 ### [2.8.2] - 2025-11-26
 - **New Feature: File → New (Cmd+N)**:
   - Added "New" menu item to create empty document tabs

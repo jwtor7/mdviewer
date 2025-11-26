@@ -358,6 +358,10 @@ body {
   -webkit-app-region: no-drag;
 }
 
+.toolbar-group-right {
+  margin-left: auto;
+}
+
 .toolbar-title {
   font-weight: bold;
   font-size: 14px;

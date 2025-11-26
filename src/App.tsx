@@ -453,10 +453,6 @@ const App: React.FC = () => {
             </div>
             <div className="toolbar">
                 <div className="toolbar-group">
-                    <div className="toolbar-title">Markdown Viewer</div>
-                </div>
-
-                <div className="toolbar-group">
                     <button
                         className="icon-btn"
                         onClick={() => handleFormat('bold')}
@@ -569,6 +565,15 @@ const App: React.FC = () => {
                     >
                         &ldquo;&rdquo;
                     </button>
+                    <button
+                        className="icon-btn"
+                        onClick={() => handleFormat('hr')}
+                        title="Horizontal Rule"
+                        aria-label="Insert horizontal rule"
+                        disabled={viewMode === VIEW_MODES.RENDERED || viewMode === VIEW_MODES.TEXT}
+                    >
+                        ―
+                    </button>
                     <div className="toolbar-divider" role="separator"></div>
 
                     <button
@@ -606,7 +611,9 @@ const App: React.FC = () => {
                     >
                         {getThemeIcon()}
                     </button>
+                </div>
 
+                <div className="toolbar-group toolbar-group-right">
                     <div className="toggle-container" role="tablist" aria-label="View mode">
                         <button
                             className={`toggle-btn ${viewMode === VIEW_MODES.RENDERED ? 'active' : ''}`}
