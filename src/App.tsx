@@ -100,6 +100,15 @@ const App: React.FC = () => {
                     message = 'Text file saved successfully!';
                 }
                 showError(message, 'info');
+
+                // Update document with new filepath and filename
+                if (result.filePath) {
+                    const filename = result.filePath.split('/').pop() || 'Untitled';
+                    updateExistingDocument(activeDoc.id, {
+                        filePath: result.filePath,
+                        name: filename
+                    });
+                }
             } else {
                 if (result.error !== 'Cancelled') {
                     showError(result.error || 'Failed to save file');
@@ -108,7 +117,7 @@ const App: React.FC = () => {
         } catch (err) {
             showError('Failed to save file');
         }
-    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, showError]);
+    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument]);
 
     // Wire up file handlers (open, new, save from menu)
     useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError, handleSave);
