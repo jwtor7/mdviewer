@@ -168,9 +168,10 @@ Uses React 19.2.0 with modern hooks (useState, useEffect, useRef, forwardRef).
 - **Strict Mode**: TypeScript strict mode is enabled for maximum type safety
 
 ### Documentation
-- **Changelog Location**: The project changelog is in README.md (NOT in a separate CHANGELOG.md file)
-- **Version History**: See README.md starting at line ~307 for complete changelog
-- **Project Overview**: README.md contains comprehensive feature documentation
+- **README.md**: Condensed overview (~215 lines) with 5 most recent changelog versions
+- **CHANGELOG.md**: Full verbose version history
+- **SECURITY.md**: Security details with CVEs (gitignored)
+- See [Documentation Pattern](#documentation-pattern) section for full details
 
 ## Testing & Development Workflow
 

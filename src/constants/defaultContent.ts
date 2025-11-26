@@ -27,7 +27,7 @@ const extractSection = (content: string, startMarker: string, endMarker?: string
 };
 
 // Extract sections from README and CHANGELOG
-const roadmap = extractSection(readmeRaw, '## 🚀 Feature Roadmap', '## 📝 Changelog');
+const roadmap = extractSection(readmeRaw, '## Feature Roadmap', '## Changelog');
 const changelog = extractSection(changelogRaw, '# Changelog', undefined);
 
 export const DEFAULT_CONTENT = `# mdviewer Test Document
