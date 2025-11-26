@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.7-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.8-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -316,8 +316,11 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.8.8] - 2025-11-26
+- **Bug Fix**: Tooltips no longer get cut off at window edges (right-aligned toolbar buttons)
+
 ### [2.8.7] - 2025-11-26
-- **Documentation**: Updated feature roadmap with completed features and code signing phases
+- **Documentation**: Updated feature roadmap with code signing phases
 
 ### [2.8.6] - 2025-11-26
 - **New Feature: Unsaved changes prompts** when closing tabs or quitting with modified documents

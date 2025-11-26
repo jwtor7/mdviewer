@@ -964,6 +964,17 @@ body {
   display: none;
 }
 
+/* Fix tooltip cutoff for buttons in right toolbar group */
+.toolbar-group-right .toggle-btn::after {
+  left: auto;
+  right: 0;
+  transform: translateX(0) translateY(-8px);
+}
+
+.toolbar-group-right .toggle-btn:hover::after {
+  transform: translateX(0) translateY(-4px);
+}
+
 /* Split View Styles */
 .split-view {
   --split-position: 50%;  /* default value, updated via JS */
