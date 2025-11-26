@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.4-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.5-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -314,6 +314,11 @@ mdviewer/
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.8.5] - 2025-11-26
+- **New Feature: Recent Files menu** (File → Open Recent) with last 10 files and Clear Recent option
+- **New files default to Raw view** for immediate editing
+- **Bug Fix**: Tab name now updates after saving an untitled document
 
 ### [2.8.4] - 2025-11-26
 - **New Feature: File → Save menu item** with Cmd+S accelerator

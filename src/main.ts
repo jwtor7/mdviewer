@@ -265,7 +265,126 @@ let mainWindow: BrowserWindow | null = null;
 let pendingFileToOpen: string | null = null;
 let openWindowCount = 0; // Track number of open windows for security limits
 
+// Recent files management
+const MAX_RECENT_FILES = 10;
+let recentFiles: string[] = [];
+
+/**
+ * Gets the path to the recent files storage JSON file.
+ * Stored in the app's userData directory for persistence across sessions.
+ */
+const getRecentFilesPath = (): string => {
+  return path.join(app.getPath('userData'), 'recent-files.json');
+};
+
+/**
+ * Loads recent files list from persistent storage.
+ */
+const loadRecentFiles = (): void => {
+  try {
+    const recentFilesPath = getRecentFilesPath();
+    if (fs.existsSync(recentFilesPath)) {
+      const data = fs.readFileSync(recentFilesPath, 'utf-8');
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed)) {
+        recentFiles = parsed.filter((file): file is string => typeof file === 'string');
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load recent files:', error);
+    recentFiles = [];
+  }
+};
+
+/**
+ * Saves recent files list to persistent storage.
+ */
+const saveRecentFiles = (): void => {
+  try {
+    const recentFilesPath = getRecentFilesPath();
+    fs.writeFileSync(recentFilesPath, JSON.stringify(recentFiles, null, 2), 'utf-8');
+  } catch (error) {
+    console.error('Failed to save recent files:', error);
+  }
+};
+
+/**
+ * Adds a file to the recent files list.
+ * Removes duplicates and maintains max size of 10 files.
+ *
+ * @param filePath - The file path to add to recent files
+ */
+const addRecentFile = (filePath: string): void => {
+  // Remove if already exists (to move it to front)
+  recentFiles = recentFiles.filter(f => f !== filePath);
+
+  // Add to front
+  recentFiles.unshift(filePath);
+
+  // Limit to MAX_RECENT_FILES
+  if (recentFiles.length > MAX_RECENT_FILES) {
+    recentFiles = recentFiles.slice(0, MAX_RECENT_FILES);
+  }
+
+  // Persist changes
+  saveRecentFiles();
+
+  // Rebuild menu to reflect changes
+  createMenu();
+};
+
+/**
+ * Clears all recent files.
+ */
+const clearRecentFiles = (): void => {
+  recentFiles = [];
+  saveRecentFiles();
+  createMenu();
+};
+
 const createMenu = (): void => {
+  // Build recent files submenu items
+  const recentFilesSubmenu: MenuItemConstructorOptions[] = [];
+
+  // Filter out non-existent files and build menu items
+  const existingRecentFiles = recentFiles.filter(filePath => {
+    try {
+      return fs.existsSync(filePath);
+    } catch {
+      return false;
+    }
+  });
+
+  // Update recent files list if any were removed
+  if (existingRecentFiles.length !== recentFiles.length) {
+    recentFiles = existingRecentFiles;
+    saveRecentFiles();
+  }
+
+  // Add menu items for each recent file
+  if (existingRecentFiles.length > 0) {
+    existingRecentFiles.forEach((filePath) => {
+      recentFilesSubmenu.push({
+        label: path.basename(filePath),
+        click: (): void => {
+          openFile(filePath);
+        }
+      });
+    });
+
+    // Add separator before "Clear Recent"
+    recentFilesSubmenu.push({ type: 'separator' });
+  }
+
+  // Add "Clear Recent" option
+  recentFilesSubmenu.push({
+    label: 'Clear Recent',
+    enabled: existingRecentFiles.length > 0,
+    click: (): void => {
+      clearRecentFiles();
+    }
+  });
+
   const template: MenuItemConstructorOptions[] = [
     {
       label: 'File',
@@ -296,6 +415,10 @@ const createMenu = (): void => {
               openFile(result.filePaths[0]);
             }
           }
+        },
+        {
+          label: 'Open Recent',
+          submenu: recentFilesSubmenu
         },
         { type: 'separator' },
         {
@@ -448,6 +571,9 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
         name: path.basename(filepath)
       };
       targetWindow.webContents.send('file-open', fileData);
+
+      // Add to recent files list
+      addRecentFile(filepath);
     }
   } catch (err) {
     const error = err as NodeJS.ErrnoException;
@@ -885,6 +1011,12 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
     } else {
       // Save as Markdown (default)
       await fsPromises.writeFile(result.filePath, content, 'utf-8');
+
+      // Add to recent files if it's a markdown file
+      if (ext === '.md' || ext === '.markdown') {
+        addRecentFile(result.filePath);
+      }
+
       return { success: true, filePath: result.filePath };
     }
   } catch (err) {
@@ -989,6 +1121,9 @@ app.whenReady().then(() => {
       return { action: 'deny' };
     });
   });
+
+  // Load recent files from persistent storage
+  loadRecentFiles();
 
   createMenu();
   mainWindow = createWindow();

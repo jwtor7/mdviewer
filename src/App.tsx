@@ -120,7 +120,17 @@ const App: React.FC = () => {
     }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument]);
 
     // Wire up file handlers (open, new, save from menu)
-    useFileHandler(addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeDocument, showError, handleSave);
+    useFileHandler(
+        addDocument,
+        updateExistingDocument,
+        findDocumentByPath,
+        setActiveTabId,
+        documents,
+        closeDocument,
+        showError,
+        handleSave,
+        () => setViewMode(VIEW_MODES.RAW) // Switch to Raw view when File → New is triggered
+    );
 
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
@@ -147,6 +157,8 @@ const App: React.FC = () => {
             content: '',
             filePath: null,
         });
+        // Switch to Raw view for new empty documents
+        setViewMode(VIEW_MODES.RAW);
     }, [addDocument]);
 
     // Keyboard shortcuts

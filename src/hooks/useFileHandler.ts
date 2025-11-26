@@ -12,7 +12,8 @@ export const useFileHandler = (
   documents: Document[],
   closeTab: (id: string) => void,
   showError: (message: string) => void,
-  onSave?: () => void
+  onSave?: () => void,
+  onNewFile?: () => void
 ): void => {
   useEffect(() => {
     // Listen for file content from main process
@@ -94,6 +95,11 @@ export const useFileHandler = (
           content: '',
           filePath: null,
         });
+
+        // Switch to Raw view when creating new document
+        if (onNewFile) {
+          onNewFile();
+        }
       });
 
       // Listen for file-save event from main process (File → Save menu)
@@ -108,5 +114,5 @@ export const useFileHandler = (
         if (cleanupFileSave) cleanupFileSave();
       };
     }
-  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError, onSave]);
+  }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError, onSave, onNewFile]);
 };
