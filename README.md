@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.5-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.6-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -314,6 +314,10 @@ mdviewer/
 - [ ] **App Store Distribution**: Package for Apple App Store
 
 ## 📝 Changelog
+
+### [2.8.6] - 2025-11-26
+- **New Feature: Unsaved changes prompts** when closing tabs or quitting with modified documents
+- **Dialog options**: Save, Don't Save, Cancel for individual tabs; Save All for app quit
 
 ### [2.8.5] - 2025-11-26
 - **New Feature: Recent Files menu** (File → Open Recent) with last 10 files and Clear Recent option

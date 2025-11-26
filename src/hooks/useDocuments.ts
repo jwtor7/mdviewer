@@ -28,6 +28,7 @@ export interface UseDocumentsReturn {
   updateExistingDocument: (id: string, updates: DocumentUpdate) => void;
   findDocumentByPath: (filePath: string) => Document | undefined;
   closeTab: (id: string) => void;
+  markDocumentSaved: (id: string) => void;
   undo: () => void;
   redo: () => void;
   canUndo: boolean;
@@ -76,9 +77,15 @@ export const useDocuments = (): UseDocumentsReturn => {
       lastUpdateRef.current.set(activeTabId, now);
     }
 
-    setDocuments(prev => prev.map(doc =>
-      doc.id === activeTabId ? { ...doc, content: newContent } : doc
-    ));
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === activeTabId) {
+        // Mark as dirty if content changed from last saved state
+        const lastSaved = doc.lastSavedContent ?? doc.content;
+        const isDirty = newContent !== lastSaved;
+        return { ...doc, content: newContent, dirty: isDirty };
+      }
+      return doc;
+    }));
   }, [activeTabId, documents, getHistory]);
 
   const addDocument = useCallback((doc: Partial<Document>): string => {
@@ -102,6 +109,15 @@ export const useDocuments = (): UseDocumentsReturn => {
   const findDocumentByPath = useCallback((filePath: string): Document | undefined => {
     return documents.find(d => d.filePath === filePath);
   }, [documents]);
+
+  const markDocumentSaved = useCallback((id: string): void => {
+    setDocuments(prev => prev.map(doc => {
+      if (doc.id === id) {
+        return { ...doc, dirty: false, lastSavedContent: doc.content };
+      }
+      return doc;
+    }));
+  }, []);
 
   const closeTab = useCallback((id: string): void => {
     setDocuments(prev => {
@@ -192,6 +208,7 @@ export const useDocuments = (): UseDocumentsReturn => {
     updateExistingDocument,
     findDocumentByPath,
     closeTab,
+    markDocumentSaved,
     undo,
     redo,
     canUndo,
