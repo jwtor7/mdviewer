@@ -280,16 +280,24 @@ const getRecentFilesPath = (): string => {
 
 /**
  * Loads recent files list from persistent storage.
+ * Uses async file operations to avoid blocking the main thread (LOW PRIORITY fix).
  */
-const loadRecentFiles = (): void => {
+const loadRecentFiles = async (): Promise<void> => {
   try {
     const recentFilesPath = getRecentFilesPath();
-    if (fs.existsSync(recentFilesPath)) {
-      const data = fs.readFileSync(recentFilesPath, 'utf-8');
-      const parsed = JSON.parse(data);
-      if (Array.isArray(parsed)) {
-        recentFiles = parsed.filter((file): file is string => typeof file === 'string');
-      }
+    // Check if file exists before reading
+    try {
+      await fsPromises.access(recentFilesPath);
+    } catch {
+      // File doesn't exist, use empty array
+      recentFiles = [];
+      return;
+    }
+
+    const data = await fsPromises.readFile(recentFilesPath, 'utf-8');
+    const parsed = JSON.parse(data);
+    if (Array.isArray(parsed)) {
+      recentFiles = parsed.filter((file): file is string => typeof file === 'string');
     }
   } catch (error) {
     console.error('Failed to load recent files:', error);
@@ -299,14 +307,24 @@ const loadRecentFiles = (): void => {
 
 /**
  * Saves recent files list to persistent storage.
+ * Uses async file operations with debouncing to avoid blocking the main thread (LOW PRIORITY fix).
  */
+let saveRecentFilesTimeout: NodeJS.Timeout | null = null;
+
 const saveRecentFiles = (): void => {
-  try {
-    const recentFilesPath = getRecentFilesPath();
-    fs.writeFileSync(recentFilesPath, JSON.stringify(recentFiles, null, 2), 'utf-8');
-  } catch (error) {
-    console.error('Failed to save recent files:', error);
+  // Debounce saves to avoid excessive disk writes
+  if (saveRecentFilesTimeout) {
+    clearTimeout(saveRecentFilesTimeout);
   }
+
+  saveRecentFilesTimeout = setTimeout(async () => {
+    try {
+      const recentFilesPath = getRecentFilesPath();
+      await fsPromises.writeFile(recentFilesPath, JSON.stringify(recentFiles, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('Failed to save recent files:', error);
+    }
+  }, 500); // 500ms debounce
 };
 
 /**
@@ -495,19 +513,17 @@ const createWindow = (initialFile: string | null = null): BrowserWindow => {
 
   // Handle window close event to check for unsaved changes
   win.on('close', async (e) => {
-    // Ask renderer for unsaved documents
+    // Security: Use proper IPC instead of executeJavaScript (LOW PRIORITY fix)
     try {
-      const unsavedDocs = await win.webContents.executeJavaScript(`
-        (function() {
-          if (window.electronAPI && window.electronAPI.getUnsavedDocuments) {
-            // Access React app state via a global we'll set up
-            if (window.__APP_GET_UNSAVED_DOCS__) {
-              return window.__APP_GET_UNSAVED_DOCS__();
-            }
-          }
-          return [];
-        })()
-      `);
+      // Request unsaved documents list from renderer via IPC
+      const unsavedDocs = await new Promise<string[]>((resolve) => {
+        const timeout = setTimeout(() => resolve([]), 1000);
+        ipcMain.once('unsaved-docs-response', (_event, docs) => {
+          clearTimeout(timeout);
+          resolve(Array.isArray(docs) ? docs : []);
+        });
+        win.webContents.send('request-unsaved-docs');
+      });
 
       if (unsavedDocs && unsavedDocs.length > 0) {
         e.preventDefault(); // Prevent close for now
@@ -906,32 +922,37 @@ ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): P
       },
     });
 
-    // Generate HTML with inline CSS for PDF rendering
-    const htmlContent = await generatePDFHTML(content);
+    try {
+      // Generate HTML with inline CSS for PDF rendering
+      const htmlContent = await generatePDFHTML(content);
 
-    await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+      await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
 
-    // Wait for page to finish loading
-    await new Promise(resolve => setTimeout(resolve, 1000));
+      // Wait for page to finish loading
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
-    // Generate PDF
-    const pdfData = await pdfWindow.webContents.printToPDF({
-      printBackground: true,
-      margins: {
-        top: 0.5,
-        bottom: 0.5,
-        left: 0.5,
-        right: 0.5,
-      },
-    });
+      // Generate PDF
+      const pdfData = await pdfWindow.webContents.printToPDF({
+        printBackground: true,
+        margins: {
+          top: 0.5,
+          bottom: 0.5,
+          left: 0.5,
+          right: 0.5,
+        },
+      });
 
-    // Save to file
-    await fsPromises.writeFile(result.filePath, pdfData);
+      // Save to file
+      await fsPromises.writeFile(result.filePath, pdfData);
 
-    // Clean up
-    pdfWindow.close();
-
-    return { success: true, filePath: result.filePath };
+      return { success: true, filePath: result.filePath };
+    } catch (err) {
+      console.error('PDF export error:', err);
+      return { success: false, error: 'Failed to export PDF' };
+    } finally {
+      // Security: Guaranteed cleanup to prevent memory leak (MEDIUM PRIORITY fix)
+      pdfWindow.destroy();
+    }
   } catch (err) {
     console.error('PDF export error:', err);
     return { success: false, error: 'Failed to export PDF' };
@@ -1006,17 +1027,17 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
 
     if (ext === '.pdf') {
       // Export as PDF using existing PDF generation logic
-      try {
-        // Create a temporary hidden window to render the content
-        const pdfWindow = new BrowserWindow({
-          show: false,
-          webPreferences: {
-            contextIsolation: true,
-            nodeIntegration: false,
-            sandbox: true,
-          },
-        });
+      // Create a temporary hidden window to render the content
+      const pdfWindow = new BrowserWindow({
+        show: false,
+        webPreferences: {
+          contextIsolation: true,
+          nodeIntegration: false,
+          sandbox: true,
+        },
+      });
 
+      try {
         // Generate HTML with inline CSS for PDF rendering
         const htmlContent = await generatePDFHTML(content);
 
@@ -1039,13 +1060,13 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
         // Save to file
         await fsPromises.writeFile(result.filePath, pdfData);
 
-        // Clean up
-        pdfWindow.close();
-
         return { success: true, filePath: result.filePath };
       } catch (pdfErr) {
         console.error('PDF export error:', pdfErr);
         return { success: false, error: 'Failed to export PDF' };
+      } finally {
+        // Security: Guaranteed cleanup to prevent memory leak (MEDIUM PRIORITY fix)
+        pdfWindow.destroy();
       }
     } else if (ext === '.txt') {
       // Save as plain text (convert markdown to text)
@@ -1181,17 +1202,6 @@ ipcMain.handle('show-unsaved-dialog', async (event: IpcMainInvokeEvent, data: un
   }
 });
 
-ipcMain.handle('get-unsaved-documents', (event: IpcMainInvokeEvent): string[] => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected get-unsaved-documents from invalid origin');
-    return [];
-  }
-
-  // This will be implemented in the renderer - this handler just needs to exist
-  // The renderer will send back the list via a different mechanism
-  return [];
-});
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon
@@ -1213,7 +1223,7 @@ app.on('open-file', (event: Electron.Event, filePath: string) => {
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   // Security: Add runtime protection for web contents
   app.on('web-contents-created', (_event, contents) => {
     // Security: Prevent navigation to external URLs
@@ -1234,7 +1244,7 @@ app.whenReady().then(() => {
   });
 
   // Load recent files from persistent storage
-  loadRecentFiles();
+  await loadRecentFiles();
 
   createMenu();
   mainWindow = createWindow();

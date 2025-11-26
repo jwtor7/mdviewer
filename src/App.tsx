@@ -123,15 +123,13 @@ const App: React.FC = () => {
         }
     }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument, markDocumentSaved]);
 
-    // Expose function to get unsaved documents for window close handling
+    // Security: Use proper IPC to respond to unsaved documents requests (LOW PRIORITY fix)
     useEffect(() => {
-        (window as typeof window & { __APP_GET_UNSAVED_DOCS__?: () => string[] }).__APP_GET_UNSAVED_DOCS__ = () => {
+        const cleanup = window.electronAPI?.onRequestUnsavedDocs?.(() => {
             return documents.filter(d => d.dirty).map(d => d.name);
-        };
+        });
 
-        return () => {
-            delete (window as typeof window & { __APP_GET_UNSAVED_DOCS__?: () => string[] }).__APP_GET_UNSAVED_DOCS__;
-        };
+        return () => cleanup?.();
     }, [documents]);
 
     // Handle save-all-and-quit event from main process

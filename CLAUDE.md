@@ -289,3 +289,32 @@ npm install
 5. **Use keyboard shortcuts**: `Cmd+O` to open files quickly during testing
 - remember to update the default content with the current roadmap and changelog
 - whenever coding needs to be done in this project, @agent-mdviewer-lead-dev handles the coding task
+
+## Documentation Pattern
+
+mdviewer uses a structured approach to documentation that separates concise reference information from detailed history:
+
+- **README.md**: Minimal changelog (5 most recent versions, feature names only, few words)
+  - Target: ~309 lines or less
+  - Changelog entries use generic descriptions like "Security enhancements" or "Bug fixes" for security items
+  - Links to CHANGELOG.md for full history
+
+- **CHANGELOG.md**: Verbose full history (tracked in version control)
+  - Contains complete version history with detailed descriptions
+  - All changelog entries from project start to present
+  - Standard changelog format following Keep a Changelog conventions
+
+- **SECURITY.md**: Security details with CVEs (gitignored, not committed)
+  - Extracted security-related entries from changelog
+  - Includes CVE references, vulnerability details, CVSS scores
+  - Detailed fix descriptions and impact assessments
+  - This file contains sensitive security information and is never committed
+
+### Updating Documentation
+
+When adding new features or fixes:
+
+1. Add detailed entry to CHANGELOG.md
+2. If it's one of the 5 most recent versions, update README.md with minimal description
+3. If security-related, add detailed entry to SECURITY.md (not committed)
+4. Default content in `src/constants/defaultContent.ts` imports from CHANGELOG.md for test document

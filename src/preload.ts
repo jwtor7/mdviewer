@@ -34,6 +34,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('save-all-and-quit', handler);
     };
   },
+  onRequestUnsavedDocs: (callback: () => string[]): (() => void) => {
+    const handler = (_event: IpcRendererEvent): void => {
+      const docs = callback();
+      ipcRenderer.send('unsaved-docs-response', docs);
+    };
+    ipcRenderer.on('request-unsaved-docs', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('request-unsaved-docs', handler);
+    };
+  },
   createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
   notifyTabDropped: (dragId: string): Promise<boolean> =>

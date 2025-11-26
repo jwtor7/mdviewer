@@ -5,6 +5,7 @@
  */
 
 import readmeRaw from '../../README.md?raw';
+import changelogRaw from '../../CHANGELOG.md?raw';
 
 /**
  * Helper to extract a section from markdown content
@@ -25,9 +26,9 @@ const extractSection = (content: string, startMarker: string, endMarker?: string
   return contentFromStart.trim();
 };
 
-// Extract sections from README
+// Extract sections from README and CHANGELOG
 const roadmap = extractSection(readmeRaw, '## 🚀 Feature Roadmap', '## 📝 Changelog');
-const changelog = extractSection(readmeRaw, '## 📝 Changelog', '## 🤝🏽 Contributing');
+const changelog = extractSection(changelogRaw, '# Changelog', undefined);
 
 export const DEFAULT_CONTENT = `# mdviewer Test Document
 
