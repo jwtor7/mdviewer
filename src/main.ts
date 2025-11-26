@@ -245,6 +245,14 @@ const createMenu = (): void => {
       label: 'File',
       submenu: [
         {
+          label: 'New',
+          accelerator: 'CmdOrCtrl+N',
+          click: (): void => {
+            if (!mainWindow || mainWindow.isDestroyed()) return;
+            mainWindow.webContents.send('file-new');
+          }
+        },
+        {
           label: 'Open...',
           accelerator: 'CmdOrCtrl+O',
           click: async (): Promise<void> => {

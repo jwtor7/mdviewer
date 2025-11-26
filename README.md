@@ -315,6 +315,16 @@ mdviewer/
 
 ## 📝 Changelog
 
+### [2.8.2] - 2025-11-26
+- **New Feature: File → New (Cmd+N)**:
+  - Added "New" menu item to create empty document tabs
+  - Added "+" button next to tabs for quick new document creation
+  - Smart naming: "Untitled", "Untitled 2", "Untitled 3", etc.
+- **Bug Fixes**:
+  - Fixed tab close buttons not working (stale closure in useDocuments)
+  - Fixed tab reintegration for unsaved documents
+  - Fixed editing in spawned windows (document ID mismatch)
+
 ### [2.8.1] - 2025-11-25
 - **Removed**: DOCX export feature removed to simplify codebase
   - Save dialog now offers Markdown, PDF, and Text formats only

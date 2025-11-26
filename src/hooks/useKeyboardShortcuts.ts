@@ -9,6 +9,7 @@ export interface UseKeyboardShortcutsProps {
   onFind?: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
+  onNew?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -20,6 +21,7 @@ export const useKeyboardShortcuts = ({
   onFind,
   onUndo,
   onRedo,
+  onNew,
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -70,9 +72,14 @@ export const useKeyboardShortcuts = ({
         e.preventDefault();
         onRedo();
       }
+      // Cmd/Ctrl + N: New document
+      if (isMod && e.key === 'n' && onNew) {
+        e.preventDefault();
+        onNew();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind, onUndo, onRedo]);
+  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind, onUndo, onRedo, onNew]);
 };

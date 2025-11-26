@@ -803,6 +803,36 @@ body {
   opacity: 1;
 }
 
+.new-tab-btn {
+  padding: 5px 12px;
+  background-color: var(--toolbar-border);
+  color: var(--text-color);
+  border: none;
+  border-radius: 5px 5px 0 0;
+  margin-left: 5px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: all 0.2s;
+  -webkit-app-region: no-drag;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 30px;
+  height: 28px;
+}
+
+.new-tab-btn:hover {
+  opacity: 1;
+  background-color: var(--btn-hover);
+}
+
+.new-tab-btn:active {
+  background-color: var(--btn-active);
+}
+
 .error-container {
   position: fixed;
   top: 20px;

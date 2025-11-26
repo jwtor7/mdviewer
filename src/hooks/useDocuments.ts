@@ -81,7 +81,7 @@ export const useDocuments = (): UseDocumentsReturn => {
     ));
   }, [activeTabId, documents, getHistory]);
 
-  const addDocument = (doc: Partial<Document>): string => {
+  const addDocument = useCallback((doc: Partial<Document>): string => {
     const newDoc: Document = {
       id: doc.id || Date.now().toString(),
       name: doc.name || 'Untitled',
@@ -91,40 +91,44 @@ export const useDocuments = (): UseDocumentsReturn => {
     setDocuments(prev => [...prev, newDoc]);
     setActiveTabId(newDoc.id);
     return newDoc.id;
-  };
+  }, []);
 
-  const updateExistingDocument = (id: string, updates: DocumentUpdate): void => {
+  const updateExistingDocument = useCallback((id: string, updates: DocumentUpdate): void => {
     setDocuments(prev => prev.map(doc =>
       doc.id === id ? { ...doc, ...updates } : doc
     ));
-  };
+  }, []);
 
-  const findDocumentByPath = (filePath: string): Document | undefined => {
+  const findDocumentByPath = useCallback((filePath: string): Document | undefined => {
     return documents.find(d => d.filePath === filePath);
-  };
+  }, [documents]);
 
-  const closeTab = (id: string): void => {
-    // Calculate new state outside of setters
-    const newDocs = documents.filter(d => d.id !== id);
+  const closeTab = useCallback((id: string): void => {
+    setDocuments(prev => {
+      // Calculate new state
+      const newDocs = prev.filter(d => d.id !== id);
 
-    // Clean up history for closed document
-    historyRef.current.delete(id);
-    lastUpdateRef.current.delete(id);
+      // Clean up history for closed document
+      historyRef.current.delete(id);
+      lastUpdateRef.current.delete(id);
 
-    if (newDocs.length === 0) {
-      const defaultDoc: Document = { id: 'default', name: 'Untitled', content: '', filePath: null };
-      setDocuments([defaultDoc]);
-      setActiveTabId('default');
-      return;
-    }
+      if (newDocs.length === 0) {
+        const defaultDoc: Document = { id: 'default', name: 'Untitled', content: '', filePath: null };
+        setActiveTabId('default');
+        return [defaultDoc];
+      }
+
+      return newDocs;
+    });
 
     // If closing the active tab, switch to the last tab
-    if (activeTabId === id) {
-      setActiveTabId(newDocs[newDocs.length - 1].id);
-    }
-
-    setDocuments(newDocs);
-  };
+    setDocuments(currentDocs => {
+      if (activeTabId === id && currentDocs.length > 0) {
+        setActiveTabId(currentDocs[currentDocs.length - 1].id);
+      }
+      return currentDocs;
+    });
+  }, [activeTabId]);
 
   // Undo function
   const undo = useCallback((): void => {

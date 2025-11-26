@@ -16,7 +16,7 @@ export const useFileHandler = (
   useEffect(() => {
     // Listen for file content from main process
     if (window.electronAPI) {
-      const cleanup = window.electronAPI.onFileOpen((value: FileOpenData | string) => {
+      const cleanupFileOpen = window.electronAPI.onFileOpen((value: FileOpenData | string) => {
         // value is { filePath, content, name } or just string (legacy)
         const isFileOpenData = (val: FileOpenData | string): val is FileOpenData => {
           return typeof val === 'object' && 'content' in val;
@@ -48,12 +48,12 @@ export const useFileHandler = (
           );
 
           if (defaultDoc && documents.length === 1) {
-            // Replace default document with the new file
+            // Replace default document with the new file content
+            // Update in place instead of close+add to avoid creating a blank tab
             updateExistingDocument('default', {
               name: fileName,
               content: fileContent,
               filePath,
-              id: Date.now().toString(),
             });
           } else {
             // Add new document
@@ -68,8 +68,38 @@ export const useFileHandler = (
         }
       });
 
-      // Cleanup listener on unmount or dependency change
-      return cleanup;
+      // Listen for file-new event from main process (File → New menu)
+      const cleanupFileNew = window.electronAPI.onFileNew(() => {
+        // Generate unique "Untitled" name
+        const untitledDocs = documents.filter(d => d.name.startsWith('Untitled'));
+        let newName = 'Untitled';
+        if (untitledDocs.length > 0) {
+          // Find the highest number in existing "Untitled N" documents
+          const numbers = untitledDocs
+            .map(d => {
+              const match = d.name.match(/^Untitled(?: (\d+))?$/);
+              return match ? (match[1] ? parseInt(match[1], 10) : 1) : 0;
+            })
+            .filter(n => n > 0);
+          const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
+          newName = `Untitled ${maxNumber + 1}`;
+        }
+
+        // Create new empty document
+        const newId = Date.now().toString();
+        addDocument({
+          id: newId,
+          name: newName,
+          content: '',
+          filePath: null,
+        });
+      });
+
+      // Cleanup listeners on unmount or dependency change
+      return () => {
+        cleanupFileOpen();
+        cleanupFileNew();
+      };
     }
   }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, documents, closeTab, showError]);
 };

@@ -129,6 +129,15 @@ const App: React.FC = () => {
         setSearchCurrentMatch(matchIndex);
     }, []);
 
+    // Handle new document creation
+    const handleNewDocument = useCallback((): void => {
+        addDocument({
+            name: 'Untitled',
+            content: '',
+            filePath: null,
+        });
+    }, [addDocument]);
+
     // Keyboard shortcuts
     useKeyboardShortcuts({
         onBold: () => handleFormat('bold'),
@@ -146,6 +155,7 @@ const App: React.FC = () => {
         onFind: handleFind,
         onUndo: undo,
         onRedo: redo,
+        onNew: handleNewDocument,
     });
 
     // Performance: Memoize text statistics
@@ -196,13 +206,13 @@ const App: React.FC = () => {
         }
     }, [viewMode, activeDoc.content, showError]);
 
+    // Track the current drag operation ID
+    const dragIdRef = useRef<string | null>(null);
+
     const handleCloseTab = (e: React.MouseEvent<HTMLButtonElement>, id: string): void => {
         e.stopPropagation();
         closeDocument(id);
     };
-
-    // Track the current drag operation ID
-    const dragIdRef = useRef<string | null>(null);
 
     const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document): void => {
         const dragId = Date.now().toString();
@@ -289,7 +299,7 @@ const App: React.FC = () => {
             try {
                 const doc = JSON.parse(textData) as DraggableDocument;
 
-                if (doc.id && doc.content && doc.filePath) {
+                if (doc.id && doc.content !== undefined) {
                     // Security: Validate content size before processing (HIGH-2 fix)
                     if (doc.content.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
                         showError(`Content too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
@@ -432,6 +442,14 @@ const App: React.FC = () => {
                         </button>
                     </div>
                 ))}
+                <button
+                    className="new-tab-btn"
+                    onClick={handleNewDocument}
+                    aria-label="New document (Cmd+N)"
+                    title="New document (Cmd+N)"
+                >
+                    +
+                </button>
             </div>
             <div className="toolbar">
                 <div className="toolbar-group">
