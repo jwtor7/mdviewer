@@ -20,6 +20,89 @@ npm run lint                 # Currently no linting configured
 - **Development**: `npm start` uses Electron Forge with Vite for hot module replacement
 - **Production**: `npm run make` creates platform-specific distributables (DMG for macOS, etc.)
 
+### Testing
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Watch mode (re-runs on file changes)
+npm run test:coverage # Generate coverage report
+npm run test:ui       # Launch interactive Vitest UI
+```
+
+## Testing Architecture
+
+### Stack
+- **Vitest**: Fast, Vite-native test runner
+- **React Testing Library**: Component and hook testing
+- **jsdom**: Browser environment simulation for Node.js
+- **@vitest/coverage-v8**: Code coverage reporting
+
+### Configuration Files
+- `vitest.config.ts`: Main test configuration (environment, aliases, coverage thresholds)
+- `tsconfig.test.json`: TypeScript config for test files
+- `src/test/setup.ts`: Global setup (jest-dom matchers, mocks)
+- `src/__mocks__/electron.ts`: Electron module mocks
+
+### Test File Conventions
+- Tests are co-located with source files: `Component.tsx` → `Component.test.tsx`
+- Use `.test.ts` for utility tests, `.test.tsx` for React component/hook tests
+- All tests run in jsdom environment (simulated browser)
+
+### Mocking Strategy
+
+**Electron APIs**: Since tests run in Node.js (not Electron), all `window.electronAPI` methods are mocked in `src/test/setup.ts`. The mock provides stub implementations for:
+- File operations: `onFileOpen`, `saveFile`, `readFile`, `exportPDF`
+- Window management: `createWindowForTab`, `closeWindow`
+- IPC callbacks: All `on*` methods return cleanup functions
+
+**Browser APIs**: `window.matchMedia` is mocked for theme testing.
+
+### Writing Tests
+
+**Unit tests** (utilities):
+```typescript
+import { calculateTextStats } from './textCalculations';
+
+describe('calculateTextStats', () => {
+  it('counts words correctly', () => {
+    expect(calculateTextStats('hello world').words).toBe(2);
+  });
+});
+```
+
+**Hook tests**:
+```typescript
+import { renderHook, act } from '@testing-library/react';
+import { useTheme } from './useTheme';
+
+it('toggles theme', () => {
+  const { result } = renderHook(() => useTheme());
+  act(() => result.current.toggleTheme());
+  expect(result.current.theme).toBe('light');
+});
+```
+
+**Component tests**:
+```typescript
+import { render, screen } from '@testing-library/react';
+import { ErrorNotification } from './ErrorNotification';
+
+it('displays error message', () => {
+  render(<ErrorNotification error={{ message: 'Test error', type: 'error' }} onDismiss={() => {}} />);
+  expect(screen.getByText('Test error')).toBeInTheDocument();
+});
+```
+
+### Coverage
+Coverage reports are generated in `coverage/` directory. Current thresholds:
+- Lines: 5%
+- Functions: 45%
+- Branches: 50%
+
+### What's NOT Tested (Yet)
+- **Main process** (`src/main.ts`): Requires Electron-specific test setup
+- **Preload script** (`src/preload.ts`): Requires context isolation testing
+- **E2E workflows**: Would need Playwright or Spectron
+
 ## Architecture
 
 ### Electron Multi-Process Architecture

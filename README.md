@@ -126,6 +126,18 @@ npm start
 npm run make
 ```
 
+### Running Tests
+```bash
+npm test              # Run all tests once
+npm run test:watch    # Watch mode (re-runs on file changes)
+npm run test:coverage # Generate coverage report
+npm run test:ui       # Launch interactive Vitest UI
+```
+
+**Test stack**: Vitest, React Testing Library, jsdom
+
+**Test structure**: Tests are co-located with source files (`*.test.ts`, `*.test.tsx`)
+
 ### Testing File Opening
 **Development mode**: Use File → Open (Cmd+O) or drag-and-drop onto app window
 **Production mode**: Build with `npm run make`, then double-click .md files in Finder

@@ -26,6 +26,9 @@ coverage
 # nyc test coverage
 .nyc_output
 
+# Vitest coverage
+coverage/
+
 # node-waf configuration
 .lock-wscript
 
