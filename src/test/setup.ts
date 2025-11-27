@@ -1,0 +1,81 @@
+/**
+ * Test setup file for Vitest
+ *
+ * This file runs before all test files and sets up:
+ * - @testing-library/jest-dom matchers
+ * - Browser API mocks (matchMedia, Electron APIs)
+ * - Global test utilities
+ */
+
+import '@testing-library/jest-dom';
+import { cleanup } from '@testing-library/react';
+import { afterEach, vi } from 'vitest';
+
+// Cleanup after each test automatically
+afterEach(() => {
+  cleanup();
+});
+
+// Mock window.matchMedia (required for theme tests)
+Object.defineProperty(window, 'matchMedia', {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: false, // Default to light mode
+    media: query,
+    onchange: null,
+    addListener: vi.fn(), // Deprecated but still used by some libraries
+    removeListener: vi.fn(), // Deprecated
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
+
+// Mock Electron API (window.electronAPI)
+const mockElectronAPI = {
+  onFileOpen: vi.fn(() => vi.fn()), // Returns cleanup function
+  onFileNew: vi.fn(() => vi.fn()),
+  onFileSave: vi.fn(() => vi.fn()),
+  onSaveAllAndQuit: vi.fn(() => vi.fn()),
+  onRequestUnsavedDocs: vi.fn(() => vi.fn()),
+  createWindowForTab: vi.fn(() => Promise.resolve({ success: true })),
+  notifyTabDropped: vi.fn(() => Promise.resolve(true)),
+  checkTabDropped: vi.fn(() => Promise.resolve(false)),
+  closeWindow: vi.fn(() => Promise.resolve()),
+  openExternalUrl: vi.fn(() => Promise.resolve()),
+  exportPDF: vi.fn(() => Promise.resolve({ success: true, filePath: '/test/path.pdf' })),
+  saveFile: vi.fn(() => Promise.resolve({ success: true, filePath: '/test/path.md' })),
+  readFile: vi.fn(() => Promise.resolve({ content: 'test content' })),
+  getPathForFile: vi.fn((file: File) => `/mock/path/${file.name}`),
+  showUnsavedDialog: vi.fn(() => Promise.resolve({ response: 'dont-save' as const })),
+  getUnsavedDocuments: vi.fn(() => Promise.resolve([])),
+};
+
+Object.defineProperty(window, 'electronAPI', {
+  writable: true,
+  value: mockElectronAPI,
+});
+
+// Export mocks for test file access
+export { mockElectronAPI };
+
+// Mock HTMLElement methods that aren't implemented in jsdom
+HTMLElement.prototype.scrollIntoView = vi.fn();
+
+// Suppress console errors during tests (optional - remove if you want to see them)
+// const originalError = console.error;
+// beforeAll(() => {
+//   console.error = (...args: unknown[]) => {
+//     if (
+//       typeof args[0] === 'string' &&
+//       args[0].includes('Not implemented: HTMLFormElement.prototype.submit')
+//     ) {
+//       return;
+//     }
+//     originalError.call(console, ...args);
+//   };
+// });
+
+// afterAll(() => {
+//   console.error = originalError;
+// });
