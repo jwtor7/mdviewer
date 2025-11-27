@@ -16,6 +16,7 @@
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",
+    "premake": "npm test",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
     "lint": "eslint src/**/*.{ts,tsx}",
