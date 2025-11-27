@@ -1317,3 +1317,54 @@ body {
 [data-theme='solarized-light'] .headings-dropdown-menu {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+/* Tab Context Menu Styles */
+.tab-context-menu {
+  position: fixed;
+  background-color: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 180px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-in;
+}
+
+.context-menu-item {
+  width: 100%;
+  padding: 8px 16px;
+  background: none;
+  border: none;
+  color: var(--text-color);
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 13px;
+  display: block;
+  transition: background-color 0.15s;
+}
+
+.context-menu-item:hover:not(:disabled) {
+  background-color: var(--btn-hover);
+}
+
+.context-menu-item:focus {
+  outline: none;
+  background-color: var(--btn-hover);
+}
+
+.context-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Light theme adjustments for context menu */
+[data-theme='light'] .tab-context-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Solarized Light theme adjustments */
+[data-theme='solarized-light'] .tab-context-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}

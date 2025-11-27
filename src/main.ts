@@ -1202,6 +1202,54 @@ ipcMain.handle('show-unsaved-dialog', async (event: IpcMainInvokeEvent, data: un
   }
 });
 
+ipcMain.handle('reveal-in-finder', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; error?: string }> => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected reveal-in-finder from invalid origin');
+    return { success: false, error: 'Invalid IPC origin' };
+  }
+
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-reveal-in-finder')) {
+    console.warn('Rate limit exceeded for reveal-in-finder');
+    return { success: false, error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { success: false, error: 'Invalid data' };
+  }
+
+  const { filePath } = data as { filePath: unknown };
+
+  if (typeof filePath !== 'string') {
+    return { success: false, error: 'Invalid filePath' };
+  }
+
+  try {
+    // Security: Validate file path to prevent path traversal
+    if (!isPathSafe(filePath)) {
+      console.warn(`Blocked attempt to reveal unsafe file: ${filePath}`);
+      return { success: false, error: 'Invalid file path' };
+    }
+
+    // Security: Verify file exists before revealing
+    const stats = await fsPromises.stat(filePath);
+    if (!stats.isFile()) {
+      return { success: false, error: 'Path is not a file' };
+    }
+
+    // Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux)
+    shell.showItemInFolder(filePath);
+    return { success: true };
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    console.error('Reveal in Finder error:', sanitizeError(error));
+    return { success: false, error: 'Failed to reveal file' };
+  }
+});
+
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon

@@ -2,6 +2,11 @@
 
 All notable changes to mdviewer are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.9] - 2025-11-27
+- **New Feature: Tab context menu** - Right-click any tab to reveal file in Finder
+- Disabled state for unsaved documents (no file path)
+- Full security validation (IPC origin, rate limiting, path safety checks)
+
 ## [2.8.8] - 2025-11-26
 - **Bug Fix**: Tooltips no longer get cut off at window edges (right-aligned toolbar buttons)
 

@@ -51,7 +51,9 @@ export type IPCMessage =
   /** Show confirmation dialog for unsaved changes */
   | { channel: 'show-unsaved-dialog'; data: { filename: string } }
   /** Get list of unsaved document names */
-  | { channel: 'get-unsaved-documents'; data: void };
+  | { channel: 'get-unsaved-documents'; data: void }
+  /** Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux) */
+  | { channel: 'reveal-in-finder'; data: { filePath: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -70,6 +72,7 @@ export interface ElectronAPI {
   getPathForFile: (file: File) => string;
   showUnsavedDialog: (filename: string) => Promise<{ response: 'save' | 'dont-save' | 'cancel' }>;
   getUnsavedDocuments: () => Promise<string[]>;
+  revealInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 declare global {

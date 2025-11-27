@@ -182,6 +182,9 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 2.8.9 - 2025-11-27
+- Tab context menu (Reveal in Finder)
+
 ### 2.8.8 - 2025-11-26
 - Bug fixes
 
@@ -195,9 +198,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 
 ### 2.7.13 - 2025-11-25
 - Advanced formatting toolbar
-
-### 2.7.12 - 2025-11-25
-- Synchronized text selection
 
 
 

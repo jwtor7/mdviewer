@@ -402,3 +402,4 @@ When adding new features or fixes:
 2. If it's one of the 5 most recent versions, update README.md with minimal description
 3. If security-related, add detailed entry to SECURITY.md (not committed)
 4. Default content in `src/constants/defaultContent.ts` imports from CHANGELOG.md for test document
+- always use @agent-mdviewer-lead-dev for coding in this project, unless told not to

@@ -41,9 +41,11 @@ const App: React.FC = () => {
     const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
     const [searchCurrentMatch, setSearchCurrentMatch] = useState(0);
     const [showHeadingsMenu, setShowHeadingsMenu] = useState(false);
+    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; docId: string } | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const splitViewRef = useRef<HTMLDivElement>(null);
     const headingsMenuRef = useRef<HTMLDivElement>(null);
+    const contextMenuRef = useRef<HTMLDivElement>(null);
 
     // Update CSS custom property for split pane position (CSP-compliant)
     useEffect(() => {
@@ -68,6 +70,23 @@ const App: React.FC = () => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, [showHeadingsMenu]);
+
+    // Close context menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent): void => {
+            if (contextMenu && contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
+                setContextMenu(null);
+            }
+        };
+
+        if (contextMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [contextMenu]);
 
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
 
@@ -330,6 +349,35 @@ const App: React.FC = () => {
         }
     };
 
+    // Handle tab context menu (right-click)
+    const handleTabContextMenu = (e: React.MouseEvent<HTMLDivElement>, docId: string): void => {
+        e.preventDefault();
+        setContextMenu({
+            x: e.clientX,
+            y: e.clientY,
+            docId
+        });
+    };
+
+    // Handle reveal in Finder
+    const handleRevealInFinder = async (docId: string): Promise<void> => {
+        const doc = documents.find(d => d.id === docId);
+        if (!doc?.filePath || !window.electronAPI?.revealInFinder) {
+            return;
+        }
+
+        try {
+            const result = await window.electronAPI.revealInFinder(doc.filePath);
+            if (!result.success) {
+                showError(result.error || 'Failed to reveal file in Finder');
+            }
+        } catch (err) {
+            showError('Failed to reveal file in Finder');
+        } finally {
+            setContextMenu(null);
+        }
+    };
+
     const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>, doc: Document): Promise<void> => {
         const currentDragId = dragIdRef.current;
 
@@ -512,6 +560,7 @@ const App: React.FC = () => {
                         key={doc.id}
                         className={`tab ${activeTabId === doc.id ? 'active' : ''}`}
                         onClick={() => setActiveTabId(doc.id)}
+                        onContextMenu={(e) => handleTabContextMenu(e, doc.id)}
                         draggable={true}
                         onDragStart={(e) => handleDragStart(e, doc)}
                         onDragEnd={(e) => handleDragEnd(e, doc)}
@@ -853,6 +902,26 @@ const App: React.FC = () => {
                 <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
                 <div className="status-item status-version" aria-label="App version">v{pkg.version}</div>
             </div>
+            {contextMenu && (
+                <div
+                    ref={contextMenuRef}
+                    className="tab-context-menu"
+                    style={{
+                        left: `${contextMenu.x}px`,
+                        top: `${contextMenu.y}px`
+                    }}
+                    role="menu"
+                >
+                    <button
+                        className="context-menu-item"
+                        onClick={() => handleRevealInFinder(contextMenu.docId)}
+                        disabled={!documents.find(d => d.id === contextMenu.docId)?.filePath}
+                        role="menuitem"
+                    >
+                        Reveal in Finder
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

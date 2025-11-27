@@ -66,4 +66,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('show-unsaved-dialog', { filename }),
   getUnsavedDocuments: (): Promise<string[]> =>
     ipcRenderer.invoke('get-unsaved-documents'),
+  revealInFinder: (filePath: string): Promise<{ success: boolean; error?: string }> =>
+    ipcRenderer.invoke('reveal-in-finder', { filePath }),
 } satisfies ElectronAPI);
