@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## ⚠️ Agent Requirement
+
+**ALL coding tasks MUST use `@agent-mdviewer-lead-dev`** unless explicitly told otherwise.
+
+Additional reminders:
+- Update default content (`src/constants/defaultContent.ts`) when roadmap/changelog changes
+
 ## Project Overview
 
 mdviewer is an offline-capable Markdown Viewer desktop application for macOS built with Electron. It provides a clean interface for viewing and editing Markdown files with GitHub Flavored Markdown support, syntax highlighting, and theme switching.
@@ -371,8 +378,6 @@ npm install
 3. **Clean up production builds**: Delete `out/` after testing file associations
 4. **Restart for main/preload changes**: HMR only works for renderer code
 5. **Use keyboard shortcuts**: `Cmd+O` to open files quickly during testing
-- remember to update the default content with the current roadmap and changelog
-- whenever coding needs to be done in this project, @agent-mdviewer-lead-dev handles the coding task
 
 ## Documentation Pattern
 
@@ -402,4 +407,3 @@ When adding new features or fixes:
 2. If it's one of the 5 most recent versions, update README.md with minimal description
 3. If security-related, add detailed entry to SECURITY.md (not committed)
 4. Default content in `src/constants/defaultContent.ts` imports from CHANGELOG.md for test document
-- always use @agent-mdviewer-lead-dev for coding in this project, unless told not to
