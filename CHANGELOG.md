@@ -2,6 +2,14 @@
 
 All notable changes to mdviewer are documented in this file. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.10] - 2025-11-29
+- **Open Recent expanded to 50 files** - File → Open Recent now shows last 50 files instead of 10, with full file paths for better identification
+- **Always on Top window preference** - New "Keep on Top" checkbox in Window menu, persists across sessions, applies to all windows
+- **Right-click context menu** - Right-click selected text for Cut/Copy/Paste/Select All, Search with Perplexity, and Bold/Italic/List formatting (in Raw view)
+- **Install/Upgrade script** - Added double-clickable `scripts/Install mdviewer.command` to build and install latest version
+- **Uninstall script** - Added double-clickable `scripts/Uninstall mdviewer.command` to completely remove app and all data
+- **Bug fix**: Recent files now saved for drag-and-drop and double-click opened files (not just File → Open)
+
 ## [2.8.9] - 2025-11-27
 - **New Feature: Tab context menu** - Right-click any tab to reveal file in Finder
 - Disabled state for unsaved documents (no file path)

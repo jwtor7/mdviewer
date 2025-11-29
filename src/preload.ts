@@ -34,6 +34,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('save-all-and-quit', handler);
     };
   },
+  onFormatText: (callback: (format: string) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, format: string): void => callback(format);
+    ipcRenderer.on('format-text', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('format-text', handler);
+    };
+  },
   onRequestUnsavedDocs: (callback: () => string[]): (() => void) => {
     const handler = (_event: IpcRendererEvent): void => {
       const docs = callback();

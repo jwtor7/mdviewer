@@ -190,6 +190,14 @@ const App: React.FC = () => {
         () => setViewMode(VIEW_MODES.RAW) // Switch to Raw view when File → New is triggered
     );
 
+    // Listen for format-text IPC events from context menu
+    useEffect(() => {
+        const cleanup = window.electronAPI.onFormatText((format) => {
+            handleFormat(format as 'bold' | 'italic' | 'list');
+        });
+        return cleanup;
+    }, [handleFormat]);
+
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
         setShowFindReplace(true);

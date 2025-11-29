@@ -43,7 +43,7 @@
 - Advanced formatting toolbar: headings, bold, italic, lists, code blocks, blockquotes, links
 - Rich text copy to clipboard (HTML + plain text)
 - Save as Markdown (.md), PDF (.pdf), or Text (.txt)
-- Recent files menu with last 10 files
+- Recent files menu with last 50 files (full paths)
 - Unsaved changes prompts when closing tabs or quitting
 - Real-time statistics: word, character, and token counts
 - Custom undo/redo history (Cmd+Z, Cmd+Shift+Z)
@@ -91,6 +91,42 @@ npm run package
 # Create distributable installer
 npm run make
 ```
+
+### Installing / Upgrading
+
+To install (or upgrade to) the latest version:
+
+**Option 1: Double-click** (easiest)
+- Open `scripts/Install mdviewer.command` in Finder and double-click it
+
+**Option 2: Terminal**
+```bash
+./scripts/Install\ mdviewer.command
+```
+
+This will:
+1. Remove any existing installation and app data
+2. Build the latest version from source
+3. Install to `/Applications/mdviewer.app`
+
+### Uninstalling
+
+To completely remove mdviewer and all its data:
+
+**Option 1: Double-click** (easiest)
+- Open `scripts/Uninstall mdviewer.command` in Finder and double-click it
+
+**Option 2: Terminal**
+```bash
+./scripts/Uninstall\ mdviewer.command
+```
+
+This removes:
+- `/Applications/mdviewer.app`
+- `~/Library/Application Support/mdviewer` (preferences, recent files)
+- `~/Library/Preferences/com.electron.mdviewer.plist`
+- `~/Library/Caches/com.electron.mdviewer`
+- `~/Library/Saved Application State/com.electron.mdviewer.savedState`
 
 ## Usage
 
@@ -177,10 +213,20 @@ src/
 
 ### Planned
 - [ ] **App Store Distribution**: Package and submit to Apple App Store
+- [ ] **Outline/TOC Sidebar**: Collapsible sidebar showing document headings (H1-H6) with click-to-jump navigation, auto-highlights current section while scrolling, toggle via View menu or keyboard shortcut (Cmd+Shift+O)
+- [ ] **Image Paste Support**: Paste images from clipboard directly into Raw view, auto-saves to `{document-folder}/images/`, inserts markdown image syntax, works with screenshots (Cmd+Shift+4 → Cmd+V)
+- [ ] **Focus Mode**: Distraction-free writing mode that hides toolbar, tabs, and status bar, centers content with comfortable max-width, subtle fade on non-active paragraphs, toggle via View menu or Cmd+Shift+F
+- [ ] **Word Wrap Toggle**: Toggle soft word wrap in Raw view, useful for viewing tables and code-heavy markdown, persisted preference, menu item in View menu with keyboard shortcut (Cmd+Alt+W)
+- [ ] **Auto-Save Drafts**: Automatically save unsaved work to drafts folder, recover unsaved documents after crash/quit, configurable interval (default: 30 seconds), shows "Draft saved" indicator in status bar, drafts cleared when document explicitly saved
 
 ## Changelog
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
+
+### 2.8.10 - 2025-11-29
+- Open Recent expanded to 50 files with full paths
+- Always on Top window preference
+- Right-click context menu
 
 ### 2.8.9 - 2025-11-27
 - Tab context menu (Reveal in Finder)

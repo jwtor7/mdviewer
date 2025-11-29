@@ -266,8 +266,77 @@ let pendingFileToOpen: string | null = null;
 let openWindowCount = 0; // Track number of open windows for security limits
 
 // Recent files management
-const MAX_RECENT_FILES = 10;
+const MAX_RECENT_FILES = 50;
 let recentFiles: string[] = [];
+
+// Preferences management
+interface AppPreferences {
+  alwaysOnTop: boolean;
+}
+
+let appPreferences: AppPreferences = { alwaysOnTop: false };
+
+/**
+ * Gets the path to the preferences storage JSON file.
+ * Stored in the app's userData directory for persistence across sessions.
+ */
+const getPreferencesPath = (): string => {
+  return path.join(app.getPath('userData'), 'preferences.json');
+};
+
+/**
+ * Loads app preferences from persistent storage.
+ * Uses async file operations to avoid blocking the main thread.
+ */
+const loadPreferences = async (): Promise<void> => {
+  try {
+    const preferencesPath = getPreferencesPath();
+    // Check if file exists before reading
+    try {
+      await fsPromises.access(preferencesPath);
+    } catch {
+      // File doesn't exist, use defaults
+      appPreferences = { alwaysOnTop: false };
+      return;
+    }
+
+    const data = await fsPromises.readFile(preferencesPath, 'utf-8');
+    const parsed = JSON.parse(data);
+    if (typeof parsed === 'object' && parsed !== null) {
+      appPreferences = {
+        alwaysOnTop: typeof parsed.alwaysOnTop === 'boolean' ? parsed.alwaysOnTop : false
+      };
+    }
+  } catch (error) {
+    console.error('Failed to load preferences:', error);
+    appPreferences = { alwaysOnTop: false };
+  }
+};
+
+/**
+ * Saves app preferences to persistent storage.
+ * Uses async file operations with debouncing to avoid blocking the main thread.
+ */
+let savePreferencesTimeout: NodeJS.Timeout | null = null;
+
+const savePreferences = (): void => {
+  // Debounce saves to avoid excessive disk writes
+  if (savePreferencesTimeout) {
+    clearTimeout(savePreferencesTimeout);
+  }
+
+  savePreferencesTimeout = setTimeout(async () => {
+    try {
+      const preferencesPath = getPreferencesPath();
+      const dir = path.dirname(preferencesPath);
+      // Ensure directory exists
+      await fsPromises.mkdir(dir, { recursive: true });
+      await fsPromises.writeFile(preferencesPath, JSON.stringify(appPreferences, null, 2), 'utf-8');
+    } catch (error) {
+      console.error('Failed to save preferences:', error);
+    }
+  }, 500); // 500ms debounce
+};
 
 
 /**
@@ -320,6 +389,9 @@ const saveRecentFiles = (): void => {
   saveRecentFilesTimeout = setTimeout(async () => {
     try {
       const recentFilesPath = getRecentFilesPath();
+      const dir = path.dirname(recentFilesPath);
+      // Ensure directory exists
+      await fsPromises.mkdir(dir, { recursive: true });
       await fsPromises.writeFile(recentFilesPath, JSON.stringify(recentFiles, null, 2), 'utf-8');
     } catch (error) {
       console.error('Failed to save recent files:', error);
@@ -385,7 +457,7 @@ const createMenu = (): void => {
   if (existingRecentFiles.length > 0) {
     existingRecentFiles.forEach((filePath) => {
       recentFilesSubmenu.push({
-        label: path.basename(filePath),
+        label: filePath,
         click: (): void => {
           openFile(filePath);
         }
@@ -486,6 +558,22 @@ const createMenu = (): void => {
         { role: 'minimize' },
         { role: 'zoom' },
         { type: 'separator' },
+        {
+          label: 'Keep on Top',
+          type: 'checkbox',
+          checked: appPreferences.alwaysOnTop,
+          click: (menuItem): void => {
+            appPreferences.alwaysOnTop = menuItem.checked;
+            // Apply to all open windows
+            BrowserWindow.getAllWindows().forEach(win => {
+              win.setAlwaysOnTop(menuItem.checked);
+            });
+            savePreferences();
+            // Rebuild menu to update checkbox state
+            createMenu();
+          }
+        },
+        { type: 'separator' },
         { role: 'front' }
       ]
     }
@@ -500,6 +588,7 @@ const createWindow = (initialFile: string | null = null): BrowserWindow => {
   const win = new BrowserWindow({
     width: WINDOW_CONFIG.DEFAULT_WIDTH,
     height: WINDOW_CONFIG.DEFAULT_HEIGHT,
+    alwaysOnTop: appPreferences.alwaysOnTop,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -510,6 +599,52 @@ const createWindow = (initialFile: string | null = null): BrowserWindow => {
 
   // Security: Track window count
   openWindowCount++;
+
+  // Add context menu handler for right-click text actions
+  win.webContents.on('context-menu', (_event, params) => {
+    const { selectionText, isEditable, editFlags } = params;
+
+    const menuItems: MenuItemConstructorOptions[] = [];
+
+    // Standard editing items
+    if (editFlags.canCut) menuItems.push({ label: 'Cut', role: 'cut' });
+    if (editFlags.canCopy || selectionText) menuItems.push({ label: 'Copy', role: 'copy' });
+    if (editFlags.canPaste) menuItems.push({ label: 'Paste', role: 'paste' });
+    menuItems.push({ type: 'separator' });
+    menuItems.push({ label: 'Select All', role: 'selectAll' });
+
+    // Search with Perplexity (only when text selected)
+    if (selectionText) {
+      menuItems.push({ type: 'separator' });
+      menuItems.push({
+        label: 'Search with Perplexity',
+        click: (): void => {
+          const query = encodeURIComponent(selectionText);
+          shell.openExternal(`https://www.perplexity.ai/search?q=${query}`);
+        }
+      });
+    }
+
+    // Formatting options (only when editable and text selected)
+    if (isEditable && selectionText) {
+      menuItems.push({ type: 'separator' });
+      menuItems.push({
+        label: 'Bold',
+        click: (): void => win.webContents.send('format-text', 'bold')
+      });
+      menuItems.push({
+        label: 'Italic',
+        click: (): void => win.webContents.send('format-text', 'italic')
+      });
+      menuItems.push({
+        label: 'List',
+        click: (): void => win.webContents.send('format-text', 'list')
+      });
+    }
+
+    const menu = Menu.buildFromTemplate(menuItems);
+    menu.popup();
+  });
 
   // Handle window close event to check for unsaved changes
   win.on('close', async (e) => {
@@ -1144,6 +1279,9 @@ ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
       return { content: '', error: validation.error || 'File content could not be validated' };
     }
 
+    // Add to recent files (for drag-and-drop opened files)
+    addRecentFile(filePath);
+
     return { content: validation.content };
   } catch (err) {
     const error = err as NodeJS.ErrnoException;
@@ -1291,7 +1429,8 @@ app.whenReady().then(async () => {
     });
   });
 
-  // Load recent files from persistent storage
+  // Load preferences and recent files from persistent storage
+  await loadPreferences();
   await loadRecentFiles();
 
   createMenu();
