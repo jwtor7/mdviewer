@@ -42,6 +42,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('format-text', handler);
     };
   },
+  onToggleWordWrap: (callback: () => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent): void => callback();
+    ipcRenderer.on('toggle-word-wrap', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('toggle-word-wrap', handler);
+    };
+  },
   onRequestUnsavedDocs: (callback: () => string[]): (() => void) => {
     const handler = (_event: IpcRendererEvent): void => {
       const docs = callback();

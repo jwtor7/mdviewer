@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.10-blue.svg)
+![Version](https://img.shields.io/badge/version-2.8.11-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -35,6 +35,7 @@
 - Multi-tab support for multiple Markdown documents
 - Drag tabs outside to spawn new windows
 - Four view modes: Rendered, Raw, Split (side-by-side), and Text (plain text)
+- Word wrap toggle for Raw/Code view (toolbar button, keyboard shortcut, menu item)
 - Synchronized text selection highlighting between Raw and Rendered views (Split mode)
 - GitHub Flavored Markdown with tables, task lists, and strikethrough
 - Syntax highlighting for code blocks
@@ -61,6 +62,7 @@
 - `Cmd+I` - Italic formatting
 - `Cmd+E` - Cycle view modes (Rendered → Raw → Split → Text)
 - `Cmd+T` - Cycle themes
+- `Cmd+Alt+W` - Toggle word wrap
 - `Cmd+Z` - Undo
 - `Cmd+Shift+Z` / `Cmd+Y` - Redo
 
@@ -216,12 +218,15 @@ src/
 - [ ] **Outline/TOC Sidebar**: Collapsible sidebar showing document headings (H1-H6) with click-to-jump navigation, auto-highlights current section while scrolling, toggle via View menu or keyboard shortcut (Cmd+Shift+O)
 - [ ] **Image Paste Support**: Paste images from clipboard directly into Raw view, auto-saves to `{document-folder}/images/`, inserts markdown image syntax, works with screenshots (Cmd+Shift+4 → Cmd+V)
 - [ ] **Focus Mode**: Distraction-free writing mode that hides toolbar, tabs, and status bar, centers content with comfortable max-width, subtle fade on non-active paragraphs, toggle via View menu or Cmd+Shift+F
-- [ ] **Word Wrap Toggle**: Toggle soft word wrap in Raw view, useful for viewing tables and code-heavy markdown, persisted preference, menu item in View menu with keyboard shortcut (Cmd+Alt+W)
+- [x] **Word Wrap Toggle**: Toggle soft word wrap in Raw view, useful for viewing tables and code-heavy markdown, persisted preference, menu item in View menu with keyboard shortcut (Cmd+Alt+W)
 - [ ] **Auto-Save Drafts**: Automatically save unsaved work to drafts folder, recover unsaved documents after crash/quit, configurable interval (default: 30 seconds), shows "Draft saved" indicator in status bar, drafts cleared when document explicitly saved
 
 ## Changelog
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
+
+### 2.8.11 - 2025-11-29
+- Word Wrap Toggle
 
 ### 2.8.10 - 2025-11-29
 - Open Recent expanded to 50 files with full paths

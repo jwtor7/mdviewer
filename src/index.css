@@ -684,8 +684,6 @@ body {
   font-family: monospace;
   font-size: 14px;
   line-height: 1.5;
-  white-space: pre-wrap;
-  word-wrap: break-word;
   overflow: auto;
   box-sizing: border-box;
   pointer-events: none;
@@ -693,6 +691,18 @@ body {
   color: transparent;
   background-color: var(--editor-bg);
   transition: background-color 0.3s;
+}
+
+/* Word wrap control for highlight layer */
+.code-editor-highlight-layer.word-wrap {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: hidden;
+}
+
+.code-editor-highlight-layer.no-wrap {
+  white-space: pre;
+  overflow-x: auto;
 }
 
 /* Highlighted text within the layer */
@@ -724,6 +734,18 @@ body {
   color: var(--editor-text);
   transition: color 0.3s;
   z-index: 2;
+}
+
+/* Word wrap control for textarea */
+.code-editor.word-wrap {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-x: hidden;
+}
+
+.code-editor.no-wrap {
+  white-space: pre;
+  overflow-x: auto;
 }
 
 .status-bar {

@@ -61,6 +61,7 @@ export interface ElectronAPI {
   onFileSave: (callback: () => void) => () => void;
   onSaveAllAndQuit: (callback: () => void) => () => void;
   onFormatText: (callback: (format: string) => void) => () => void;
+  onToggleWordWrap: (callback: () => void) => () => void;
   onRequestUnsavedDocs: (callback: () => string[]) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;
   notifyTabDropped: (dragId: string) => Promise<boolean>;

@@ -4,10 +4,11 @@ export interface CodeEditorProps {
   content: string;
   onChange: (content: string) => void;
   highlightedContent?: React.ReactNode;
+  wordWrap?: boolean;
 }
 
 const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
-  ({ content, onChange, highlightedContent }, ref) => {
+  ({ content, onChange, highlightedContent, wordWrap = true }, ref) => {
     const internalRef = useRef<HTMLTextAreaElement>(null);
     const thumbRef = useRef<HTMLDivElement>(null);
 
@@ -54,7 +55,7 @@ const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
     return (
       <div className="code-editor-wrapper">
         {highlightedContent && (
-          <div className="code-editor-highlight-layer" aria-hidden="true">
+          <div className={`code-editor-highlight-layer ${wordWrap ? 'word-wrap' : 'no-wrap'}`} aria-hidden="true">
             {highlightedContent}
           </div>
         )}
@@ -62,7 +63,7 @@ const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
           ref={textareaRef}
           value={content}
           onChange={(e) => onChange(e.target.value)}
-          className="code-editor"
+          className={`code-editor ${wordWrap ? 'word-wrap' : 'no-wrap'}`}
           spellCheck="false"
           aria-label="Markdown source code editor"
         />

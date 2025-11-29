@@ -4,7 +4,7 @@ import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
 import TextPreview from './components/TextPreview';
-import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts } from './hooks/index';
+import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts, useWordWrap } from './hooks/index';
 import { VIEW_MODES, RENDERER_SECURITY, type ViewMode } from './constants/index';
 import { convertMarkdownToText } from './utils/textConverter';
 import { sanitizeHtmlForClipboard, sanitizeTextForClipboard } from './utils/clipboardSanitizer';
@@ -32,6 +32,7 @@ const App: React.FC = () => {
     } = useDocuments();
 
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
+    const { wordWrap, toggleWordWrap } = useWordWrap();
     const { errors, showError, dismissError } = useErrorHandler();
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.RENDERED);
     const [showFindReplace, setShowFindReplace] = useState(false);
@@ -198,6 +199,14 @@ const App: React.FC = () => {
         return cleanup;
     }, [handleFormat]);
 
+    // Listen for toggle-word-wrap IPC events from View menu
+    useEffect(() => {
+        const cleanup = window.electronAPI.onToggleWordWrap(() => {
+            toggleWordWrap();
+        });
+        return cleanup;
+    }, [toggleWordWrap]);
+
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
         setShowFindReplace(true);
@@ -240,6 +249,7 @@ const App: React.FC = () => {
             });
         }, []),
         onToggleTheme: handleThemeToggle,
+        onToggleWordWrap: toggleWordWrap,
         onSave: handleSave,
         onFind: handleFind,
         onUndo: undo,
@@ -752,6 +762,15 @@ const App: React.FC = () => {
 
                     <button
                         className="icon-btn"
+                        onClick={toggleWordWrap}
+                        title={`Word Wrap: ${wordWrap ? 'On' : 'Off'} (Cmd+Alt+W)`}
+                        aria-label={`Toggle word wrap. Currently ${wordWrap ? 'on' : 'off'}.`}
+                    >
+                        {wordWrap ? '⤸' : '→'}
+                    </button>
+
+                    <button
+                        className="icon-btn"
                         onClick={handleThemeToggle}
                         title={`Theme: ${theme} (Cmd+T)`}
                         aria-label={`Current theme: ${theme}. Click to change theme.`}
@@ -849,6 +868,7 @@ const App: React.FC = () => {
                         content={activeDoc.content}
                         onChange={updateContent}
                         highlightedContent={highlightedContent}
+                        wordWrap={wordWrap}
                     />
                 ) : viewMode === VIEW_MODES.TEXT ? (
                     <TextPreview
@@ -865,6 +885,7 @@ const App: React.FC = () => {
                                 content={activeDoc.content}
                                 onChange={updateContent}
                                 highlightedContent={highlightedContent}
+                                wordWrap={wordWrap}
                             />
                         </div>
                         <div

@@ -5,6 +5,7 @@ export interface UseKeyboardShortcutsProps {
   onItalic: () => void;
   onToggleView: () => void;
   onToggleTheme: () => void;
+  onToggleWordWrap?: () => void;
   onSave?: () => void;
   onFind?: () => void;
   onUndo?: () => void;
@@ -17,6 +18,7 @@ export const useKeyboardShortcuts = ({
   onItalic,
   onToggleView,
   onToggleTheme,
+  onToggleWordWrap,
   onSave,
   onFind,
   onUndo,
@@ -46,6 +48,11 @@ export const useKeyboardShortcuts = ({
       if (isMod && e.key === 't') {
         e.preventDefault();
         onToggleTheme();
+      }
+      // Cmd/Ctrl + Alt + W: Toggle word wrap
+      if (isMod && e.altKey && e.key === 'w' && onToggleWordWrap) {
+        e.preventDefault();
+        onToggleWordWrap();
       }
       // Cmd/Ctrl + S: Save
       if (isMod && e.key === 's' && onSave) {
@@ -81,5 +88,5 @@ export const useKeyboardShortcuts = ({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBold, onItalic, onToggleView, onToggleTheme, onSave, onFind, onUndo, onRedo, onNew]);
+  }, [onBold, onItalic, onToggleView, onToggleTheme, onToggleWordWrap, onSave, onFind, onUndo, onRedo, onNew]);
 };

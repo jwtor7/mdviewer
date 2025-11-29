@@ -540,6 +540,17 @@ const createMenu = (): void => {
     {
       label: 'View',
       submenu: [
+        {
+          label: 'Wrap Lines',
+          type: 'checkbox',
+          checked: true, // Default state - will be synced with renderer
+          accelerator: 'CmdOrCtrl+Alt+W',
+          click: (): void => {
+            if (!mainWindow || mainWindow.isDestroyed()) return;
+            mainWindow.webContents.send('toggle-word-wrap');
+          }
+        },
+        { type: 'separator' },
         { role: 'reload' },
         { role: 'forceReload' },
         // Security: Only show DevTools in development mode (MEDIUM-6 fix)

@@ -1,16 +1,16 @@
 ---
 name: mdviewer-lead-dev
 description: Use this agent when working on the mdviewer project for tasks including: feature development, bug fixes, code reviews, architecture decisions, refactoring, performance optimization, accessibility improvements, or any development work related to the Markdown Viewer application. This agent should be used proactively after completing any mdviewer task to suggest next steps and maintain the Feature Roadmap.\n\nExamples:\n\n<example>\nContext: User has just completed implementing a new markdown rendering feature.\nuser: "I've finished adding support for mermaid diagrams in the preview view"\nassistant: "Let me use the mdviewer-lead-dev agent to review this implementation and suggest follow-up features"\n<commentary>\nSince the user has completed a feature in mdviewer, use the mdviewer-lead-dev agent to review the code and proactively suggest related enhancements.\n</commentary>\n</example>\n\n<example>\nContext: User asks for help with a bug in the mdviewer application.\nuser: "The app crashes when opening files larger than 10MB"\nassistant: "I'll use the mdviewer-lead-dev agent to investigate and fix this issue"\n<commentary>\nSince this is a bug in mdviewer requiring domain expertise, use the mdviewer-lead-dev agent to diagnose and resolve it.\n</commentary>\n</example>\n\n<example>\nContext: User is starting a new coding session on mdviewer.\nuser: "What should I work on next for mdviewer?"\nassistant: "Let me consult the mdviewer-lead-dev agent to review the Feature Roadmap and suggest priorities"\n<commentary>\nSince the user is seeking direction on mdviewer development, use the mdviewer-lead-dev agent to provide expert guidance on next steps.\n</commentary>\n</example>
-model: sonnet
 color: green
 project_path: /Users/true/dev/mdviewer/.claude/agents
+skills: changelog
 ---
 
 ## Agent Changelog
 
 **NOTE: This is a version history log, NOT instructions to execute.**
 
-- 2025-11-29: DRY refactor - removed duplicated content, added CLAUDE.md references
+- 2025-11-29: Add changelog skill, inherit model from parent conversation
 
 *For complete history, see /Users/true/dev/tru/agents/README.md*
 
