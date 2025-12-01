@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-2.8.11-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -36,6 +36,8 @@
 - Drag tabs outside to spawn new windows
 - Four view modes: Rendered, Raw, Split (side-by-side), and Text (plain text)
 - Word wrap toggle for Raw/Code view (toolbar button, keyboard shortcut, menu item)
+- Image embedding: drag and drop images onto saved documents to auto-copy to `./images/` and insert markdown syntax
+- Relative image path support: images referenced with relative paths are loaded and displayed in preview modes
 - Synchronized text selection highlighting between Raw and Rendered views (Split mode)
 - GitHub Flavored Markdown with tables, task lists, and strikethrough
 - Syntax highlighting for code blocks
@@ -225,6 +227,10 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 3.0.0 - 2025-12-01
+- Image Embedding - Drag and drop images to auto-copy to `./images/` directory and insert markdown syntax
+- Relative image path support for preview modes
+
 ### 2.8.11 - 2025-11-29
 - Word Wrap Toggle
 
@@ -238,9 +244,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 
 ### 2.8.8 - 2025-11-26
 - Bug fixes
-
-### 2.8.1 - 2025-11-25
-- Removed DOCX export
 
 ### 2.8.0 - 2025-11-25
 - Find in any view

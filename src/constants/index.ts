@@ -106,3 +106,11 @@ export const FILE_INTEGRITY = {
   // These are normal whitespace/formatting characters
   ALLOWED_CONTROL_CHARS: ['\n', '\r', '\t'] as const,
 } as const;
+
+// Image Embedding Configuration
+export const IMAGE_CONFIG = {
+  // Allowed image file extensions for embedding
+  ALLOWED_IMAGE_EXTENSIONS: ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'] as const,
+  // Maximum image file size (10MB)
+  MAX_IMAGE_FILE_SIZE: 10 * 1024 * 1024,
+} as const;

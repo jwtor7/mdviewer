@@ -5,7 +5,7 @@ import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
 import TextPreview from './components/TextPreview';
 import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts, useWordWrap } from './hooks/index';
-import { VIEW_MODES, RENDERER_SECURITY, type ViewMode } from './constants/index';
+import { VIEW_MODES, RENDERER_SECURITY, IMAGE_CONFIG, type ViewMode } from './constants/index';
 import { convertMarkdownToText } from './utils/textConverter';
 import { sanitizeHtmlForClipboard, sanitizeTextForClipboard } from './utils/clipboardSanitizer';
 import type { Document, DraggableDocument } from './types/document';
@@ -502,10 +502,71 @@ const App: React.FC = () => {
         }
 
         const files = Array.from(e.dataTransfer.files);
+
+        // Separate markdown files and image files
         const markdownFiles = files.filter((file: File) =>
             file.name.endsWith('.md') || file.name.endsWith('.markdown')
         );
 
+        const imageFiles = files.filter((file: File) => {
+            const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+            return (IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext);
+        });
+
+        // Handle image file drops
+        if (imageFiles.length > 0) {
+            // Check if document is saved
+            if (!activeDoc.filePath) {
+                showError('Please save the document before embedding images');
+                return;
+            }
+
+            // Process each image file asynchronously
+            (async () => {
+                for (const imageFile of imageFiles) {
+                    try {
+                        // Get file path
+                        let imagePath: string | null = null;
+                        if (window.electronAPI?.getPathForFile) {
+                            try {
+                                imagePath = window.electronAPI.getPathForFile(imageFile);
+                            } catch (e) {
+                                console.error('Failed to get path for image file', e);
+                            }
+                        }
+
+                        if (!imagePath || !window.electronAPI?.copyImageToDocument) {
+                            showError('Cannot process image file');
+                            continue;
+                        }
+
+                        // Copy image to document's images directory
+                        const result = await window.electronAPI.copyImageToDocument(imagePath, activeDoc.filePath!);
+
+                        if (result.error) {
+                            showError(result.error);
+                            continue;
+                        }
+
+                        if (result.relativePath) {
+                            // Insert markdown image syntax at cursor or end of content
+                            const filename = imageFile.name;
+                            const imageMarkdown = `![${filename}](${result.relativePath})`;
+
+                            // Append to content (you could enhance this to insert at cursor position)
+                            const newContent = activeDoc.content + '\n\n' + imageMarkdown;
+                            updateContent(newContent);
+
+                            showError(`Image embedded: ${filename}`, 'info');
+                        }
+                    } catch (err) {
+                        showError(`Failed to embed image: ${imageFile.name}`);
+                    }
+                }
+            })();
+        }
+
+        // Handle markdown file drops
         markdownFiles.forEach(async (file: File) => {
             // Use secure method to get file path (works in Electron renderer)
             let filePath: string | null = null;
@@ -861,6 +922,8 @@ const App: React.FC = () => {
                         searchTerm={searchTerm}
                         caseSensitive={searchCaseSensitive}
                         currentMatchIndex={searchCurrentMatch}
+                        filePath={activeDoc.filePath || undefined}
+                        onContentChange={updateContent}
                     />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
@@ -920,6 +983,8 @@ const App: React.FC = () => {
                                 searchTerm={searchTerm}
                                 caseSensitive={searchCaseSensitive}
                                 currentMatchIndex={searchCurrentMatch}
+                                filePath={activeDoc.filePath || undefined}
+                                onContentChange={updateContent}
                             />
                         </div>
                     </div>

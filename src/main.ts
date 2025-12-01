@@ -4,7 +4,7 @@ import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import os from 'node:os';
-import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY } from './constants/index.js';
+import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY, IMAGE_CONFIG } from './constants/index.js';
 import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
@@ -1396,6 +1396,168 @@ ipcMain.handle('reveal-in-finder', async (event: IpcMainInvokeEvent, data: unkno
     const error = err as NodeJS.ErrnoException;
     console.error('Reveal in Finder error:', sanitizeError(error));
     return { success: false, error: 'Failed to reveal file' };
+  }
+});
+
+ipcMain.handle('read-image-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ dataUri?: string; error?: string }> => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected read-image-file from invalid origin');
+    return { error: 'Invalid IPC origin' };
+  }
+
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-read-image-file')) {
+    console.warn('Rate limit exceeded for read-image-file');
+    return { error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { error: 'Invalid data' };
+  }
+
+  const { imagePath, markdownFilePath } = data as { imagePath: unknown; markdownFilePath: unknown };
+
+  if (typeof imagePath !== 'string' || typeof markdownFilePath !== 'string') {
+    return { error: 'Invalid parameters' };
+  }
+
+  try {
+    // Security: Resolve paths to prevent traversal
+    const resolvedMarkdownPath = path.resolve(markdownFilePath);
+    const markdownDir = path.dirname(resolvedMarkdownPath);
+
+    // If image path is relative, resolve it relative to markdown file directory
+    let resolvedImagePath: string;
+    if (path.isAbsolute(imagePath)) {
+      resolvedImagePath = path.resolve(imagePath);
+    } else {
+      resolvedImagePath = path.resolve(markdownDir, imagePath);
+    }
+
+    // Security: Verify resolved image path is within markdown directory or its subdirectories
+    // This prevents accessing files outside the markdown file's directory tree
+    if (!resolvedImagePath.startsWith(markdownDir)) {
+      console.warn(`Blocked attempt to read image outside markdown directory: ${resolvedImagePath}`);
+      return { error: 'Image path must be relative to markdown file' };
+    }
+
+    // Security: Validate image file extension
+    const ext = path.extname(resolvedImagePath).toLowerCase();
+    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
+    if (!allowedExtensions.includes(ext)) {
+      console.warn(`Rejected image file with invalid extension: ${ext}`);
+      return { error: `Invalid image type. Allowed: ${allowedExtensions.join(', ')}` };
+    }
+
+    // Security: Check file size to prevent memory exhaustion
+    const stats = await fsPromises.stat(resolvedImagePath);
+    if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+      const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
+      return { error: `Image exceeds maximum size of ${maxSizeMB}MB` };
+    }
+
+    // Read file as buffer
+    const buffer = await fsPromises.readFile(resolvedImagePath);
+
+    // Determine MIME type based on extension
+    const mimeTypes: Record<string, string> = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.gif': 'image/gif',
+      '.svg': 'image/svg+xml',
+      '.webp': 'image/webp',
+    };
+    const mimeType = mimeTypes[ext] || 'application/octet-stream';
+
+    // Convert to base64 data URI
+    const base64 = buffer.toString('base64');
+    const dataUri = `data:${mimeType};base64,${base64}`;
+
+    return { dataUri };
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    console.error('Read image file error:', sanitizeError(error));
+    return { error: 'Failed to read image file' };
+  }
+});
+
+ipcMain.handle('copy-image-to-document', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ relativePath?: string; error?: string }> => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected copy-image-to-document from invalid origin');
+    return { error: 'Invalid IPC origin' };
+  }
+
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-copy-image-to-document')) {
+    console.warn('Rate limit exceeded for copy-image-to-document');
+    return { error: 'Rate limit exceeded' };
+  }
+
+  // Security: Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { error: 'Invalid data' };
+  }
+
+  const { imagePath, markdownFilePath } = data as { imagePath: unknown; markdownFilePath: unknown };
+
+  if (typeof imagePath !== 'string' || typeof markdownFilePath !== 'string') {
+    return { error: 'Invalid parameters' };
+  }
+
+  try {
+    // Security: Resolve paths to prevent traversal
+    const resolvedImagePath = path.resolve(imagePath);
+    const resolvedMarkdownPath = path.resolve(markdownFilePath);
+
+    // Security: Validate image file extension
+    const ext = path.extname(resolvedImagePath).toLowerCase();
+    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
+    if (!allowedExtensions.includes(ext)) {
+      console.warn(`Rejected image file with invalid extension: ${ext}`);
+      return { error: `Invalid image type. Allowed: ${allowedExtensions.join(', ')}` };
+    }
+
+    // Security: Check source file size to prevent memory exhaustion
+    const stats = await fsPromises.stat(resolvedImagePath);
+    if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+      const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
+      return { error: `Image exceeds maximum size of ${maxSizeMB}MB` };
+    }
+
+    // Create images directory next to markdown file
+    const markdownDir = path.dirname(resolvedMarkdownPath);
+    const imagesDir = path.join(markdownDir, 'images');
+    await fsPromises.mkdir(imagesDir, { recursive: true });
+
+    // Generate destination filename (handle collisions)
+    const originalBasename = path.basename(resolvedImagePath);
+    const baseName = path.basename(originalBasename, ext);
+    let destFilename = originalBasename;
+    let counter = 1;
+
+    while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
+      destFilename = `${baseName}-${counter}${ext}`;
+      counter++;
+    }
+
+    const destPath = path.join(imagesDir, destFilename);
+
+    // Copy the file
+    await fsPromises.copyFile(resolvedImagePath, destPath);
+
+    // Return relative path from markdown file
+    const relativePath = `./images/${destFilename}`;
+    return { relativePath };
+  } catch (err) {
+    const error = err as NodeJS.ErrnoException;
+    console.error('Copy image to document error:', sanitizeError(error));
+    return { error: 'Failed to copy image file' };
   }
 });
 

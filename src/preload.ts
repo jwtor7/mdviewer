@@ -84,4 +84,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('get-unsaved-documents'),
   revealInFinder: (filePath: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('reveal-in-finder', { filePath }),
+  readImageFile: (imagePath: string, markdownFilePath: string): Promise<{ dataUri?: string; error?: string }> =>
+    ipcRenderer.invoke('read-image-file', { imagePath, markdownFilePath }),
+  copyImageToDocument: (imagePath: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
+    ipcRenderer.invoke('copy-image-to-document', { imagePath, markdownFilePath }),
 } satisfies ElectronAPI);

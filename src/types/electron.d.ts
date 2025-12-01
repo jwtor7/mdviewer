@@ -53,7 +53,11 @@ export type IPCMessage =
   /** Get list of unsaved document names */
   | { channel: 'get-unsaved-documents'; data: void }
   /** Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux) */
-  | { channel: 'reveal-in-finder'; data: { filePath: string } };
+  | { channel: 'reveal-in-finder'; data: { filePath: string } }
+  /** Read an image file and return as base64 data URI */
+  | { channel: 'read-image-file'; data: { imagePath: string; markdownFilePath: string } }
+  /** Copy an image file to the document's images directory */
+  | { channel: 'copy-image-to-document'; data: { imagePath: string; markdownFilePath: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -75,6 +79,8 @@ export interface ElectronAPI {
   showUnsavedDialog: (filename: string) => Promise<{ response: 'save' | 'dont-save' | 'cancel' }>;
   getUnsavedDocuments: () => Promise<string[]>;
   revealInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
+  readImageFile: (imagePath: string, markdownFilePath: string) => Promise<{ dataUri?: string; error?: string }>;
+  copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
 }
 
 declare global {

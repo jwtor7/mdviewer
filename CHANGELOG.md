@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.0] - 2025-12-01
+
+### Added
+- Image Embedding - Drag and drop image files (.png, .jpg, .jpeg, .gif, .svg, .webp) onto saved documents to automatically copy them to `./images/` directory and insert markdown image syntax
+- Relative image path support - Images referenced with relative paths (e.g., `./images/photo.png`) are loaded and displayed in preview modes
+- Image validation - File size limits (10MB max), extension whitelist, and path traversal protection for secure image handling
+- Document save requirement - Images can only be embedded in saved documents to ensure proper relative path resolution
+
+### Changed
+- MAJOR VERSION BUMP - Image embedding feature represents significant new functionality
+
 ## [2.8.11] - 2025-11-29
 
 ### Added

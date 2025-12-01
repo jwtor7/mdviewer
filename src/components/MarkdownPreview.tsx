@@ -6,6 +6,7 @@ import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
 import type { ThemeMode } from '../constants/index.js';
 import CodeBlock from './CodeBlock';
+import { replaceTextContent } from '../utils/textEditing';
 
 export interface MarkdownPreviewProps {
   content: string;
@@ -13,6 +14,8 @@ export interface MarkdownPreviewProps {
   searchTerm?: string;
   caseSensitive?: boolean;
   currentMatchIndex?: number;
+  filePath?: string;
+  onContentChange?: (content: string) => void;
 }
 
 // Helper to highlight text content with search term
@@ -106,8 +109,35 @@ const processChildren = (children: React.ReactNode, searchTerm: string, caseSens
   return children;
 };
 
-const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0 }: MarkdownPreviewProps) => {
+const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange }: MarkdownPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
+
+  // Image cache to avoid reloading the same images
+  const imageCache = useRef<Map<string, string>>(new Map());
+
+  // Clear cache when filePath changes
+  useEffect(() => {
+    imageCache.current.clear();
+  }, [filePath]);
+
+  // Handler for inline text editing - syncs on blur to avoid re-render focus loss
+  const handleTextEdit = useCallback((e: React.FocusEvent<HTMLElement>) => {
+    if (!onContentChange || !content) return;
+
+    const element = e.currentTarget;
+    const start = parseInt(element.dataset.sourceStart || '0');
+    const end = parseInt(element.dataset.sourceEnd || '0');
+    const newText = element.textContent || '';
+
+    const originalMarkdown = content.slice(start, end);
+    const updatedMarkdown = replaceTextContent(originalMarkdown, newText);
+
+    // Only update if content actually changed
+    if (updatedMarkdown !== originalMarkdown) {
+      const newContent = content.slice(0, start) + updatedMarkdown + content.slice(end);
+      onContentChange(newContent);
+    }
+  }, [onContentChange, content]);
 
   // Helper to extract text content from React children (for copy button)
   const extractTextContent = useCallback((children: React.ReactNode): string => {
@@ -141,6 +171,63 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
           </CodeBlock>
         );
       },
+      // Custom img component to handle relative paths
+      img(props) {
+        const { src, alt, ...rest } = props;
+        const [dataUri, setDataUri] = React.useState<string | null>(null);
+        const [loading, setLoading] = React.useState(false);
+        const [error, setError] = React.useState(false);
+
+        React.useEffect(() => {
+          if (!src || !filePath) {
+            return;
+          }
+
+          // Skip if it's already a data URI or absolute URL
+          if (src.startsWith('data:') || src.startsWith('http://') || src.startsWith('https://')) {
+            return;
+          }
+
+          // Check cache first
+          const cached = imageCache.current.get(src);
+          if (cached) {
+            setDataUri(cached);
+            return;
+          }
+
+          // Load image via IPC
+          setLoading(true);
+          setError(false);
+
+          window.electronAPI?.readImageFile(src, filePath)
+            .then((result) => {
+              if (result.dataUri) {
+                imageCache.current.set(src, result.dataUri);
+                setDataUri(result.dataUri);
+              } else if (result.error) {
+                console.error('Failed to load image:', result.error);
+                setError(true);
+              }
+            })
+            .catch((err) => {
+              console.error('Failed to load image:', err);
+              setError(true);
+            })
+            .finally(() => {
+              setLoading(false);
+            });
+        }, [src]);
+
+        if (loading) {
+          return <span style={{ color: '#888', fontStyle: 'italic' }}>Loading image...</span>;
+        }
+
+        if (error) {
+          return <span style={{ color: '#f00' }} title={src || 'Unknown image'}>⚠ Image not found: {alt || src}</span>;
+        }
+
+        return <img src={dataUri || src} alt={alt} {...rest} />;
+      },
       a(props) {
         const { href, children, ...rest } = props;
 
@@ -170,62 +257,240 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
       },
       // Process text in paragraph elements
       p(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        // Make editable if onContentChange is provided
+        if (onContentChange && node?.position) {
+          return (
+            <p
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </p>
+          );
+        }
+
         return <p {...rest}>{processedChildren}</p>;
       },
       // Process text in list items
       li(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        // Make editable if onContentChange is provided
+        if (onContentChange && node?.position) {
+          return (
+            <li
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </li>
+          );
+        }
+
         return <li {...rest}>{processedChildren}</li>;
       },
       // Process headings
       h1(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h1
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h1>
+          );
+        }
+
         return <h1 {...rest}>{processedChildren}</h1>;
       },
       h2(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h2
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h2>
+          );
+        }
+
         return <h2 {...rest}>{processedChildren}</h2>;
       },
       h3(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h3
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h3>
+          );
+        }
+
         return <h3 {...rest}>{processedChildren}</h3>;
       },
       h4(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h4
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h4>
+          );
+        }
+
         return <h4 {...rest}>{processedChildren}</h4>;
       },
       h5(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h5
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h5>
+          );
+        }
+
         return <h5 {...rest}>{processedChildren}</h5>;
       },
       h6(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <h6
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </h6>
+          );
+        }
+
         return <h6 {...rest}>{processedChildren}</h6>;
       },
       // Process table cells
       td(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <td
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </td>
+          );
+        }
+
         return <td {...rest}>{processedChildren}</td>;
       },
       th(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <th
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </th>
+          );
+        }
+
         return <th {...rest}>{processedChildren}</th>;
       },
       // Process blockquotes
       blockquote(props) {
-        const { children, ...rest } = props;
+        const { children, node, ...rest } = props;
         const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+
+        if (onContentChange && node?.position) {
+          return (
+            <blockquote
+              {...rest}
+              contentEditable={true}
+              suppressContentEditableWarning={true}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+              onBlur={handleTextEdit}
+            >
+              {processedChildren}
+            </blockquote>
+          );
+        }
+
         return <blockquote {...rest}>{processedChildren}</blockquote>;
       },
       // Process strong/em/del
@@ -245,7 +510,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         return <del {...rest}>{processedChildren}</del>;
       },
     };
-  }, [searchTerm, caseSensitive, currentMatchIndex, extractTextContent]);
+  }, [searchTerm, caseSensitive, currentMatchIndex, extractTextContent, filePath, onContentChange, content, handleTextEdit]);
 
   // Scroll to current match after render
   useEffect(() => {

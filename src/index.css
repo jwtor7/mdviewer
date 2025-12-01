@@ -450,6 +450,33 @@ body {
   transition: background-color 0.3s, color 0.3s;
 }
 
+/* Inline editing styles */
+.markdown-preview [contenteditable="true"] {
+  outline: none;
+  transition: background-color 0.2s, box-shadow 0.2s;
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+.markdown-preview [contenteditable="true"]:hover {
+  background-color: rgba(127, 127, 127, 0.08);
+}
+
+.markdown-preview [contenteditable="true"]:focus {
+  background-color: rgba(38, 139, 210, 0.12);
+  box-shadow: 0 0 0 2px rgba(38, 139, 210, 0.3);
+}
+
+[data-theme='light'] .markdown-preview [contenteditable="true"]:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme='light'] .markdown-preview [contenteditable="true"]:focus {
+  background-color: rgba(0, 102, 204, 0.08);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.25);
+}
+
 .markdown-preview h1 {
   font-size: 2em;
   border-bottom: 1px solid var(--toolbar-border);
