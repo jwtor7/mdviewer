@@ -1618,15 +1618,19 @@ ipcMain.handle('save-image-from-data', async (event: IpcMainInvokeEvent, data: u
     const imagesDir = path.join(markdownDir, 'images');
     await fsPromises.mkdir(imagesDir, { recursive: true });
 
-    // Generate filename
-    let destFilename = `pasted-image${ext}`;
+    // Generate filename based on document name
+    const docBasename = path.basename(resolvedMarkdownPath, path.extname(resolvedMarkdownPath));
+    // Sanitize basename slightly to avoid really bad chars in image filenames, 
+    // but keep spaces if user uses them (as requested "match file name")
+    // We mainly want to avoid chars that might be problematic in some filesystems/urls even if valid in doc names
+    const safeDocName = docBasename.replace(/[\/\\:*?"<>|]/g, '-');
+
     let counter = 1;
-    // Base timestamp to avoid collisions across sessions
-    const timestamp = Date.now();
+    let destFilename = `${safeDocName}-${counter}${ext}`;
 
     while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
-      destFilename = `pasted-image-${timestamp}-${counter}${ext}`;
       counter++;
+      destFilename = `${safeDocName}-${counter}${ext}`;
     }
 
     const destPath = path.join(imagesDir, destFilename);
