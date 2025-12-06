@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -226,6 +226,9 @@ src/
 ## Changelog
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
+
+### 3.0.1 - 2025-12-05
+- Security fix for PDF export (CSP)
 
 ### 3.0.0 - 2025-12-01
 - Image Embedding - Drag and drop images to auto-copy to `./images/` directory and insert markdown syntax
