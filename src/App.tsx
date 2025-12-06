@@ -29,6 +29,7 @@ const App: React.FC = () => {
         redo,
         canUndo,
         canRedo,
+        reorderDocuments,
     } = useDocuments();
 
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
@@ -207,6 +208,18 @@ const App: React.FC = () => {
         return cleanup;
     }, [toggleWordWrap]);
 
+    // Listen for close-tab IPC events from File menu
+    useEffect(() => {
+        if (!window.electronAPI?.onCloseTab) return;
+        const cleanup = window.electronAPI.onCloseTab(() => {
+            // Close the currently active tab
+            handleCloseTab({ stopPropagation: () => { } } as React.MouseEvent<HTMLButtonElement>, activeTabId);
+        });
+        return cleanup;
+    }, [activeTabId, documents, activeDoc]);
+
+
+
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
         setShowFindReplace(true);
@@ -305,8 +318,9 @@ const App: React.FC = () => {
         }
     }, [viewMode, activeDoc.content, showError]);
 
-    // Track the current drag operation ID
+    // Track the current drag operation ID and Document ID
     const dragIdRef = useRef<string | null>(null);
+    const draggedDocIdRef = useRef<string | null>(null);
 
     const handleCloseTab = async (e: React.MouseEvent<HTMLButtonElement>, id: string): Promise<void> => {
         e.stopPropagation();
@@ -326,24 +340,26 @@ const App: React.FC = () => {
                         setActiveTabId(id);
                     }
                     await handleSave();
+                    await handleSave();
                     // Close after save
-                    closeDocument(id);
+                    closeTabOrWindow(id);
                 } else {
                     // Don't save, just close
-                    closeDocument(id);
+                    closeTabOrWindow(id);
                 }
             } catch (err) {
                 showError('Failed to show unsaved changes dialog');
                 return;
             }
         } else {
-            closeDocument(id);
+            closeTabOrWindow(id);
         }
     };
 
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document): void => {
+    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document, index: number): void => {
         const dragId = Date.now().toString();
         dragIdRef.current = dragId;
+        draggedDocIdRef.current = doc.id;
 
         // Ensure filePath is included in the dragged data
         const dragData: DraggableDocument = {
@@ -352,7 +368,8 @@ const App: React.FC = () => {
             dragId
         };
         e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('application/x-mdviewer-tab-index', index.toString());
+        e.dataTransfer.effectAllowed = 'copyMove';
     };
 
     const closeTabOrWindow = (id: string): void => {
@@ -397,39 +414,31 @@ const App: React.FC = () => {
     };
 
     const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>, doc: Document): Promise<void> => {
-        const currentDragId = dragIdRef.current;
+        // Drag-to-new-window logic:
+        // If we dragged explicitly outside the window and the drop wasn't handled by us (reorder),
+        // we create a new window.
 
-        // Check if the tab was dropped and handled by ANY window (including this one)
-        let handled = false;
-        if (window.electronAPI && window.electronAPI.checkTabDropped && currentDragId) {
-            handled = await window.electronAPI.checkTabDropped(currentDragId);
-        }
+        const isOutside = (
+            e.clientX < 0 ||
+            e.clientX > window.innerWidth ||
+            e.clientY < 0 ||
+            e.clientY > window.innerHeight
+        );
 
-        if (handled) {
-            // The tab was successfully dropped into a window.
-            // We should close it here to "move" it.
-            closeTabOrWindow(doc.id);
-            return;
-        }
-
-        // If NOT handled, check if dropped outside to create a new window
-        if (e.screenX < window.screenX ||
-            e.screenX > window.screenX + window.outerWidth ||
-            e.screenY < window.screenY ||
-            e.screenY > window.screenY + window.outerHeight) {
-
+        if (isOutside && e.dataTransfer.dropEffect === 'none') {
             if (window.electronAPI && window.electronAPI.createWindowForTab) {
                 window.electronAPI.createWindowForTab({
                     filePath: doc.filePath,
                     content: doc.content
                 });
-                // Close the tab in current window
+                // Close the tab as we created a new window for it
                 closeTabOrWindow(doc.id);
             }
         }
 
         // Reset drag ID
         dragIdRef.current = null;
+        draggedDocIdRef.current = null;
     };
 
     // Handle file drops onto the app window
@@ -464,36 +473,39 @@ const App: React.FC = () => {
 
                     // It's a tab!
 
-                    // Notify main process that this tab was dropped/handled
-                    // BUT only if it's not a self-drop (optional optimization, but safer to just notify)
-                    // Actually, if we notify on self-drop, handleDragEnd will close it.
-                    // We need to prevent closing on self-drop.
+                    // CRITICAL CHANGE: Disable re-integration from other windows.
+                    // Only allow drops if the drag originated in THIS window (internal reorder/self-drop).
+                    if (dragIdRef.current !== doc.dragId) {
+                        // External drop - IGNORE IT.
+                        return;
+                    }
 
-                    // Check if this is a self-drop
-                    if (dragIdRef.current === doc.dragId) {
-                        // Self-drop! Do NOT notify main process.
-                        // handleDragEnd will see handled=false.
-                        // It will check "outside". It is NOT outside.
-                        // So it will do nothing. Tab stays. Perfect.
+                    // Check if we already have this doc (by ID or path)
+                    const existingById = documents.find(d => d.id === doc.id);
+                    const existingByPath = doc.filePath ? findDocumentByPath(doc.filePath) : undefined;
+
+                    if (existingById) {
+                        setActiveTabId(existingById.id);
+                    } else if (existingByPath) {
+                        setActiveTabId(existingByPath.id);
                     } else {
-                        if (window.electronAPI && window.electronAPI.notifyTabDropped) {
-                            window.electronAPI.notifyTabDropped(doc.dragId);
+                        // Add it (only if internal, though internal usually means it exists...)
+                        // This case handles a theoretical "we dragged it out then back in same window" 
+                        // but if we dragged it out, we haven't closed it yet (dragEnd happens after).
+
+                        // Actually, if it's internal, it MUST exist unless we deleted it mid-drag?
+                        // Safe to just activate if found.
+
+                        if (!existingById && !existingByPath) {
+                            addDocument({
+                                id: doc.id,
+                                name: doc.name,
+                                content: doc.content,
+                                filePath: doc.filePath
+                            });
                         }
                     }
-
-                    // Check if we already have this doc (by path)
-                    const existing = doc.filePath ? findDocumentByPath(doc.filePath) : undefined;
-                    if (existing) {
-                        setActiveTabId(existing.id);
-                    } else {
-                        // Add it
-                        addDocument({
-                            id: doc.id, // Keep ID or generate new? keeping ID might be good for tracking
-                            name: doc.name,
-                            content: doc.content,
-                            filePath: doc.filePath
-                        });
-                    }
+                    return; // Handled
                     return; // Handled
                 }
             } catch (err) {
@@ -641,8 +653,46 @@ const App: React.FC = () => {
                         onClick={() => setActiveTabId(doc.id)}
                         onContextMenu={(e) => handleTabContextMenu(e, doc.id)}
                         draggable={true}
-                        onDragStart={(e) => handleDragStart(e, doc)}
+                        onDragStart={(e) => handleDragStart(e, doc, documents.indexOf(doc))}
                         onDragEnd={(e) => handleDragEnd(e, doc)}
+                        onDragOver={(e) => {
+                            e.preventDefault();
+                            if (e.dataTransfer.types.includes('application/x-mdviewer-tab-index')) {
+                                e.dataTransfer.dropEffect = 'move';
+                            }
+                        }}
+                        onDrop={(e) => {
+                            e.preventDefault();
+
+                            // Check if this is an internal reorder (tab belongs to THIS window)
+                            // We do this by checking if the dragged document ID exists in our documents list
+                            let isInternal = false;
+                            try {
+                                const textData = e.dataTransfer.getData('text/plain');
+                                if (textData) {
+                                    const draggedDoc = JSON.parse(textData) as DraggableDocument;
+                                    if (draggedDoc.id && documents.some(d => d.id === draggedDoc.id)) {
+                                        isInternal = true;
+                                    }
+                                }
+                            } catch (err) {
+                                // Ignore parse error, treat as external
+                            }
+
+                            if (isInternal) {
+                                e.stopPropagation(); // Stop bubbling only if we handle it here
+                                const fromIndexStr = e.dataTransfer.getData('application/x-mdviewer-tab-index');
+                                if (fromIndexStr) {
+                                    const fromIndex = parseInt(fromIndexStr, 10);
+                                    const toIndex = documents.indexOf(doc);
+
+                                    if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
+                                        reorderDocuments(fromIndex, toIndex);
+                                    }
+                                }
+                            }
+                            // If NOT internal (external drop), we let it bubble up to the container's handleFileDrop
+                        }}
                         role="tab"
                         aria-selected={activeTabId === doc.id}
                         aria-controls="content-area"

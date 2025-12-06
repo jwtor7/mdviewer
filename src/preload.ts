@@ -2,53 +2,35 @@ import { contextBridge, ipcRenderer, IpcRendererEvent, webUtils } from 'electron
 import type { ElectronAPI, FileOpenData } from './types/electron';
 
 contextBridge.exposeInMainWorld('electronAPI', {
-  onFileOpen: (callback: (data: FileOpenData) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, value: FileOpenData): void => callback(value);
-    ipcRenderer.on('file-open', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('file-open', handler);
-    };
+  onFileOpen: (callback: (data: { content: string; filePath: string; name: string }) => void): (() => void) => {
+    const subscription = (_: IpcRendererEvent, data: { content: string; filePath: string; name: string }) => callback(data);
+    ipcRenderer.on('file-open', subscription);
+    return () => ipcRenderer.removeListener('file-open', subscription);
   },
   onFileNew: (callback: () => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent): void => callback();
-    ipcRenderer.on('file-new', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('file-new', handler);
-    };
+    const subscription = () => callback();
+    ipcRenderer.on('file-new', subscription);
+    return () => ipcRenderer.removeListener('file-new', subscription);
   },
-  onFileSave: (callback: () => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent): void => callback();
-    ipcRenderer.on('file-save', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('file-save', handler);
-    };
+  onFileSave: (callback: (request: any) => void): (() => void) => {
+    const subscription = (_: IpcRendererEvent, request: any) => callback(request);
+    ipcRenderer.on('file-save', subscription);
+    return () => ipcRenderer.removeListener('file-save', subscription);
   },
   onSaveAllAndQuit: (callback: () => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent): void => callback();
-    ipcRenderer.on('save-all-and-quit', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('save-all-and-quit', handler);
-    };
+    const subscription = () => callback();
+    ipcRenderer.on('save-all-and-quit', subscription);
+    return () => ipcRenderer.removeListener('save-all-and-quit', subscription);
   },
   onFormatText: (callback: (format: string) => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent, format: string): void => callback(format);
-    ipcRenderer.on('format-text', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('format-text', handler);
-    };
+    const subscription = (_: IpcRendererEvent, format: string) => callback(format);
+    ipcRenderer.on('format-text', subscription);
+    return () => ipcRenderer.removeListener('format-text', subscription);
   },
   onToggleWordWrap: (callback: () => void): (() => void) => {
-    const handler = (_event: IpcRendererEvent): void => callback();
-    ipcRenderer.on('toggle-word-wrap', handler);
-    // Return cleanup function to remove listener
-    return (): void => {
-      ipcRenderer.removeListener('toggle-word-wrap', handler);
-    };
+    const subscription = () => callback();
+    ipcRenderer.on('toggle-word-wrap', subscription);
+    return () => ipcRenderer.removeListener('toggle-word-wrap', subscription);
   },
   onRequestUnsavedDocs: (callback: () => string[]): (() => void) => {
     const handler = (_event: IpcRendererEvent): void => {
@@ -61,12 +43,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('request-unsaved-docs', handler);
     };
   },
+  onCloseTab: (callback: () => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent): void => callback();
+    ipcRenderer.on('close-tab', handler);
+    // Return cleanup function to remove listener
+    return (): void => {
+      ipcRenderer.removeListener('close-tab', handler);
+    };
+  },
   createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
-  notifyTabDropped: (dragId: string): Promise<boolean> =>
-    ipcRenderer.invoke('tab-dropped', dragId),
-  checkTabDropped: (dragId: string): Promise<boolean> =>
-    ipcRenderer.invoke('check-tab-dropped', dragId),
   closeWindow: (): Promise<void> =>
     ipcRenderer.invoke('close-window'),
   openExternalUrl: (url: string): Promise<void> =>
@@ -90,4 +76,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('copy-image-to-document', { imagePath, markdownFilePath }),
   saveImageFromData: (imageData: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
     ipcRenderer.invoke('save-image-from-data', { imageData, markdownFilePath }),
+  logDebug: (message: string, data?: any): void => ipcRenderer.send('log-debug', { message, data }),
 } satisfies ElectronAPI);

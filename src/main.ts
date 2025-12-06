@@ -512,6 +512,14 @@ const createMenu = (): void => {
           label: 'Open Recent',
           submenu: recentFilesSubmenu
         },
+        {
+          label: 'Close Tab',
+          accelerator: 'CmdOrCtrl+W',
+          click: (): void => {
+            if (!mainWindow || mainWindow.isDestroyed()) return;
+            mainWindow.webContents.send('close-tab');
+          }
+        },
         { type: 'separator' },
         {
           label: 'Save',
@@ -793,72 +801,17 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
   }
 };
 
-
-
 // Security: Create rate limiters for IPC handlers
 const rateLimiter = createRateLimiter(
   SECURITY_CONFIG.RATE_LIMIT.MAX_CALLS,
   SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS
 );
 
-// Security: Track dropped tabs with proper cleanup to prevent memory leaks
-const droppedTabs = new Map<string, NodeJS.Timeout>();
+// Tab drag and drop status tracking
 
-ipcMain.handle('tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boolean => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected tab-dropped from invalid origin');
-    return false;
-  }
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-tab-dropped')) {
-    console.warn('Rate limit exceeded for tab-dropped');
-    return false;
-  }
-
-  // Security: Clear existing timeout if any to prevent duplicate timers
-  const existingTimeout = droppedTabs.get(dragId);
-  if (existingTimeout) {
-    clearTimeout(existingTimeout);
-  }
-
-  // Security: Enforce maximum size to prevent unbounded growth
-  if (droppedTabs.size >= SECURITY_CONFIG.MAX_DROPPED_TABS) {
-    console.warn(`Max dropped tabs limit (${SECURITY_CONFIG.MAX_DROPPED_TABS}) reached, clearing oldest`);
-    const firstKey = droppedTabs.keys().next().value as string | undefined;
-    if (firstKey) {
-      const timeout = droppedTabs.get(firstKey);
-      if (timeout) clearTimeout(timeout);
-      droppedTabs.delete(firstKey);
-    }
-  }
-
-  // Auto-cleanup after 5 seconds
-  const timeout = setTimeout(() => {
-    droppedTabs.delete(dragId);
-  }, 5000);
-
-  droppedTabs.set(dragId, timeout);
-  return true;
-});
-
-ipcMain.handle('check-tab-dropped', (event: IpcMainInvokeEvent, dragId: string): boolean => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected check-tab-dropped from invalid origin');
-    return false;
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-check-tab-dropped')) {
-    console.warn('Rate limit exceeded for check-tab-dropped');
-    return false;
-  }
-
-  return droppedTabs.has(dragId);
+ipcMain.on('log-debug', (_event, { message, data }) => {
+  console.log(`[RENDERER-DEBUG] ${message}`, data ? JSON.stringify(data) : '');
 });
 
 ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {

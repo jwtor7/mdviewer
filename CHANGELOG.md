@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.5] - 2025-12-06
+
+### Fixed
+- Fixed critical race condition in tab dragging by disabling cross-window tab reintegration to prevent data loss ("disappearing tabs").
+- Fixed "Duplicate Tabs" issue where reordering tabs could sometimes create ghost duplicates.
+- Fixed issue where closing the last tab would not close the window.
+
+### Changed
+- **Tab Re-integration Disabled**: Dragging a tab from one window to another is now explicitly blocked to ensure stability. You can still drag a tab *out* to create a new window, and reorder tabs *within* a window.
+- Added `Cmd+W` / `Ctrl+W` shortcut to close the active tab.
+
 ## [3.0.4] - 2025-12-06
 
 ### Changed

@@ -33,6 +33,7 @@ export interface UseDocumentsReturn {
   redo: () => void;
   canUndo: boolean;
   canRedo: boolean;
+  reorderDocuments: (fromIndex: number, toIndex: number) => void;
 }
 
 export const useDocuments = (): UseDocumentsReturn => {
@@ -213,5 +214,13 @@ export const useDocuments = (): UseDocumentsReturn => {
     redo,
     canUndo,
     canRedo,
+    reorderDocuments: useCallback((fromIndex: number, toIndex: number): void => {
+      setDocuments(prev => {
+        const newDocs = [...prev];
+        const [movedDoc] = newDocs.splice(fromIndex, 1);
+        newDocs.splice(toIndex, 0, movedDoc);
+        return newDocs;
+      });
+    }, []),
   };
 };

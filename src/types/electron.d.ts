@@ -54,6 +54,8 @@ export type IPCMessage =
   | { channel: 'get-unsaved-documents'; data: void }
   /** Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux) */
   | { channel: 'reveal-in-finder'; data: { filePath: string } }
+  /** Request to close the active tab */
+  | { channel: 'close-tab'; data: void }
   /** Read an image file and return as base64 data URI */
   | { channel: 'read-image-file'; data: { imagePath: string; markdownFilePath: string } }
   /** Copy an image file to the document's images directory */
@@ -66,10 +68,9 @@ export interface ElectronAPI {
   onSaveAllAndQuit: (callback: () => void) => () => void;
   onFormatText: (callback: (format: string) => void) => () => void;
   onToggleWordWrap: (callback: () => void) => () => void;
+  onCloseTab: (callback: () => void) => () => void;
   onRequestUnsavedDocs: (callback: () => string[]) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;
-  notifyTabDropped: (dragId: string) => Promise<boolean>;
-  checkTabDropped: (dragId: string) => Promise<boolean>;
   closeWindow: () => Promise<void>;
   openExternalUrl: (url: string) => Promise<void>;
   exportPDF: (data: PDFExportData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
@@ -82,6 +83,7 @@ export interface ElectronAPI {
   readImageFile: (imagePath: string, markdownFilePath: string) => Promise<{ dataUri?: string; error?: string }>;
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
+  logDebug: (message: string, data?: any) => void;
 }
 
 declare global {
