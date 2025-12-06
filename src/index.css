@@ -618,7 +618,7 @@ body {
   align-items: flex-start;
 }
 
-.markdown-preview li:has(> input[type="checkbox"]) > input[type="checkbox"] {
+.markdown-preview li:has(> input[type="checkbox"])>input[type="checkbox"] {
   margin-top: 0.3em;
 }
 
@@ -805,6 +805,13 @@ body {
   align-items: flex-end;
   padding-left: 10px;
   -webkit-app-region: drag;
+  overflow-x: auto;
+  flex-wrap: nowrap;
+}
+
+/* Hide scrollbar for cleaner UI */
+.tab-bar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -822,6 +829,7 @@ body {
   -webkit-app-region: no-drag;
   transition: all 0.2s;
   user-select: none;
+  flex-shrink: 0;
 }
 
 .tab:hover {
@@ -1026,7 +1034,8 @@ body {
 
 /* Split View Styles */
 .split-view {
-  --split-position: 50%;  /* default value, updated via JS */
+  --split-position: 50%;
+  /* default value, updated via JS */
   display: flex;
   width: 100%;
   height: 100%;
@@ -1044,7 +1053,8 @@ body {
 }
 
 .split-pane-right {
-  width: calc(100% - var(--split-position) - 4px);  /* 4px = divider width */
+  width: calc(100% - var(--split-position) - 4px);
+  /* 4px = divider width */
 }
 
 .split-pane-left .code-editor,
@@ -1273,6 +1283,7 @@ body {
   background: transparent;
   color: inherit;
 }
+
 /* Headings Dropdown Menu Styles */
 .headings-dropdown-wrapper {
   position: relative;
@@ -1299,6 +1310,7 @@ body {
     opacity: 0;
     transform: translateY(-8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
