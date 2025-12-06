@@ -5,6 +5,7 @@ import remarkRehype from 'remark-rehype';
 import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeStringify from 'rehype-stringify';
+import crypto from 'crypto';
 
 export const convertMarkdownToHTML = async (markdown: string): Promise<string> => {
   const file = await unified()
@@ -118,13 +119,14 @@ export const getPDFStyles = (): string => {
 
 export const generatePDFHTML = async (markdownContent: string): Promise<string> => {
   const htmlBody = await convertMarkdownToHTML(markdownContent);
+  const nonce = crypto.randomBytes(16).toString('base64');
 
   return `<!DOCTYPE html>
 <html>
   <head>
     <meta charset="utf-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; font-src 'self' data:;">
-    <style>${getPDFStyles()}</style>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: blob:; style-src 'nonce-${nonce}'; font-src 'self' data:;">
+    <style nonce="${nonce}">${getPDFStyles()}</style>
   </head>
   <body>
     ${htmlBody}

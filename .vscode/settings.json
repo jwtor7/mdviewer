@@ -1,0 +1,5 @@
+{
+    "accessibility.signals.chatEditModifiedFile": {
+        "sound": "off"
+    }
+}

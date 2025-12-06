@@ -81,6 +81,7 @@ export interface ElectronAPI {
   revealInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
   readImageFile: (imagePath: string, markdownFilePath: string) => Promise<{ dataUri?: string; error?: string }>;
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
+  saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
 }
 
 declare global {

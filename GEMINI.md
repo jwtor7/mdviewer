@@ -189,3 +189,19 @@ git push --force origin main
 ```
 
 Rewrites history on main. Use consciously (typically safe in solo workflow when required).
+## Release Protocol
+
+### 1. Mandatory Pre-Merge Checks
+- [ ] **Bump Version**: Update `version` in `package.json` (e.g., 2.7.0 -> 2.7.1 for fixes)
+- [ ] **Update Documentation**:
+    - **CHANGELOG.md**: Add detailed entry under new version header.
+    - **README.md**: Update "Latest Version" references if applicable (keep it minimal, ~309 lines).
+- [ ] **Verify Build**: Ensure `npm start` runs without errors.
+
+### 2. Commit Standards
+- **Subject**: Use imperative mood ("Bump version to 2.7.1", "Update changelog").
+- **Content**: Include version bump and documentation updates in the same commit or immediately following the feature merge.
+
+### 3. "Remembering" Strategy
+- **ALWAYS** check this Release Protocol before asking to push.
+- **NEVER** skip version bumps for meaningful changes (fix, feat).

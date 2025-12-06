@@ -1561,6 +1561,86 @@ ipcMain.handle('copy-image-to-document', async (event: IpcMainInvokeEvent, data:
   }
 });
 
+ipcMain.handle('save-image-from-data', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ relativePath?: string; error?: string }> => {
+  // Security: Validate IPC origin
+  if (!isValidIPCOrigin(event)) {
+    console.warn('Rejected save-image-from-data from invalid origin');
+    return { error: 'Invalid IPC origin' };
+  }
+
+  // Security: Apply rate limiting
+  const senderId = event.sender.id.toString();
+  if (!rateLimiter(senderId + '-save-image-from-data')) {
+    console.warn('Rate limit exceeded for save-image-from-data');
+    return { error: 'Rate limit exceeded' };
+  }
+
+  // Validate input
+  if (typeof data !== 'object' || data === null) {
+    return { error: 'Invalid data' };
+  }
+
+  const { imageData, markdownFilePath } = data as { imageData: unknown; markdownFilePath: unknown };
+
+  if (typeof imageData !== 'string' || typeof markdownFilePath !== 'string') {
+    return { error: 'Invalid parameters' };
+  }
+
+  try {
+    const resolvedMarkdownPath = path.resolve(markdownFilePath);
+
+    // Parse data URI
+    // Format: data:image/png;base64,.....
+    const matches = imageData.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+    if (!matches) {
+      return { error: 'Invalid data URI format' };
+    }
+
+    const ext = '.' + matches[1];
+    const base64Data = matches[2];
+    const buffer = Buffer.from(base64Data, 'base64');
+
+    // Security: Validate extension
+    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
+    // Note: mime type handling might be slightly different than extensions (jpeg vs jpg). 
+    // We'll normalize generic check.
+    if (!['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) {
+      return { error: 'Invalid image type' };
+    }
+
+    // Security: Check size
+    if (buffer.length > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+      return { error: 'Image too large' };
+    }
+
+    // Create images directory
+    const markdownDir = path.dirname(resolvedMarkdownPath);
+    const imagesDir = path.join(markdownDir, 'images');
+    await fsPromises.mkdir(imagesDir, { recursive: true });
+
+    // Generate filename
+    let destFilename = `pasted-image${ext}`;
+    let counter = 1;
+    // Base timestamp to avoid collisions across sessions
+    const timestamp = Date.now();
+
+    while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
+      destFilename = `pasted-image-${timestamp}-${counter}${ext}`;
+      counter++;
+    }
+
+    const destPath = path.join(imagesDir, destFilename);
+    await fsPromises.writeFile(destPath, buffer);
+
+    const relativePath = `./images/${destFilename}`;
+    return { relativePath };
+
+  } catch (err) {
+    console.error('Save image from data error:', err);
+    return { error: 'Failed to save pasted image' };
+  }
+});
+
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon

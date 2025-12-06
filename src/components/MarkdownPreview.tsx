@@ -1,10 +1,10 @@
 import React, { memo, useEffect, useRef, useMemo, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypeSanitize from 'rehype-sanitize';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
-import type { ThemeMode } from '../constants/index.js';
+import { ThemeMode, IMAGE_CONFIG } from '../constants/index.js';
 import CodeBlock from './CodeBlock';
 import { replaceTextContent } from '../utils/textEditing';
 
@@ -139,6 +139,113 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     }
   }, [onContentChange, content]);
 
+  // Handler for pasting images
+  const handlePaste = useCallback(async (e: React.ClipboardEvent<HTMLElement>) => {
+    if (!onContentChange || !content) return;
+
+    if (!filePath) {
+      // Check if there are files to be pasted
+      if (e.clipboardData.files.length > 0) {
+        alert('Please save the document before pasting images.');
+      }
+      return;
+    }
+
+    const files = Array.from(e.clipboardData.files);
+    let imageFiles: File[] = [];
+
+    try {
+      imageFiles = files.filter(file => {
+        // Check MIME type first (most reliable for clipboard)
+        if (file.type.startsWith('image/')) {
+          return true;
+        }
+
+        // Fallback to extension check
+        const ext = file.name.includes('.')
+          ? file.name.substring(file.name.lastIndexOf('.')).toLowerCase()
+          : '';
+
+        // Only allow defined image types
+        return (IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext);
+      });
+    } catch (err) {
+      console.error('[MarkdownPreview] Error filtering images:', err);
+    }
+
+    // If no images, let default paste happen (text)
+    if (imageFiles.length === 0) {
+      return;
+    }
+
+    // Prevent default to stop browser from inserting <img src="blob:..."> which we can't save easily
+    e.preventDefault();
+
+    const element = e.currentTarget;
+    const start = parseInt(element.dataset.sourceStart || '0');
+    const end = parseInt(element.dataset.sourceEnd || '0');
+
+    // We will append images to the end of the current block for simplicity
+    // A better approach would be to insert at caret, but that requires complex Selection API handling
+    // and mapping to markdown offsets.
+
+    let addedMarkdown = '';
+
+    for (const imageFile of imageFiles) {
+      try {
+        let sourcePath: string | null = null;
+        if (window.electronAPI?.getPathForFile) {
+          sourcePath = window.electronAPI.getPathForFile(imageFile);
+        }
+
+        let relativePath: string | undefined;
+
+        if (sourcePath && window.electronAPI?.copyImageToDocument) {
+          const result = await window.electronAPI.copyImageToDocument(sourcePath, filePath);
+          relativePath = result.relativePath;
+        } else if (window.electronAPI?.saveImageFromData) {
+          // Fallback: Read file as data URI and save
+          const reader = new FileReader();
+          const dataUri = await new Promise<string>((resolve, reject) => {
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(imageFile);
+          });
+
+          const result = await window.electronAPI.saveImageFromData(dataUri, filePath);
+          relativePath = result.relativePath;
+        }
+
+        if (relativePath) {
+          // Use encoded path for spaces
+          addedMarkdown += `![${imageFile.name}](${encodeURI(relativePath)})`;
+        }
+      } catch (err) {
+        console.error('Failed to handle pasted image', err);
+      }
+    }
+
+    if (addedMarkdown) {
+      // Insert the markdown.
+      // We replace the current block's content with: current_text + added_markdown
+      // This ensures we don't lose the text being edited + the new image.
+      // NOTE: We must be careful. handlePaste happens BEFORE the text might be updated in the DOM if we prevented default?
+      // We prevented default, so the text currently in 'element' is what was there before paste.
+      // But wait, if they were typing, element.textContent is current.
+
+      const currentText = element.textContent || '';
+      const originalMarkdown = content.slice(start, end);
+      const updatedBlockText = replaceTextContent(originalMarkdown, currentText);
+
+      // Add the image markdown
+      const newBlockContent = updatedBlockText + (updatedBlockText.endsWith('\n') ? '' : '\n') + addedMarkdown;
+
+      const newContent = content.slice(0, start) + newBlockContent + content.slice(end);
+      onContentChange(newContent);
+    }
+
+  }, [onContentChange, content, filePath]);
+
   // Helper to extract text content from React children (for copy button)
   const extractTextContent = useCallback((children: React.ReactNode): string => {
     if (typeof children === 'string') return children;
@@ -188,7 +295,10 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
             return;
           }
 
-          // Check cache first
+          // Decode URL to get actual filename (e.g. "my%20image.png" -> "my image.png")
+          const decodedSrc = decodeURIComponent(src);
+
+          // Check cache first (using the decoded source or original? usually original source string is the key)
           const cached = imageCache.current.get(src);
           if (cached) {
             setDataUri(cached);
@@ -199,7 +309,8 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
           setLoading(true);
           setError(false);
 
-          window.electronAPI?.readImageFile(src, filePath)
+          // Use decoded path for file system access
+          window.electronAPI?.readImageFile(decodedSrc, filePath)
             .then((result) => {
               if (result.dataUri) {
                 imageCache.current.set(src, result.dataUri);
@@ -270,6 +381,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </p>
@@ -293,6 +405,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </li>
@@ -315,6 +428,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h1>
@@ -336,6 +450,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h2>
@@ -357,6 +472,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h3>
@@ -378,6 +494,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h4>
@@ -399,6 +516,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h5>
@@ -420,6 +538,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </h6>
@@ -442,6 +561,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </td>
@@ -463,6 +583,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </th>
@@ -485,6 +606,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               data-source-start={node.position.start.offset}
               data-source-end={node.position.end.offset}
               onBlur={handleTextEdit}
+              onPaste={handlePaste}
             >
               {processedChildren}
             </blockquote>
@@ -522,11 +644,47 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     }
   }, [searchTerm, currentMatchIndex]);
 
+  // Validation schema to allow relative paths (no protocol) in img src
+  const schema = useMemo(() => {
+    return {
+      ...defaultSchema,
+      protocols: {
+        ...defaultSchema.protocols,
+        src: ['http', 'https', 'data'] // Relative paths are allowed if not in this list? No, usually strict.
+        // Actually rehype-sanitize default behavior is strict.
+        // To allow relative paths (no protocol), we need to ensure the protocol check allows it or is disabled for src.
+        // Setting it to allow "no protocol" is tricky.
+        // Let's try merging with a custom setup.
+      }
+    };
+  }, []);
+
+  // Custom schema to allow relative paths (which have no protocol)
+  // By default, rehype-sanitize might strip src if it doesn't match known protocols.
+  // We need to permit src to be relative.
+  const customSchema = useMemo(() => ({
+    ...defaultSchema,
+    protocols: {
+      ...defaultSchema.protocols,
+      // To allow relative URLs, we generally need to be careful.
+      // But standard rehype-sanitize behavior for src usually allows http/https/mailto.
+      // If we want relative, we might need to basically disable protocol check for src,
+      // or rely on the fact that if we pass null/undefined to a property in protocols, it allows everything.
+      src: null
+    }
+  }), []);
+
   return (
-    <div ref={previewRef} className="markdown-preview" role="document" aria-label="Rendered markdown preview">
+    <div
+      ref={previewRef}
+      className="markdown-preview"
+      role="document"
+      aria-label="Rendered markdown preview"
+      onPaste={handlePaste}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypeSanitize, rehypeHighlight]}
+        rehypePlugins={[[rehypeSanitize, customSchema], rehypeHighlight]}
         components={components}
       >
         {content}

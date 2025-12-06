@@ -88,4 +88,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('read-image-file', { imagePath, markdownFilePath }),
   copyImageToDocument: (imagePath: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
     ipcRenderer.invoke('copy-image-to-document', { imagePath, markdownFilePath }),
+  saveImageFromData: (imageData: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
+    ipcRenderer.invoke('save-image-from-data', { imageData, markdownFilePath }),
 } satisfies ElectronAPI);

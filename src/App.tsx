@@ -551,7 +551,7 @@ const App: React.FC = () => {
                         if (result.relativePath) {
                             // Insert markdown image syntax at cursor or end of content
                             const filename = imageFile.name;
-                            const imageMarkdown = `![${filename}](${result.relativePath})`;
+                            const imageMarkdown = `![${filename}](${encodeURI(result.relativePath)})`;
 
                             // Append to content (you could enhance this to insert at cursor position)
                             const newContent = activeDoc.content + '\n\n' + imageMarkdown;

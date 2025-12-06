@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.3] - 2025-12-06
+
+### Fixed
+- Image Paste: Support for pasting screenshots and images directly into the rendered view (saves to `./images/` folder)
+- Image Rendering: Proper handling of spaces in image filenames (fixed disappearing images)
+- Image Paste: Added support for detection of images by MIME type in clipboard content
+
 ## [3.0.2] - 2025-12-05
 
 ### Fixed
