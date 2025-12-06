@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.2] - 2025-12-05
+
+### Fixed
+- Horizontal scrolling for tab bar when tabs overflow the window width (tabs no longer shrink indefinitely)
+
 ## [3.0.1] - 2025-12-05
 
 ### Security
@@ -466,7 +471,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rendered/Raw view toggle
 - Syntax highlighting
 
-[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v2.8.11...HEAD
+[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v3.0.2...HEAD
+[3.0.2]: https://github.com/jwtor7/mdviewer/compare/v3.0.1...v3.0.2
+[3.0.1]: https://github.com/jwtor7/mdviewer/compare/v3.0.0...v3.0.1
 [2.8.11]: https://github.com/jwtor7/mdviewer/compare/v2.8.10...v2.8.11
 [2.8.10]: https://github.com/jwtor7/mdviewer/compare/v2.8.9...v2.8.10
 [2.8.9]: https://github.com/jwtor7/mdviewer/compare/v2.8.8...v2.8.9
