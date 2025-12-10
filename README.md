@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.0.1-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.6-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -227,34 +227,22 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
-### 3.0.1 - 2025-12-05
-- Security fix for PDF export (CSP)
+### 3.0.6 - 2025-12-10
+- Fix tab tear-off (drag tabs out to create new windows)
 
-### 3.0.0 - 2025-12-01
-- Image Embedding - Drag and drop images to auto-copy to `./images/` directory and insert markdown syntax
-- Relative image path support for preview modes
+### 3.0.5 - 2025-12-06
+- Fix tab dragging race conditions
+- Add Cmd+W to close tabs
 
-### 2.8.11 - 2025-11-29
-- Word Wrap Toggle
+### 3.0.4 - 2025-12-06
+- Pasted screenshots use document filename
 
-### 2.8.10 - 2025-11-29
-- Open Recent expanded to 50 files with full paths
-- Always on Top window preference
-- Right-click context menu
+### 3.0.3 - 2025-12-06
+- Image paste support for screenshots
+- Fix image rendering with spaces in filenames
 
-### 2.8.9 - 2025-11-27
-- Tab context menu (Reveal in Finder)
-
-### 2.8.8 - 2025-11-26
-- Bug fixes
-
-### 2.8.0 - 2025-11-25
-- Find in any view
-- Custom undo/redo
-- Bug fixes
-
-### 2.7.13 - 2025-11-25
-- Advanced formatting toolbar
+### 3.0.2 - 2025-12-05
+- Horizontal scrolling for tab overflow
 
 
 

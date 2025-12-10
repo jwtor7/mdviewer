@@ -425,7 +425,9 @@ const App: React.FC = () => {
             e.clientY > window.innerHeight
         );
 
-        if (isOutside && e.dataTransfer.dropEffect === 'none') {
+        // Create new window if dragged outside, regardless of dropEffect
+        // The dropEffect check was preventing tab tear-off from working
+        if (isOutside) {
             if (window.electronAPI && window.electronAPI.createWindowForTab) {
                 window.electronAPI.createWindowForTab({
                     filePath: doc.filePath,
