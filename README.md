@@ -32,41 +32,56 @@
 
 ## Features
 
-- Multi-tab support for multiple Markdown documents
-- Drag tabs outside to spawn new windows
-- Four view modes: Rendered, Raw, Split (side-by-side), and Text (plain text)
-- Word wrap toggle for Raw/Code view (toolbar button, keyboard shortcut, menu item)
-- Image embedding: drag and drop images onto saved documents to auto-copy to `./images/` and insert markdown syntax
-- Relative image path support: images referenced with relative paths are loaded and displayed in preview modes
-- Synchronized text selection highlighting between Raw and Rendered views (Split mode)
-- GitHub Flavored Markdown with tables, task lists, and strikethrough
+### Core
+- Multi-tab support with drag-to-spawn new windows
+- Four view modes: Rendered, Raw, Split (side-by-side), Text (plain)
+- GitHub Flavored Markdown (tables, task lists, strikethrough)
 - Syntax highlighting for code blocks
-- Five themes: System, Light, Dark, Solarized Light, Solarized Dark
-- Find & Replace with case-sensitive search, match navigation, and bulk replace
-- Advanced formatting toolbar: headings, bold, italic, lists, code blocks, blockquotes, links
-- Rich text copy to clipboard (HTML + plain text)
-- Save as Markdown (.md), PDF (.pdf), or Text (.txt)
-- Recent files menu with last 50 files (full paths)
-- Unsaved changes prompts when closing tabs or quitting
-- Real-time statistics: word, character, and token counts
+- Synchronized selection highlighting in Split mode
+
+### Editing
+- Find & Replace with case-sensitive search, match navigation, bulk replace
+- Formatting toolbar: headings, bold, italic, lists, code, quotes, links
 - Custom undo/redo history (Cmd+Z, Cmd+Shift+Z)
-- macOS file associations: open `.md` files with "Open With" or drag-and-drop
-- WCAG 2.1 accessibility with full ARIA support and keyboard navigation
+- Word wrap toggle for code-heavy content
+- Rich text copy (HTML + plain text)
+
+### Themes
+- Five themes: System, Light, Dark, Solarized Light, Solarized Dark
+- Respects OS preferences in System mode
+
+### Files & Images
+- Save as Markdown (.md), PDF (.pdf), or Text (.txt)
+- Drag-drop images to embed (auto-copies to `./images/`)
+- Relative image paths supported in preview
+- Recent files menu (last 50 with full paths)
+- Unsaved changes prompts on close/quit
+- macOS file associations ("Open With", drag-drop)
+
+### Stats & Accessibility
+- Real-time word, character, and token counts
+- WCAG 2.1 with full ARIA support and keyboard navigation
+
+### Privacy & Security
 - 100% offline: no telemetry, no external requests
-- Comprehensive security: sandboxed environment, CSP, input validation, rate limiting
+- Sandboxed environment, CSP, input validation
 
 ### Keyboard Shortcuts
-- `Cmd+N` - New document
-- `Cmd+O` - Open file dialog
-- `Cmd+S` - Save As
-- `Cmd+F` - Find & Replace
-- `Cmd+B` - Bold formatting
-- `Cmd+I` - Italic formatting
-- `Cmd+E` - Cycle view modes (Rendered → Raw → Split → Text)
-- `Cmd+T` - Cycle themes
-- `Cmd+Alt+W` - Toggle word wrap
-- `Cmd+Z` - Undo
-- `Cmd+Shift+Z` / `Cmd+Y` - Redo
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd+N` | New document |
+| `Cmd+O` | Open file dialog |
+| `Cmd+S` | Save As |
+| `Cmd+W` | Close tab |
+| `Cmd+F` | Find & Replace |
+| `Cmd+B` | Bold formatting |
+| `Cmd+I` | Italic formatting |
+| `Cmd+E` | Cycle view modes (Rendered → Raw → Split → Text) |
+| `Cmd+T` | Cycle themes |
+| `Cmd+Alt+W` | Toggle word wrap |
+| `Cmd+Z` | Undo |
+| `Cmd+Shift+Z` / `Cmd+Y` | Redo |
 
 ## Installation
 
@@ -139,21 +154,11 @@ This removes:
 - **File Association**: Right-click `.md` files → "Open With" → mdviewer
 - **Within App**: Use tabs to manage multiple open documents
 
-### View Modes
-- **Rendered Mode**: Rendered Markdown with syntax highlighting
-- **Raw Mode**: Raw Markdown source with monospace font
-- **Split Mode**: Side-by-side code and preview with resizable divider
-- Cycle through modes using the toolbar buttons or `Cmd+E`
-
-### Formatting Text (Raw Mode)
-1. Select text in the editor
-2. Click formatting buttons or use keyboard shortcuts
-3. Text is automatically wrapped with Markdown syntax
-
-### Theme Switching
-- Click the theme button in toolbar or press `Cmd+T`
-- Cycles through: System → Light → Dark → System
-- Respects OS theme preferences in System mode
+### Working with Content
+- **View Modes**: Cycle between Rendered, Raw, Split, and Text modes using toolbar buttons or `Cmd+E` (see [Features](#features) for details)
+- **Themes**: Cycle through 5 themes with toolbar button or `Cmd+T`
+- **Formatting**: Select text in Raw mode, then use toolbar buttons or keyboard shortcuts
+- **Find & Replace**: Press `Cmd+F` to open the search panel
 
 ## Development & Testing
 
@@ -243,8 +248,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 ### 3.0.3 - 2025-12-06
 - Image paste support for screenshots
 - Fix image rendering with spaces in filenames
-
-
 
 ## Contributing
 

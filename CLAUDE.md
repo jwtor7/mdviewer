@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## ⚠️ Agent Requirement
 
-**ALL coding tasks MUST use `@agent-mdviewer-lead-dev`** unless explicitly told otherwise.
+**ALL tasks in this project MUST use `@agent-mdviewer-lead-dev`** unless explicitly told otherwise. This includes coding, file creation, documentation, and any other work - no exceptions.
 
 Additional reminders:
 - Update default content (`src/constants/defaultContent.ts`) when roadmap/changelog changes
