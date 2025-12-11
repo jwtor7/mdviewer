@@ -23,7 +23,6 @@
 - [Usage](#usage)
 - [Development & Testing](#development--testing)
 - [Architecture](#architecture)
-- [Feature Roadmap](#feature-roadmap)
 - [Changelog](#changelog)
 - [Contributing](#contributing)
 - [License](#license)
@@ -213,20 +212,6 @@ src/
 ```
 
 **Security Model**: Sandboxed renderer process with context isolation, secure IPC communication via preload script, strict CSP
-
-## Feature Roadmap
-
-### In Progress
-- [ ] **Code Signing for GitHub**: Sign application for trusted distribution via GitHub releases
-- [ ] **Code Signing for App Store**: Prepare for Apple App Store submission
-
-### Planned
-- [ ] **App Store Distribution**: Package and submit to Apple App Store
-- [ ] **Outline/TOC Sidebar**: Collapsible sidebar showing document headings (H1-H6) with click-to-jump navigation, auto-highlights current section while scrolling, toggle via View menu or keyboard shortcut (Cmd+Shift+O)
-- [ ] **Image Paste Support**: Paste images from clipboard directly into Raw view, auto-saves to `{document-folder}/images/`, inserts markdown image syntax, works with screenshots (Cmd+Shift+4 → Cmd+V)
-- [ ] **Focus Mode**: Distraction-free writing mode that hides toolbar, tabs, and status bar, centers content with comfortable max-width, subtle fade on non-active paragraphs, toggle via View menu or Cmd+Shift+F
-- [x] **Word Wrap Toggle**: Toggle soft word wrap in Raw view, useful for viewing tables and code-heavy markdown, persisted preference, menu item in View menu with keyboard shortcut (Cmd+Alt+W)
-- [ ] **Auto-Save Drafts**: Automatically save unsaved work to drafts folder, recover unsaved documents after crash/quit, configurable interval (default: 30 seconds), shows "Draft saved" indicator in status bar, drafts cleared when document explicitly saved
 
 ## Changelog
 
