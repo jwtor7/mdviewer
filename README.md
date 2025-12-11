@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.0.6-blue.svg)
+![Version](https://img.shields.io/badge/version-3.0.7-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -227,6 +227,9 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 3.0.7 - 2025-12-11
+- Security fix: Prevent tab drag data leak
+
 ### 3.0.6 - 2025-12-10
 - Fix tab tear-off (drag tabs out to create new windows)
 
@@ -240,9 +243,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 ### 3.0.3 - 2025-12-06
 - Image paste support for screenshots
 - Fix image rendering with spaces in filenames
-
-### 3.0.2 - 2025-12-05
-- Horizontal scrolling for tab overflow
 
 
 

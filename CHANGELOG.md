@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.7] - 2025-12-11
+
+### Security
+- Fixed tab drag data leak that created .textClipping files containing internal JSON data (document IDs, content, file paths) when dragging tabs onto desktop
+- Changed tab drag MIME type from `text/plain` to custom `application/x-mdviewer-tab` - macOS Finder now ignores drag data, preventing unintended file creation
+
 ## [3.0.6] - 2025-12-10
 
 ### Fixed
