@@ -12,7 +12,7 @@
 
 **A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron, React, and TypeScript.**
 
-![mdviewer Screenshot](https://github.com/jwtor7/mdviewer/raw/main/screenshot.png)
+![mdviewer Screenshot](https://github.com/jwtor7/mdviewer/raw/main/docs/screenshot.png)
 
 </div>
 
