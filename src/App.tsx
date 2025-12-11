@@ -367,7 +367,7 @@ const App: React.FC = () => {
             filePath: doc.filePath || null, // Explicitly include, even if null
             dragId
         };
-        e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+        e.dataTransfer.setData('application/x-mdviewer-tab', JSON.stringify(dragData));
         e.dataTransfer.setData('application/x-mdviewer-tab-index', index.toString());
         e.dataTransfer.effectAllowed = 'copyMove';
     };
@@ -451,7 +451,7 @@ const App: React.FC = () => {
         e.dataTransfer.dropEffect = 'copy'; // Default to copy for files
 
         // If it's our own tab, we might want 'move'
-        if (e.dataTransfer.types.includes('text/plain')) {
+        if (e.dataTransfer.types.includes('application/x-mdviewer-tab')) {
             e.dataTransfer.dropEffect = 'move';
         }
     }, []);
@@ -461,7 +461,7 @@ const App: React.FC = () => {
         e.stopPropagation();
 
         // Check for internal tab drop
-        const textData = e.dataTransfer.getData('text/plain');
+        const textData = e.dataTransfer.getData('application/x-mdviewer-tab');
         if (textData) {
             try {
                 const doc = JSON.parse(textData) as DraggableDocument;
@@ -670,7 +670,7 @@ const App: React.FC = () => {
                             // We do this by checking if the dragged document ID exists in our documents list
                             let isInternal = false;
                             try {
-                                const textData = e.dataTransfer.getData('text/plain');
+                                const textData = e.dataTransfer.getData('application/x-mdviewer-tab');
                                 if (textData) {
                                     const draggedDoc = JSON.parse(textData) as DraggableDocument;
                                     if (draggedDoc.id && documents.some(d => d.id === draggedDoc.id)) {
