@@ -10,6 +10,15 @@ import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
 import { withIPCHandlerNoInput, type IPCResult } from './main/security/ipcValidation.js';
+import {
+  createMenu,
+  createWindow,
+  getMainWindow,
+  setMainWindow,
+  getOpenWindowCount,
+  incrementWindowCount,
+  decrementWindowCount
+} from './main/windowManager.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -264,7 +273,6 @@ if (started) {
 
 let mainWindow: BrowserWindow | null = null;
 let pendingFileToOpen: string | null = null;
-let openWindowCount = 0; // Track number of open windows for security limits
 
 // Recent files management
 const MAX_RECENT_FILES = 50;
@@ -276,6 +284,20 @@ interface AppPreferences {
 }
 
 let appPreferences: AppPreferences = { alwaysOnTop: false };
+
+
+const createMenuWrapper = (): void => {
+  createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
+};
+
+const createWindowWrapper = (initialFile: string | null = null): BrowserWindow => {
+  return createWindow(appPreferences, openFile, initialFile);
+};
+
+// Use these wrapper functions everywhere in main.ts
+const createMenuForMenu = createMenuWrapper;
+const createWindowForWindow = createWindowWrapper;
+
 
 /**
  * Gets the path to the preferences storage JSON file.
@@ -422,7 +444,7 @@ const addRecentFile = (filePath: string): void => {
   saveRecentFiles();
 
   // Rebuild menu to reflect changes
-  createMenu();
+  createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
 };
 
 /**
@@ -431,314 +453,11 @@ const addRecentFile = (filePath: string): void => {
 const clearRecentFiles = (): void => {
   recentFiles = [];
   saveRecentFiles();
-  createMenu();
+  createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
 };
 
 
-const createMenu = (): void => {
-  // Build recent files submenu items
-  const recentFilesSubmenu: MenuItemConstructorOptions[] = [];
 
-  // Filter out non-existent files and build menu items
-  const existingRecentFiles = recentFiles.filter(filePath => {
-    try {
-      return fs.existsSync(filePath);
-    } catch {
-      return false;
-    }
-  });
-
-  // Update recent files list if any were removed
-  if (existingRecentFiles.length !== recentFiles.length) {
-    recentFiles = existingRecentFiles;
-    saveRecentFiles();
-  }
-
-  // Add menu items for each recent file
-  if (existingRecentFiles.length > 0) {
-    existingRecentFiles.forEach((filePath) => {
-      recentFilesSubmenu.push({
-        label: filePath,
-        click: (): void => {
-          openFile(filePath);
-        }
-      });
-    });
-
-    // Add separator before "Clear Recent"
-    recentFilesSubmenu.push({ type: 'separator' });
-  }
-
-  // Add "Clear Recent" option
-  recentFilesSubmenu.push({
-    label: 'Clear Recent',
-    enabled: existingRecentFiles.length > 0,
-    click: (): void => {
-      clearRecentFiles();
-    }
-  });
-
-  const template: MenuItemConstructorOptions[] = [
-    {
-      label: 'File',
-      submenu: [
-        {
-          label: 'New',
-          accelerator: 'CmdOrCtrl+N',
-          click: (): void => {
-            if (!mainWindow || mainWindow.isDestroyed()) return;
-            mainWindow.webContents.send('file-new');
-          }
-        },
-        {
-          label: 'Open...',
-          accelerator: 'CmdOrCtrl+O',
-          click: async (): Promise<void> => {
-            if (!mainWindow) return;
-
-            const result = await dialog.showOpenDialog(mainWindow, {
-              properties: ['openFile'],
-              filters: [
-                { name: 'Markdown Files', extensions: ['md', 'markdown'] },
-                { name: 'All Files', extensions: ['*'] }
-              ]
-            });
-
-            if (!result.canceled && result.filePaths.length > 0) {
-              openFile(result.filePaths[0]);
-            }
-          }
-        },
-        {
-          label: 'Open Recent',
-          submenu: recentFilesSubmenu
-        },
-        {
-          label: 'Close Tab',
-          accelerator: 'CmdOrCtrl+W',
-          click: (): void => {
-            if (!mainWindow || mainWindow.isDestroyed()) return;
-            mainWindow.webContents.send('close-tab');
-          }
-        },
-        { type: 'separator' },
-        {
-          label: 'Save',
-          accelerator: 'CmdOrCtrl+S',
-          click: (): void => {
-            if (!mainWindow || mainWindow.isDestroyed()) return;
-            mainWindow.webContents.send('file-save');
-          }
-        },
-        { type: 'separator' },
-        { role: 'quit' }
-      ]
-    },
-    {
-      label: 'Edit',
-      submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
-        { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' }
-      ]
-    },
-    {
-      label: 'View',
-      submenu: [
-        {
-          label: 'Wrap Lines',
-          type: 'checkbox',
-          checked: true, // Default state - will be synced with renderer
-          accelerator: 'CmdOrCtrl+Alt+W',
-          click: (): void => {
-            if (!mainWindow || mainWindow.isDestroyed()) return;
-            mainWindow.webContents.send('toggle-word-wrap');
-          }
-        },
-        { type: 'separator' },
-        { role: 'reload' },
-        { role: 'forceReload' },
-        // Security: Only show DevTools in development mode (MEDIUM-6 fix)
-        ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' as const }]),
-        { type: 'separator' },
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
-        { type: 'separator' },
-        { role: 'togglefullscreen' }
-      ]
-    },
-    {
-      label: 'Window',
-      submenu: [
-        { role: 'minimize' },
-        { role: 'zoom' },
-        { type: 'separator' },
-        {
-          label: 'Keep on Top',
-          type: 'checkbox',
-          checked: appPreferences.alwaysOnTop,
-          click: (menuItem): void => {
-            appPreferences.alwaysOnTop = menuItem.checked;
-            // Apply to all open windows
-            BrowserWindow.getAllWindows().forEach(win => {
-              win.setAlwaysOnTop(menuItem.checked);
-            });
-            savePreferences();
-            // Rebuild menu to update checkbox state
-            createMenu();
-          }
-        },
-        { type: 'separator' },
-        { role: 'front' }
-      ]
-    }
-  ];
-
-  const menu = Menu.buildFromTemplate(template);
-  Menu.setApplicationMenu(menu);
-};
-
-const createWindow = (initialFile: string | null = null): BrowserWindow => {
-  // Create the browser window.
-  const win = new BrowserWindow({
-    width: WINDOW_CONFIG.DEFAULT_WIDTH,
-    height: WINDOW_CONFIG.DEFAULT_HEIGHT,
-    alwaysOnTop: appPreferences.alwaysOnTop,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true,
-      nodeIntegration: false,
-      sandbox: true,
-    },
-  });
-
-  // Security: Track window count
-  openWindowCount++;
-
-  // Add context menu handler for right-click text actions
-  win.webContents.on('context-menu', (_event, params) => {
-    const { selectionText, isEditable, editFlags } = params;
-
-    const menuItems: MenuItemConstructorOptions[] = [];
-
-    // Standard editing items
-    if (editFlags.canCut) menuItems.push({ label: 'Cut', role: 'cut' });
-    if (editFlags.canCopy || selectionText) menuItems.push({ label: 'Copy', role: 'copy' });
-    if (editFlags.canPaste) menuItems.push({ label: 'Paste', role: 'paste' });
-    menuItems.push({ type: 'separator' });
-    menuItems.push({ label: 'Select All', role: 'selectAll' });
-
-    // Search with Perplexity (only when text selected)
-    if (selectionText) {
-      menuItems.push({ type: 'separator' });
-      menuItems.push({
-        label: 'Search with Perplexity',
-        click: (): void => {
-          const query = encodeURIComponent(selectionText);
-          shell.openExternal(`https://www.perplexity.ai/search?q=${query}`);
-        }
-      });
-    }
-
-    // Formatting options (only when editable and text selected)
-    if (isEditable && selectionText) {
-      menuItems.push({ type: 'separator' });
-      menuItems.push({
-        label: 'Bold',
-        click: (): void => win.webContents.send('format-text', 'bold')
-      });
-      menuItems.push({
-        label: 'Italic',
-        click: (): void => win.webContents.send('format-text', 'italic')
-      });
-      menuItems.push({
-        label: 'List',
-        click: (): void => win.webContents.send('format-text', 'list')
-      });
-    }
-
-    const menu = Menu.buildFromTemplate(menuItems);
-    menu.popup();
-  });
-
-  // Handle window close event to check for unsaved changes
-  win.on('close', async (e) => {
-    // Security: Use proper IPC instead of executeJavaScript (LOW PRIORITY fix)
-    try {
-      // Request unsaved documents list from renderer via IPC
-      const unsavedDocs = await new Promise<string[]>((resolve) => {
-        const timeout = setTimeout(() => resolve([]), 1000);
-        ipcMain.once('unsaved-docs-response', (_event, docs) => {
-          clearTimeout(timeout);
-          resolve(Array.isArray(docs) ? docs : []);
-        });
-        win.webContents.send('request-unsaved-docs');
-      });
-
-      if (unsavedDocs && unsavedDocs.length > 0) {
-        e.preventDefault(); // Prevent close for now
-
-        const result = await dialog.showMessageBox(win, {
-          type: 'warning',
-          buttons: ['Save All', "Don't Save", 'Cancel'],
-          defaultId: 0,
-          cancelId: 2,
-          title: 'Unsaved Changes',
-          message: `You have ${unsavedDocs.length} unsaved document(s).`,
-          detail: `Documents: ${unsavedDocs.join(', ')}\n\nDo you want to save them before quitting?`,
-        });
-
-        if (result.response === 2) {
-          // Cancel - don't close
-          return;
-        } else if (result.response === 0) {
-          // Save All - trigger save in renderer then close
-          win.webContents.send('save-all-and-quit');
-          // The renderer will call closeWindow when done
-        } else {
-          // Don't Save - force close
-          win.destroy();
-        }
-      }
-    } catch (err) {
-      console.error('Error checking unsaved documents:', err);
-      // If we can't check, allow close
-    }
-  });
-
-  // Clear mainWindow reference when this window is closed
-  win.on('closed', () => {
-    // Security: Decrement window count
-    openWindowCount--;
-
-    if (mainWindow === win) {
-      mainWindow = null;
-    }
-  });
-
-  // and load the index.html of the app.
-  if (MAIN_WINDOW_VITE_DEV_SERVER_URL) {
-    win.loadURL(MAIN_WINDOW_VITE_DEV_SERVER_URL);
-  } else {
-    win.loadFile(path.join(__dirname, `../renderer/${MAIN_WINDOW_VITE_NAME}/index.html`));
-  }
-
-  // Open the DevTools.
-  // win.webContents.openDevTools();
-
-  if (initialFile) {
-    win.once('ready-to-show', () => {
-      openFile(initialFile, win);
-    });
-  }
-
-  return win;
-};
 
 /**
  * Securely opens and reads a markdown file with validation.
@@ -932,7 +651,7 @@ ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknow
   }
 
   // Security: Enforce window limit to prevent resource exhaustion
-  if (openWindowCount >= SECURITY_CONFIG.MAX_WINDOWS) {
+  if (getOpenWindowCount() >= SECURITY_CONFIG.MAX_WINDOWS) {
     console.warn(`Maximum window limit (${SECURITY_CONFIG.MAX_WINDOWS}) reached`);
     return { success: false, error: 'Too many windows open' };
   }
@@ -940,7 +659,7 @@ ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknow
   // Security: Sanitize filePath to prevent path traversal
   const safePath = filePath && typeof filePath === 'string' ? path.basename(filePath) : null;
 
-  const win = createWindow();
+  const win = createWindow(appPreferences, openFile);
   win.once('ready-to-show', () => {
     const fileData: FileOpenData = {
       filePath: safePath,
@@ -1601,7 +1320,7 @@ app.on('open-file', (event: Electron.Event, filePath: string) => {
     openFile(filePath);
   } else if (app.isReady()) {
     // App is ready but no valid window exists - create a new one
-    mainWindow = createWindow(filePath);
+    mainWindow = createWindow(appPreferences, openFile, filePath);
   } else {
     // App not ready yet, queue the file
     pendingFileToOpen = filePath;
@@ -1635,8 +1354,9 @@ app.whenReady().then(async () => {
   await loadPreferences();
   await loadRecentFiles();
 
-  createMenu();
-  mainWindow = createWindow();
+  createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
+  mainWindow = createWindow(appPreferences, openFile);
+  setMainWindow(mainWindow);
 
   // If a file was queued before the window was ready, open it now
   if (pendingFileToOpen) {
@@ -1652,7 +1372,8 @@ app.whenReady().then(async () => {
   // dock icon is clicked and there are no other windows open.
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
-      mainWindow = createWindow();
+      mainWindow = createWindow(appPreferences, openFile);
+      setMainWindow(mainWindow);
     }
   });
 });

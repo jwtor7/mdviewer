@@ -5,6 +5,14 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.10] - 2026-01-05
+
+### Changed
+- Refactored main.ts into modular architecture (1676 → 1388 lines)
+- Extracted security utilities to `src/main/security/` (pathValidation, rateLimiter)
+- Extracted storage modules to `src/main/storage/` (preferences, recentFiles)
+- Extracted window management to `src/main/windowManager.ts`
+
 ## [3.0.9] - 2026-01-05
 
 ### Added
