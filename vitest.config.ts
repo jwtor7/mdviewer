@@ -29,14 +29,12 @@ export default defineConfig({
         'src/main.ts', // Main process (Electron-specific, needs different test setup)
         'src/preload.ts', // Preload script (Electron-specific)
       ],
-      // Coverage thresholds - start low, increase as more tests are added
-      // Current coverage: ~6% lines, ~48% functions (with 3 example tests)
-      // Target: Gradually increase to 60%+ as test suite grows
+      // Coverage thresholds - reflecting comprehensive test suite (395+ tests)
       thresholds: {
-        lines: 5,
-        functions: 45,
+        lines: 30,
+        functions: 50,
         branches: 50,
-        statements: 5,
+        statements: 30,
       },
     },
 

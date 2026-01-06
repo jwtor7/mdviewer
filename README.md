@@ -204,14 +204,21 @@ rm -rf out/ node_modules/ && npm install
 ```
 src/
 ├── main.ts, preload.ts, renderer.tsx, App.tsx
+├── main/           # Modular main process (security/, storage/, windowManager)
 ├── components/     # MarkdownPreview, CodeEditor, ErrorNotification, FindReplace
 ├── hooks/          # useDocuments, useTheme, useTextFormatting, useFileHandler, etc.
-├── types/          # TypeScript definitions
+├── types/          # TypeScript definitions + Zod IPC schemas
 ├── utils/          # Utility functions
 └── constants/      # Configuration values
 ```
 
-**Security Model**: Sandboxed renderer process with context isolation, secure IPC communication via preload script, strict CSP
+**Key Patterns**:
+- Modular main process: security (IPC validation, rate limiting, path validation), storage (preferences, recent files), window management
+- Custom React hooks for state management (12 hooks extracted from App.tsx)
+- Zod-based runtime validation for all IPC handlers
+- 395+ tests with Vitest and React Testing Library
+
+**Security Model**: Sandboxed renderer with context isolation, Zod IPC validation, rate limiting, path traversal protection, URL allowlisting, strict CSP. See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for details.
 
 ## Changelog
 

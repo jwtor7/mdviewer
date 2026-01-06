@@ -5,6 +5,26 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2026-01-05
+
+### Added
+- Modular architecture: main.ts split into security/, storage/, and windowManager modules
+- 12 custom React hooks extracted from App.tsx (36% size reduction)
+- Zod-based IPC validation with type-safe schemas
+- Comprehensive test suite: 395 tests (up from 38)
+- Security documentation at docs/SECURITY-MODEL.md
+
+### Changed
+- App.tsx refactored from 1076 to 690 lines
+- main.ts refactored from 1676 to 1388 lines
+- Coverage thresholds increased to 30% lines, 50% functions
+- Updated dependencies to latest patch versions
+
+### Security
+- IPC handlers now use Zod schema validation
+- Rate limiting and origin validation standardized via wrapper
+- Path validation and URL allowlisting documented
+
 ## [3.0.16] - 2026-01-05
 
 ### Added
