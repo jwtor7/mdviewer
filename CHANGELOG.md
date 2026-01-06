@@ -5,6 +5,16 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.9] - 2026-01-05
+
+### Added
+- IPC validation wrapper (`src/main/security/ipcValidation.ts`) for standardized security checks
+- `withIPCHandler` and `withIPCHandlerNoInput` utilities to reduce boilerplate
+
+### Changed
+- Refactored `close-window` IPC handler to use new validation wrapper
+- Removed feature roadmap from default test document
+
 ## [3.0.8] - 2026-01-05
 
 ### Changed

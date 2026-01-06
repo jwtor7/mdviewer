@@ -1,10 +1,9 @@
 /* eslint-disable no-secrets/no-secrets */
 /**
  * Default markdown content loaded on application startup
- * Includes feature roadmap, recent changelog, and test elements for rapid testing
+ * Includes recent changelog and test elements for rapid testing
  */
 
-import readmeRaw from '../../README.md?raw';
 import changelogRaw from '../../CHANGELOG.md?raw';
 
 /**
@@ -26,21 +25,10 @@ const extractSection = (content: string, startMarker: string, endMarker?: string
   return contentFromStart.trim();
 };
 
-// Extract sections from README and CHANGELOG
-const roadmap = extractSection(readmeRaw, '## Feature Roadmap', '## Changelog');
+// Extract sections from CHANGELOG
 const changelog = extractSection(changelogRaw, '# Changelog', undefined);
 
-export const DEFAULT_CONTENT = `# mdviewer Test Document
-
-Welcome to mdviewer! This test document includes the feature roadmap, recent changes, and various markdown elements to test all features.
-
----
-
-${roadmap}
-
----
-
-${changelog}
+export const DEFAULT_CONTENT = `${changelog}
 
 ---
 

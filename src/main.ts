@@ -9,6 +9,7 @@ import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
+import { withIPCHandlerNoInput, type IPCResult } from './main/security/ipcValidation.js';
 
 /**
  * Type helper for IPC handlers that extracts the correct data type for a given channel.
@@ -814,25 +815,16 @@ ipcMain.on('log-debug', (_event, { message, data }) => {
   console.log(`[RENDERER-DEBUG] ${message}`, data ? JSON.stringify(data) : '');
 });
 
-ipcMain.handle('close-window', (event: IpcMainInvokeEvent): void => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected close-window from invalid origin');
-    return;
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-close-window')) {
-    console.warn('Rate limit exceeded for close-window');
-    return;
-  }
-
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (win) {
-    win.close();
-  }
-});
+// close-window: Refactored to use IPC validation wrapper
+ipcMain.handle(
+  'close-window',
+  withIPCHandlerNoInput<void>({ handlerName: 'close-window' }, (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.close();
+    }
+  })
+);
 
 ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: string): Promise<void> => {
   // Security: Validate IPC origin (CRITICAL-5 fix)
