@@ -5,6 +5,14 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.12] - 2026-01-05
+
+### Added
+- Comprehensive test suite for critical hooks (95 new tests)
+- useDocuments tests: 51 tests with 100% line coverage
+- useErrorHandler tests: 14 tests for error notification lifecycle
+- useFileHandler tests: 30 tests for file opening and IPC handling
+
 ## [3.0.11] - 2026-01-05
 
 ### Changed
