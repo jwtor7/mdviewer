@@ -16,6 +16,32 @@ afterEach(() => {
   cleanup();
 });
 
+// Mock localStorage
+const localStorageMock = (() => {
+  let store: Record<string, string> = {};
+  return {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
+      store[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete store[key];
+    }),
+    clear: vi.fn(() => {
+      store = {};
+    }),
+    get length() {
+      return Object.keys(store).length;
+    },
+    key: vi.fn((index: number) => Object.keys(store)[index] || null),
+  };
+})();
+
+Object.defineProperty(window, 'localStorage', {
+  writable: true,
+  value: localStorageMock,
+});
+
 // Mock window.matchMedia (required for theme tests)
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
@@ -33,11 +59,17 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock Electron API (window.electronAPI)
 const mockElectronAPI = {
+  // IPC event listeners (return cleanup functions)
   onFileOpen: vi.fn(() => vi.fn()), // Returns cleanup function
   onFileNew: vi.fn(() => vi.fn()),
   onFileSave: vi.fn(() => vi.fn()),
   onSaveAllAndQuit: vi.fn(() => vi.fn()),
   onRequestUnsavedDocs: vi.fn(() => vi.fn()),
+  onFormatText: vi.fn(() => vi.fn()),
+  onToggleWordWrap: vi.fn(() => vi.fn()),
+  onCloseTab: vi.fn(() => vi.fn()),
+
+  // IPC invoke functions
   createWindowForTab: vi.fn(() => Promise.resolve({ success: true })),
   notifyTabDropped: vi.fn(() => Promise.resolve(true)),
   checkTabDropped: vi.fn(() => Promise.resolve(false)),
@@ -49,6 +81,11 @@ const mockElectronAPI = {
   getPathForFile: vi.fn((file: File) => `/mock/path/${file.name}`),
   showUnsavedDialog: vi.fn(() => Promise.resolve({ response: 'dont-save' as const })),
   getUnsavedDocuments: vi.fn(() => Promise.resolve([])),
+  revealInFinder: vi.fn(() => Promise.resolve({ success: true })),
+  readImageFile: vi.fn(() => Promise.resolve({ dataUri: 'data:image/png;base64,test' })),
+  copyImageToDocument: vi.fn(() => Promise.resolve({ relativePath: './images/test.png' })),
+  saveImageFromData: vi.fn(() => Promise.resolve({ relativePath: './images/pasted.png' })),
+  logDebug: vi.fn(),
 };
 
 Object.defineProperty(window, 'electronAPI', {
@@ -61,6 +98,18 @@ export { mockElectronAPI };
 
 // Mock HTMLElement methods that aren't implemented in jsdom
 HTMLElement.prototype.scrollIntoView = vi.fn();
+
+// Mock ResizeObserver (required for CodeEditor tests)
+class MockResizeObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+}
+
+Object.defineProperty(window, 'ResizeObserver', {
+  writable: true,
+  value: MockResizeObserver,
+});
 
 // Suppress console errors during tests (optional - remove if you want to see them)
 // const originalError = console.error;
