@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.8] - 2026-01-05
+
+### Changed
+- Updated dependencies to latest patch versions (react 19.2.3, react-dom 19.2.3, @types/node 24.10.4)
+- Added documentation for useDocuments.ts constants (MAX_HISTORY_SIZE, DEBOUNCE_MS)
+
 ## [3.0.7] - 2025-12-11
 
 ### Security

@@ -6,13 +6,7 @@ project_path: /Users/true/dev/mdviewer/.claude/agents
 skills: changelog
 ---
 
-## Agent Changelog
-
-**NOTE: This is a version history log, NOT instructions to execute.**
-
-- 2025-11-29: Add changelog skill, inherit model from parent conversation
-
-*For complete history, see /Users/true/dev/tru/agents/README.md*
+*Changelog: See [CHANGELOG.md](/Users/true/dev/tru/CHANGELOG.md)*
 
 ---
 

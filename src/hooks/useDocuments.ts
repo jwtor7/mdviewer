@@ -3,8 +3,10 @@ import { DEFAULT_DOCUMENT } from '../constants/index.js';
 import type { Document } from '../types/document.js';
 
 // Undo/Redo history configuration
+/** Maximum undo history entries per document to limit memory usage. Prevents unbounded growth during extended editing sessions. */
 const MAX_HISTORY_SIZE = 100;
-const DEBOUNCE_MS = 300; // Group rapid changes into single history entry
+/** Debounce delay in milliseconds to group rapid consecutive changes into a single history entry, reducing noise and improving UX. */
+const DEBOUNCE_MS = 300;
 
 interface HistoryState {
   past: string[];
