@@ -4,6 +4,7 @@
  * Provides a generic wrapper for IPC handlers with standard security checks:
  * - IPC origin validation (verifies sender is from a known BrowserWindow)
  * - Rate limiting (prevents resource exhaustion attacks)
+ * - Zod schema validation (runtime type checking with descriptive errors)
  * - Error handling (consistent error responses)
  *
  * This module consolidates repetitive security boilerplate from individual
@@ -11,6 +12,7 @@
  */
 
 import { BrowserWindow, IpcMainInvokeEvent } from 'electron';
+import { z, ZodSchema, ZodError } from 'zod';
 import { SECURITY_CONFIG } from '../../constants/index.js';
 import { createRateLimiter } from './rateLimiter.js';
 
@@ -35,6 +37,33 @@ export type IPCHandlerConfig = {
   skipOriginCheck?: boolean;
   /** Skip rate limiting (default: false) */
   skipRateLimit?: boolean;
+};
+
+/**
+ * Configuration options for the Zod-validated IPC handler wrapper.
+ */
+export type IPCHandlerWithSchemaConfig<TSchema extends ZodSchema> = {
+  /** Zod schema for validating the input data */
+  schema: TSchema;
+  /** Handler name for rate limiting and logging (e.g., 'save-file') */
+  handlerName: string;
+  /** Skip IPC origin validation (default: false) */
+  skipOriginCheck?: boolean;
+  /** Skip rate limiting (default: false) */
+  skipRateLimit?: boolean;
+};
+
+/**
+ * Formats Zod validation errors into a human-readable string.
+ * @param error - The ZodError to format
+ * @returns A string describing the validation failures
+ */
+const formatZodError = (error: ZodError): string => {
+  const issues = error.issues.map(issue => {
+    const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : '';
+    return `${path}${issue.message}`;
+  });
+  return `Validation failed: ${issues.join('; ')}`;
 };
 
 // ============================================================================
@@ -217,4 +246,77 @@ export function isIPCSuccess<T>(result: IPCResult<T>): result is { success: true
  */
 export function isIPCError<T>(result: IPCResult<T>): result is { success: false; error: string } {
   return result.success === false;
+}
+
+// ============================================================================
+// Zod-Validated IPC Handler Wrapper
+// ============================================================================
+
+/**
+ * Wraps an IPC handler with Zod schema validation and standard security checks.
+ *
+ * This wrapper provides:
+ * 1. Zod schema validation - ensures input data matches expected structure
+ * 2. IPC origin validation - ensures the request comes from a known BrowserWindow
+ * 3. Rate limiting - prevents DoS attacks via rapid repeated calls
+ * 4. Consistent error handling - returns standardized error responses
+ *
+ * @param config - Configuration including the Zod schema and handler options
+ * @param handler - The actual handler function to wrap (receives validated data)
+ * @returns A wrapped handler function suitable for ipcMain.handle()
+ *
+ * @example
+ * import { SaveFileDataSchema } from '../../types/ipc-schemas.js';
+ *
+ * ipcMain.handle('save-file',
+ *   withValidatedIPCHandler(
+ *     { schema: SaveFileDataSchema, handlerName: 'save-file' },
+ *     async (data, event) => {
+ *       // data is typed as z.infer<typeof SaveFileDataSchema>
+ *       // { content: string, filename: string, filePath: string | null }
+ *       return { filePath: savedPath };
+ *     }
+ *   )
+ * );
+ */
+export function withValidatedIPCHandler<TSchema extends ZodSchema, TOutput>(
+  config: IPCHandlerWithSchemaConfig<TSchema>,
+  handler: (data: z.infer<TSchema>, event: IpcMainInvokeEvent) => Promise<TOutput> | TOutput
+): (event: IpcMainInvokeEvent, data: unknown) => Promise<IPCResult<TOutput>> {
+  const { schema, handlerName, skipOriginCheck = false, skipRateLimit = false } = config;
+
+  return async (event: IpcMainInvokeEvent, data: unknown): Promise<IPCResult<TOutput>> => {
+    // Security: Validate IPC origin (CRITICAL-5 fix)
+    if (!skipOriginCheck && !isValidIPCOrigin(event)) {
+      console.warn(`[SECURITY] Rejected ${handlerName} from invalid origin`);
+      return { success: false, error: 'Invalid IPC origin' };
+    }
+
+    // Security: Apply rate limiting
+    if (!skipRateLimit) {
+      const senderId = event.sender.id.toString();
+      if (!sharedRateLimiter(`${senderId}-${handlerName}`)) {
+        console.warn(`[SECURITY] Rate limit exceeded for ${handlerName}`);
+        return { success: false, error: 'Rate limit exceeded' };
+      }
+    }
+
+    // Security: Validate input data with Zod schema
+    const parseResult = schema.safeParse(data);
+    if (!parseResult.success) {
+      const errorMessage = formatZodError(parseResult.error);
+      console.warn(`[SECURITY] Validation failed for ${handlerName}: ${errorMessage}`);
+      return { success: false, error: errorMessage };
+    }
+
+    try {
+      // Execute the actual handler with validated data
+      const result = await handler(parseResult.data, event);
+      return { success: true, data: result };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Error in ${handlerName}:`, errorMessage);
+      return { success: false, error: errorMessage };
+    }
+  };
 }

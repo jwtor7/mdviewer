@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.15] - 2026-01-05
+
+### Added
+- Zod runtime validation for IPC handlers
+- Type-safe IPC schemas in `src/types/ipc-schemas.ts`
+- `withValidatedIPCHandler` wrapper using Zod `.safeParse()`
+
+### Changed
+- Refactored export-pdf, save-file, read-file handlers to use Zod validation
+- Reduced validation boilerplate with declarative schemas
+
 ## [3.0.14] - 2026-01-05
 
 ### Added

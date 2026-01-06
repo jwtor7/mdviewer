@@ -9,7 +9,15 @@ import type { FileOpenData, IPCMessage } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
-import { withIPCHandlerNoInput, type IPCResult } from './main/security/ipcValidation.js';
+import { withIPCHandlerNoInput, withValidatedIPCHandler, type IPCResult } from './main/security/ipcValidation.js';
+import {
+  SaveFileDataSchema,
+  ReadFileDataSchema,
+  ExportPdfDataSchema,
+  type SaveFileDataInput,
+  type ReadFileDataInput,
+  type ExportPdfDataInput,
+} from './types/ipc-schemas.js';
 import {
   createMenu,
   createWindow,
@@ -672,171 +680,36 @@ ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknow
   return { success: true };
 });
 
-ipcMain.handle('export-pdf', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected export-pdf from invalid origin');
-    return { success: false, error: 'Invalid IPC origin' };
-  }
+// export-pdf: Refactored to use Zod validation wrapper
+ipcMain.handle(
+  'export-pdf',
+  withValidatedIPCHandler(
+    { schema: ExportPdfDataSchema, handlerName: 'export-pdf' },
+    async (data: ExportPdfDataInput, event): Promise<{ filePath?: string; error?: string }> => {
+      const { content, filename } = data;
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-export-pdf')) {
-    console.warn('Rate limit exceeded for export-pdf');
-    return { success: false, error: 'Rate limit exceeded' };
-  }
+      // Security: Validate content size
+      if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+        throw new Error('Content too large');
+      }
 
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { success: false, error: 'Invalid data' };
-  }
+      // Get the requesting window for dialog parent
+      const parentWindow = BrowserWindow.fromWebContents(event.sender);
+      if (!parentWindow) {
+        throw new Error('Window not found');
+      }
 
-  const { content, filename } = data as { content: unknown; filename: unknown };
-
-  if (typeof content !== 'string' || typeof filename !== 'string') {
-    return { success: false, error: 'Invalid parameters' };
-  }
-
-  // Security: Validate content size
-  if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
-    return { success: false, error: 'Content too large' };
-  }
-
-  try {
-    // Get the requesting window for dialog parent
-    const parentWindow = BrowserWindow.fromWebContents(event.sender);
-    if (!parentWindow) {
-      return { success: false, error: 'Window not found' };
-    }
-
-    // Show save dialog
-    const result = await dialog.showSaveDialog(parentWindow, {
-      title: 'Export PDF',
-      defaultPath: filename.replace(/\.(md|markdown)$/, '.pdf'),
-      filters: [
-        { name: 'PDF Files', extensions: ['pdf'] }
-      ]
-    });
-
-    if (result.canceled || !result.filePath) {
-      return { success: false, error: 'Cancelled' };
-    }
-
-    // Create a temporary hidden window to render the content
-    const pdfWindow = new BrowserWindow({
-      show: false,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true,
-      },
-    });
-
-    try {
-      // Generate HTML with inline CSS for PDF rendering
-      const htmlContent = await generatePDFHTML(content);
-
-      await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
-
-      // Wait for page to finish loading
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Generate PDF
-      const pdfData = await pdfWindow.webContents.printToPDF({
-        printBackground: true,
-        margins: {
-          top: 0.5,
-          bottom: 0.5,
-          left: 0.5,
-          right: 0.5,
-        },
+      // Show save dialog
+      const result = await dialog.showSaveDialog(parentWindow, {
+        title: 'Export PDF',
+        defaultPath: filename.replace(/\.(md|markdown)$/, '.pdf'),
+        filters: [{ name: 'PDF Files', extensions: ['pdf'] }],
       });
 
-      // Save to file
-      await fsPromises.writeFile(result.filePath, pdfData);
+      if (result.canceled || !result.filePath) {
+        throw new Error('Cancelled');
+      }
 
-      return { success: true, filePath: result.filePath };
-    } catch (err) {
-      console.error('PDF export error:', err);
-      return { success: false, error: 'Failed to export PDF' };
-    } finally {
-      // Security: Guaranteed cleanup to prevent memory leak (MEDIUM PRIORITY fix)
-      pdfWindow.destroy();
-    }
-  } catch (err) {
-    console.error('PDF export error:', err);
-    return { success: false, error: 'Failed to export PDF' };
-  }
-});
-
-ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; filePath?: string; error?: string }> => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected save-file from invalid origin');
-    return { success: false, error: 'Invalid IPC origin' };
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-save-file')) {
-    console.warn('Rate limit exceeded for save-file');
-    return { success: false, error: 'Rate limit exceeded' };
-  }
-
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { success: false, error: 'Invalid data' };
-  }
-
-  const { content, filename, filePath } = data as { content: unknown; filename: unknown; filePath: unknown };
-
-  if (typeof content !== 'string' || typeof filename !== 'string') {
-    return { success: false, error: 'Invalid parameters' };
-  }
-
-  if (filePath !== null && typeof filePath !== 'string') {
-    return { success: false, error: 'Invalid filePath' };
-  }
-
-  // Security: Validate content size
-  if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
-    return { success: false, error: 'Content too large' };
-  }
-
-  try {
-    // Get the requesting window for dialog parent
-    const parentWindow = BrowserWindow.fromWebContents(event.sender);
-    if (!parentWindow) {
-      return { success: false, error: 'Window not found' };
-    }
-
-    // Determine default path
-    // For new/untitled files (filePath is null), ALWAYS default to ~/Documents/
-    // This overrides macOS's remembered last directory behavior
-    const defaultDir = getDefaultSaveDirectory();
-    const defaultPath = filePath ? filePath : path.join(defaultDir, filename);
-
-    // Show save dialog with Markdown, PDF, and TXT options
-    const result = await dialog.showSaveDialog(parentWindow, {
-      title: 'Save As',
-      defaultPath: defaultPath,
-      filters: [
-        { name: 'Markdown Files', extensions: ['md', 'markdown'] },
-        { name: 'PDF Files', extensions: ['pdf'] },
-        { name: 'Text Files', extensions: ['txt'] },
-        { name: 'All Files', extensions: ['*'] }
-      ]
-    });
-
-    if (result.canceled || !result.filePath) {
-      return { success: false, error: 'Cancelled' };
-    }
-
-    // Determine format based on file extension
-    const ext = path.extname(result.filePath).toLowerCase();
-
-    if (ext === '.pdf') {
-      // Export as PDF using existing PDF generation logic
       // Create a temporary hidden window to render the content
       const pdfWindow = new BrowserWindow({
         show: false,
@@ -851,10 +724,12 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
         // Generate HTML with inline CSS for PDF rendering
         const htmlContent = await generatePDFHTML(content);
 
-        await pdfWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+        await pdfWindow.loadURL(
+          `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
+        );
 
         // Wait for page to finish loading
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Generate PDF
         const pdfData = await pdfWindow.webContents.printToPDF({
@@ -870,100 +745,172 @@ ipcMain.handle('save-file', async (event: IpcMainInvokeEvent, data: unknown): Pr
         // Save to file
         await fsPromises.writeFile(result.filePath, pdfData);
 
-        return { success: true, filePath: result.filePath };
-      } catch (pdfErr) {
-        console.error('PDF export error:', pdfErr);
-        return { success: false, error: 'Failed to export PDF' };
+        return { filePath: result.filePath };
+      } catch (err) {
+        console.error('PDF export error:', err);
+        throw new Error('Failed to export PDF');
       } finally {
         // Security: Guaranteed cleanup to prevent memory leak (MEDIUM PRIORITY fix)
         pdfWindow.destroy();
       }
-    } else if (ext === '.txt') {
-      // Save as plain text (convert markdown to text)
-      try {
-        const plainText = convertMarkdownToText(content);
-        await fsPromises.writeFile(result.filePath, plainText, 'utf-8');
-        return { success: true, filePath: result.filePath };
-      } catch (txtErr) {
-        console.error('Text export error:', txtErr);
-        return { success: false, error: 'Failed to export text file' };
-      }
-    } else {
-      // Save as Markdown (default)
-      await fsPromises.writeFile(result.filePath, content, 'utf-8');
+    }
+  )
+);
 
-      // Add to recent files if it's a markdown file
-      if (ext === '.md' || ext === '.markdown') {
-        addRecentFile(result.filePath);
+// save-file: Refactored to use Zod validation wrapper
+ipcMain.handle(
+  'save-file',
+  withValidatedIPCHandler(
+    { schema: SaveFileDataSchema, handlerName: 'save-file' },
+    async (data: SaveFileDataInput, event): Promise<{ filePath?: string; error?: string }> => {
+      const { content, filename, filePath } = data;
+
+      // Security: Validate content size
+      if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+        throw new Error('Content too large');
       }
 
-      return { success: true, filePath: result.filePath };
+      // Get the requesting window for dialog parent
+      const parentWindow = BrowserWindow.fromWebContents(event.sender);
+      if (!parentWindow) {
+        throw new Error('Window not found');
+      }
+
+      // Determine default path
+      // For new/untitled files (filePath is null), ALWAYS default to ~/Documents/
+      // This overrides macOS's remembered last directory behavior
+      const defaultDir = getDefaultSaveDirectory();
+      const defaultPath = filePath ? filePath : path.join(defaultDir, filename);
+
+      // Show save dialog with Markdown, PDF, and TXT options
+      const result = await dialog.showSaveDialog(parentWindow, {
+        title: 'Save As',
+        defaultPath: defaultPath,
+        filters: [
+          { name: 'Markdown Files', extensions: ['md', 'markdown'] },
+          { name: 'PDF Files', extensions: ['pdf'] },
+          { name: 'Text Files', extensions: ['txt'] },
+          { name: 'All Files', extensions: ['*'] },
+        ],
+      });
+
+      if (result.canceled || !result.filePath) {
+        throw new Error('Cancelled');
+      }
+
+      // Determine format based on file extension
+      const ext = path.extname(result.filePath).toLowerCase();
+
+      if (ext === '.pdf') {
+        // Export as PDF using existing PDF generation logic
+        // Create a temporary hidden window to render the content
+        const pdfWindow = new BrowserWindow({
+          show: false,
+          webPreferences: {
+            contextIsolation: true,
+            nodeIntegration: false,
+            sandbox: true,
+          },
+        });
+
+        try {
+          // Generate HTML with inline CSS for PDF rendering
+          const htmlContent = await generatePDFHTML(content);
+
+          await pdfWindow.loadURL(
+            `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
+          );
+
+          // Wait for page to finish loading
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          // Generate PDF
+          const pdfData = await pdfWindow.webContents.printToPDF({
+            printBackground: true,
+            margins: {
+              top: 0.5,
+              bottom: 0.5,
+              left: 0.5,
+              right: 0.5,
+            },
+          });
+
+          // Save to file
+          await fsPromises.writeFile(result.filePath, pdfData);
+
+          return { filePath: result.filePath };
+        } catch (pdfErr) {
+          console.error('PDF export error:', pdfErr);
+          throw new Error('Failed to export PDF');
+        } finally {
+          // Security: Guaranteed cleanup to prevent memory leak (MEDIUM PRIORITY fix)
+          pdfWindow.destroy();
+        }
+      } else if (ext === '.txt') {
+        // Save as plain text (convert markdown to text)
+        try {
+          const plainText = convertMarkdownToText(content);
+          await fsPromises.writeFile(result.filePath, plainText, 'utf-8');
+          return { filePath: result.filePath };
+        } catch (txtErr) {
+          console.error('Text export error:', txtErr);
+          throw new Error('Failed to export text file');
+        }
+      } else {
+        // Save as Markdown (default)
+        await fsPromises.writeFile(result.filePath, content, 'utf-8');
+
+        // Add to recent files if it's a markdown file
+        if (ext === '.md' || ext === '.markdown') {
+          addRecentFile(result.filePath);
+        }
+
+        return { filePath: result.filePath };
+      }
     }
-  } catch (err) {
-    console.error('Save file error:', err);
-    return { success: false, error: 'Failed to save file' };
-  }
-});
+  )
+);
 
-ipcMain.handle('read-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ content: string; error?: string }> => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected read-file from invalid origin');
-    return { content: '', error: 'Invalid IPC origin' };
-  }
+// read-file: Refactored to use Zod validation wrapper
+ipcMain.handle(
+  'read-file',
+  withValidatedIPCHandler(
+    { schema: ReadFileDataSchema, handlerName: 'read-file' },
+    async (data: ReadFileDataInput): Promise<{ content: string; error?: string }> => {
+      const { filePath } = data;
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-read-file')) {
-    console.warn('Rate limit exceeded for read-file');
-    return { content: '', error: 'Rate limit exceeded' };
-  }
+      // Security: Validate file path to prevent path traversal and enforce allowed extensions
+      if (!isPathSafe(filePath)) {
+        console.warn(`Blocked attempt to read unsafe file: ${filePath}`);
+        throw new Error('Invalid file type or path');
+      }
 
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { content: '', error: 'Invalid data' };
-  }
+      // Security: Check file size to prevent memory exhaustion
+      const stats = await fsPromises.stat(filePath);
+      if (stats.size > SECURITY_CONFIG.MAX_FILE_SIZE) {
+        const maxSizeMB = SECURITY_CONFIG.MAX_FILE_SIZE / (1024 * 1024);
+        throw new Error(`File exceeds maximum size of ${maxSizeMB}MB`);
+      }
 
-  const { filePath } = data as { filePath: unknown };
+      // Security: Read file as Buffer first for integrity validation (MEDIUM-2 fix)
+      const buffer = await fsPromises.readFile(filePath);
 
-  if (typeof filePath !== 'string') {
-    return { content: '', error: 'Invalid filePath' };
-  }
+      // Security: Validate file content integrity (UTF-8, BOM, binary detection)
+      const validation = validateFileContent(buffer);
+      if (!validation.valid || !validation.content) {
+        console.warn(
+          `[SECURITY] File integrity validation failed for: ${path.basename(filePath)}`
+        );
+        throw new Error(validation.error || 'File content could not be validated');
+      }
 
-  try {
-    // Security: Validate file path to prevent path traversal and enforce allowed extensions
-    if (!isPathSafe(filePath)) {
-      console.warn(`Blocked attempt to read unsafe file: ${filePath}`);
-      return { content: '', error: 'Invalid file type or path' };
+      // Add to recent files (for drag-and-drop opened files)
+      addRecentFile(filePath);
+
+      return { content: validation.content };
     }
-
-    // Security: Check file size to prevent memory exhaustion
-    const stats = await fsPromises.stat(filePath);
-    if (stats.size > SECURITY_CONFIG.MAX_FILE_SIZE) {
-      const maxSizeMB = SECURITY_CONFIG.MAX_FILE_SIZE / (1024 * 1024);
-      return { content: '', error: `File exceeds maximum size of ${maxSizeMB}MB` };
-    }
-
-    // Security: Read file as Buffer first for integrity validation (MEDIUM-2 fix)
-    const buffer = await fsPromises.readFile(filePath);
-
-    // Security: Validate file content integrity (UTF-8, BOM, binary detection)
-    const validation = validateFileContent(buffer);
-    if (!validation.valid || !validation.content) {
-      console.warn(`[SECURITY] File integrity validation failed for: ${path.basename(filePath)}`);
-      return { content: '', error: validation.error || 'File content could not be validated' };
-    }
-
-    // Add to recent files (for drag-and-drop opened files)
-    addRecentFile(filePath);
-
-    return { content: validation.content };
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    console.error('Failed to read file:', sanitizeError(error));
-    return { content: '', error: 'Failed to read file' };
-  }
-});
+  )
+);
 
 ipcMain.handle('show-unsaved-dialog', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> => {
   // Security: Validate IPC origin

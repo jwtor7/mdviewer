@@ -1,7 +1,7 @@
 {
   "name": "mdviewer",
   "productName": "mdviewer",
-  "version": "3.0.14",
+  "version": "3.0.15",
   "description": "A feature-rich, accessible Markdown Viewer for macOS",
   "main": ".vite/build/main.js",
   "build": {
@@ -76,6 +76,7 @@
     "remark-gfm": "^4.0.1",
     "remark-parse": "^11.0.0",
     "remark-rehype": "^11.1.2",
-    "unified": "^11.0.5"
+    "unified": "^11.0.5",
+    "zod": "^4.3.5"
   }
 }
