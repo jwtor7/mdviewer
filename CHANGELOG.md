@@ -5,6 +5,13 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.11] - 2026-01-05
+
+### Changed
+- Extracted 6 custom hooks from App.tsx (1076 → 690 lines, 36% reduction)
+- New hooks: useDragDrop, useClipboardCopy, useSaveFile, useIPCListeners, useSplitPaneDivider, useOutsideClickHandler
+- Improved code maintainability with clear separation of concerns
+
 ## [3.0.10] - 2026-01-05
 
 ### Changed

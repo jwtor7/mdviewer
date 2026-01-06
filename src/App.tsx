@@ -4,11 +4,23 @@ import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
 import TextPreview from './components/TextPreview';
-import { useDocuments, useTheme, useTextFormatting, useFileHandler, useErrorHandler, useKeyboardShortcuts, useWordWrap } from './hooks/index';
-import { VIEW_MODES, RENDERER_SECURITY, IMAGE_CONFIG, type ViewMode } from './constants/index';
-import { convertMarkdownToText } from './utils/textConverter';
-import { sanitizeHtmlForClipboard, sanitizeTextForClipboard } from './utils/clipboardSanitizer';
-import type { Document, DraggableDocument } from './types/document';
+import {
+    useDocuments,
+    useTheme,
+    useTextFormatting,
+    useFileHandler,
+    useErrorHandler,
+    useKeyboardShortcuts,
+    useWordWrap,
+    useDragDrop,
+    useClipboardCopy,
+    useSaveFile,
+    useIPCListeners,
+    useSplitPaneDivider,
+    useOutsideClickHandler,
+} from './hooks/index';
+import { VIEW_MODES, type ViewMode } from './constants/index';
+import type { Document } from './types/document';
 import { calculateTextStats } from './utils/textCalculations';
 import pkg from '../package.json';
 import './index.css';
@@ -35,6 +47,29 @@ const App: React.FC = () => {
     const { theme, handleThemeToggle, getThemeIcon } = useTheme();
     const { wordWrap, toggleWordWrap } = useWordWrap();
     const { errors, showError, dismissError } = useErrorHandler();
+
+    // Drag-and-drop handling for tabs and files
+    const {
+        handleDragStart,
+        handleDragEnd,
+        handleFileDragOver,
+        handleFileDrop,
+        handleTabDrop,
+        handleTabDragOver,
+        closeTabOrWindow,
+    } = useDragDrop({
+        documents,
+        activeDoc,
+        addDocument,
+        updateExistingDocument,
+        findDocumentByPath,
+        setActiveTabId,
+        reorderDocuments,
+        closeDocument,
+        updateContent,
+        showError,
+    });
+
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.RENDERED);
     const [showFindReplace, setShowFindReplace] = useState(false);
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
@@ -49,6 +84,20 @@ const App: React.FC = () => {
     const headingsMenuRef = useRef<HTMLDivElement>(null);
     const contextMenuRef = useRef<HTMLDivElement>(null);
 
+    // Integrate useOutsideClickHandler for headings menu
+    useOutsideClickHandler({
+        ref: headingsMenuRef,
+        isOpen: showHeadingsMenu,
+        onClose: () => setShowHeadingsMenu(false)
+    });
+
+    // Integrate useOutsideClickHandler for context menu
+    useOutsideClickHandler({
+        ref: contextMenuRef,
+        isOpen: !!contextMenu,
+        onClose: () => setContextMenu(null)
+    });
+
     // Update CSS custom property for split pane position (CSP-compliant)
     useEffect(() => {
         if (splitViewRef.current) {
@@ -56,93 +105,28 @@ const App: React.FC = () => {
         }
     }, [splitDividerPosition]);
 
-    // Close headings menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent): void => {
-            if (showHeadingsMenu && headingsMenuRef.current && !headingsMenuRef.current.contains(event.target as Node)) {
-                setShowHeadingsMenu(false);
-            }
-        };
-
-        if (showHeadingsMenu) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [showHeadingsMenu]);
-
-    // Close context menu when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent): void => {
-            if (contextMenu && contextMenuRef.current && !contextMenuRef.current.contains(event.target as Node)) {
-                setContextMenu(null);
-            }
-        };
-
-        if (contextMenu) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-
-        return () => {
-            document.removeEventListener('mousedown', handleClickOutside);
-        };
-    }, [contextMenu]);
-
     const { handleFormat } = useTextFormatting(activeDoc.content, updateContent, textareaRef, viewMode);
+
+    // Integrate useSaveFile hook
+    const { handleSave } = useSaveFile({
+        activeDoc,
+        updateExistingDocument,
+        markDocumentSaved,
+        showError,
+    });
+
+    // Integrate useClipboardCopy hook
+    const { handleCopy } = useClipboardCopy({
+        viewMode,
+        content: activeDoc.content,
+        showError,
+    });
 
     // Handle heading format with menu close
     const handleHeadingFormat = useCallback((level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'): void => {
         handleFormat(level);
         setShowHeadingsMenu(false);
     }, [handleFormat]);
-
-    // Handle save
-    const handleSave = useCallback(async (): Promise<void> => {
-        if (!window.electronAPI?.saveFile) {
-            showError('Save functionality not available');
-            return;
-        }
-
-        try {
-            const result = await window.electronAPI.saveFile({
-                content: activeDoc.content,
-                filename: activeDoc.name,
-                filePath: activeDoc.filePath,
-            });
-
-            if (result.success) {
-                // Show format-specific success message based on file extension
-                const filePath = result.filePath?.toLowerCase() || '';
-                let message = 'Markdown saved successfully!';
-                if (filePath.endsWith('.pdf')) {
-                    message = 'PDF exported successfully!';
-                } else if (filePath.endsWith('.txt')) {
-                    message = 'Text file saved successfully!';
-                }
-                showError(message, 'info');
-
-                // Update document with new filepath and filename
-                if (result.filePath) {
-                    const filename = result.filePath.split('/').pop() || 'Untitled';
-                    updateExistingDocument(activeDoc.id, {
-                        filePath: result.filePath,
-                        name: filename
-                    });
-                }
-
-                // Mark document as saved (clear dirty flag)
-                markDocumentSaved(activeDoc.id);
-            } else {
-                if (result.error !== 'Cancelled') {
-                    showError(result.error || 'Failed to save file');
-                }
-            }
-        } catch (err) {
-            showError('Failed to save file');
-        }
-    }, [activeDoc.content, activeDoc.name, activeDoc.filePath, activeDoc.id, showError, updateExistingDocument, markDocumentSaved]);
 
     // Security: Use proper IPC to respond to unsaved documents requests (LOW PRIORITY fix)
     useEffect(() => {
@@ -192,33 +176,11 @@ const App: React.FC = () => {
         () => setViewMode(VIEW_MODES.RAW) // Switch to Raw view when File → New is triggered
     );
 
-    // Listen for format-text IPC events from context menu
-    useEffect(() => {
-        const cleanup = window.electronAPI.onFormatText((format) => {
-            handleFormat(format as 'bold' | 'italic' | 'list');
-        });
-        return cleanup;
-    }, [handleFormat]);
-
-    // Listen for toggle-word-wrap IPC events from View menu
-    useEffect(() => {
-        const cleanup = window.electronAPI.onToggleWordWrap(() => {
-            toggleWordWrap();
-        });
-        return cleanup;
-    }, [toggleWordWrap]);
-
-    // Listen for close-tab IPC events from File menu
-    useEffect(() => {
-        if (!window.electronAPI?.onCloseTab) return;
-        const cleanup = window.electronAPI.onCloseTab(() => {
-            // Close the currently active tab
-            handleCloseTab({ stopPropagation: () => { } } as React.MouseEvent<HTMLButtonElement>, activeTabId);
-        });
-        return cleanup;
-    }, [activeTabId, documents, activeDoc]);
-
-
+    // Integrate useSplitPaneDivider hook
+    const { handleDividerMouseDown } = useSplitPaneDivider({
+        splitDividerPosition,
+        setSplitDividerPosition,
+    });
 
     // Handle find - now works in all view modes
     const handleFind = useCallback((): void => {
@@ -276,52 +238,6 @@ const App: React.FC = () => {
         [activeDoc.content]
     );
 
-    const handleCopy = useCallback(async (): Promise<void> => {
-        try {
-            if (viewMode === VIEW_MODES.RAW) {
-                // Security: Sanitize text to remove control characters
-                const sanitizedText = sanitizeTextForClipboard(activeDoc.content);
-                await navigator.clipboard.writeText(sanitizedText);
-            } else if (viewMode === VIEW_MODES.TEXT) {
-                // Copy plain text conversion with sanitization
-                const plainText = convertMarkdownToText(activeDoc.content);
-                const sanitizedText = sanitizeTextForClipboard(plainText);
-                await navigator.clipboard.writeText(sanitizedText);
-            } else {
-                // Rendered or Split mode: Copy HTML with sanitization
-                const previewElement = document.querySelector('.markdown-preview') as HTMLElement | null;
-                if (previewElement) {
-                    try {
-                        // Security: Sanitize HTML before copying to clipboard (HIGH-4 fix)
-                        // This removes dangerous elements (script, iframe, etc.),
-                        // event handlers (onclick, onerror, etc.), and unsafe URLs
-                        const sanitizedHtml = sanitizeHtmlForClipboard(previewElement.innerHTML);
-                        const sanitizedText = sanitizeTextForClipboard(previewElement.innerText);
-
-                        const htmlBlob = new Blob([sanitizedHtml], { type: 'text/html' });
-                        const textBlob = new Blob([sanitizedText], { type: 'text/plain' });
-                        const data = [new ClipboardItem({
-                            'text/html': htmlBlob,
-                            'text/plain': textBlob
-                        })];
-                        await navigator.clipboard.write(data);
-                    } catch (richCopyErr) {
-                        // Fallback to plain text if rich text copy fails
-                        // Security: Still sanitize the text fallback
-                        const sanitizedText = sanitizeTextForClipboard(previewElement.innerText);
-                        await navigator.clipboard.writeText(sanitizedText);
-                    }
-                }
-            }
-        } catch (err) {
-            showError('Failed to copy to clipboard');
-        }
-    }, [viewMode, activeDoc.content, showError]);
-
-    // Track the current drag operation ID and Document ID
-    const dragIdRef = useRef<string | null>(null);
-    const draggedDocIdRef = useRef<string | null>(null);
-
     const handleCloseTab = async (e: React.MouseEvent<HTMLButtonElement>, id: string): Promise<void> => {
         e.stopPropagation();
 
@@ -356,34 +272,6 @@ const App: React.FC = () => {
         }
     };
 
-    const handleDragStart = (e: React.DragEvent<HTMLDivElement>, doc: Document, index: number): void => {
-        const dragId = Date.now().toString();
-        dragIdRef.current = dragId;
-        draggedDocIdRef.current = doc.id;
-
-        // Ensure filePath is included in the dragged data
-        const dragData: DraggableDocument = {
-            ...doc,
-            filePath: doc.filePath || null, // Explicitly include, even if null
-            dragId
-        };
-        e.dataTransfer.setData('application/x-mdviewer-tab', JSON.stringify(dragData));
-        e.dataTransfer.setData('application/x-mdviewer-tab-index', index.toString());
-        e.dataTransfer.effectAllowed = 'copyMove';
-    };
-
-    const closeTabOrWindow = (id: string): void => {
-        if (documents.length === 1 && documents[0].id === id) {
-            if (window.electronAPI && window.electronAPI.closeWindow) {
-                window.electronAPI.closeWindow();
-            } else {
-                closeDocument(id);
-            }
-        } else {
-            closeDocument(id);
-        }
-    };
-
     // Handle tab context menu (right-click)
     const handleTabContextMenu = (e: React.MouseEvent<HTMLDivElement>, docId: string): void => {
         e.preventDefault();
@@ -413,232 +301,16 @@ const App: React.FC = () => {
         }
     };
 
-    const handleDragEnd = async (e: React.DragEvent<HTMLDivElement>, doc: Document): Promise<void> => {
-        // Drag-to-new-window logic:
-        // If we dragged explicitly outside the window and the drop wasn't handled by us (reorder),
-        // we create a new window.
-
-        const isOutside = (
-            e.clientX < 0 ||
-            e.clientX > window.innerWidth ||
-            e.clientY < 0 ||
-            e.clientY > window.innerHeight
-        );
-
-        // Create new window if dragged outside, regardless of dropEffect
-        // The dropEffect check was preventing tab tear-off from working
-        if (isOutside) {
-            if (window.electronAPI && window.electronAPI.createWindowForTab) {
-                window.electronAPI.createWindowForTab({
-                    filePath: doc.filePath,
-                    content: doc.content
-                });
-                // Close the tab as we created a new window for it
-                closeTabOrWindow(doc.id);
-            }
-        }
-
-        // Reset drag ID
-        dragIdRef.current = null;
-        draggedDocIdRef.current = null;
-    };
-
-    // Handle file drops onto the app window
-    const handleFileDragOver = useCallback((e: React.DragEvent<HTMLDivElement>): void => {
-        e.preventDefault();
-        e.stopPropagation();
-        // Allow dropping files
-        e.dataTransfer.dropEffect = 'copy'; // Default to copy for files
-
-        // If it's our own tab, we might want 'move'
-        if (e.dataTransfer.types.includes('application/x-mdviewer-tab')) {
-            e.dataTransfer.dropEffect = 'move';
-        }
-    }, []);
-
-    const handleFileDrop = useCallback((e: React.DragEvent<HTMLDivElement>): void => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        // Check for internal tab drop
-        const textData = e.dataTransfer.getData('application/x-mdviewer-tab');
-        if (textData) {
-            try {
-                const doc = JSON.parse(textData) as DraggableDocument;
-
-                if (doc.id && doc.content !== undefined) {
-                    // Security: Validate content size before processing (HIGH-2 fix)
-                    if (doc.content.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
-                        showError(`Content too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
-                        return;
-                    }
-
-                    // It's a tab!
-
-                    // CRITICAL CHANGE: Disable re-integration from other windows.
-                    // Only allow drops if the drag originated in THIS window (internal reorder/self-drop).
-                    if (dragIdRef.current !== doc.dragId) {
-                        // External drop - IGNORE IT.
-                        return;
-                    }
-
-                    // Check if we already have this doc (by ID or path)
-                    const existingById = documents.find(d => d.id === doc.id);
-                    const existingByPath = doc.filePath ? findDocumentByPath(doc.filePath) : undefined;
-
-                    if (existingById) {
-                        setActiveTabId(existingById.id);
-                    } else if (existingByPath) {
-                        setActiveTabId(existingByPath.id);
-                    } else {
-                        // Add it (only if internal, though internal usually means it exists...)
-                        // This case handles a theoretical "we dragged it out then back in same window" 
-                        // but if we dragged it out, we haven't closed it yet (dragEnd happens after).
-
-                        // Actually, if it's internal, it MUST exist unless we deleted it mid-drag?
-                        // Safe to just activate if found.
-
-                        if (!existingById && !existingByPath) {
-                            addDocument({
-                                id: doc.id,
-                                name: doc.name,
-                                content: doc.content,
-                                filePath: doc.filePath
-                            });
-                        }
-                    }
-                    return; // Handled
-                    return; // Handled
-                }
-            } catch (err) {
-                // Not JSON or not our tab, ignore
-            }
-        }
-
-        const files = Array.from(e.dataTransfer.files);
-
-        // Separate markdown files and image files
-        const markdownFiles = files.filter((file: File) =>
-            file.name.endsWith('.md') || file.name.endsWith('.markdown')
-        );
-
-        const imageFiles = files.filter((file: File) => {
-            const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-            return (IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext);
-        });
-
-        // Handle image file drops
-        if (imageFiles.length > 0) {
-            // Check if document is saved
-            if (!activeDoc.filePath) {
-                showError('Please save the document before embedding images');
-                return;
-            }
-
-            // Process each image file asynchronously
-            (async () => {
-                for (const imageFile of imageFiles) {
-                    try {
-                        // Get file path
-                        let imagePath: string | null = null;
-                        if (window.electronAPI?.getPathForFile) {
-                            try {
-                                imagePath = window.electronAPI.getPathForFile(imageFile);
-                            } catch (e) {
-                                console.error('Failed to get path for image file', e);
-                            }
-                        }
-
-                        if (!imagePath || !window.electronAPI?.copyImageToDocument) {
-                            showError('Cannot process image file');
-                            continue;
-                        }
-
-                        // Copy image to document's images directory
-                        const result = await window.electronAPI.copyImageToDocument(imagePath, activeDoc.filePath!);
-
-                        if (result.error) {
-                            showError(result.error);
-                            continue;
-                        }
-
-                        if (result.relativePath) {
-                            // Insert markdown image syntax at cursor or end of content
-                            const filename = imageFile.name;
-                            const imageMarkdown = `![${filename}](${encodeURI(result.relativePath)})`;
-
-                            // Append to content (you could enhance this to insert at cursor position)
-                            const newContent = activeDoc.content + '\n\n' + imageMarkdown;
-                            updateContent(newContent);
-
-                            showError(`Image embedded: ${filename}`, 'info');
-                        }
-                    } catch (err) {
-                        showError(`Failed to embed image: ${imageFile.name}`);
-                    }
-                }
-            })();
-        }
-
-        // Handle markdown file drops
-        markdownFiles.forEach(async (file: File) => {
-            // Use secure method to get file path (works in Electron renderer)
-            let filePath: string | null = null;
-
-            if (window.electronAPI?.getPathForFile) {
-                try {
-                    filePath = window.electronAPI.getPathForFile(file);
-                } catch (e) {
-                    console.error('Failed to get path for file', e);
-                }
-            } else {
-                // Fallback for older Electron versions or dev mode if API missing
-                filePath = (file as File & { path?: string }).path || null;
-            }
-
-            if (!filePath || !window.electronAPI?.readFile) {
-                // Fallback for web/dev environment if needed, or show error
-                showError('Cannot read file path');
-                return;
-            }
-
-            try {
-                const result = await window.electronAPI.readFile(filePath);
-
-                if (result.error) {
-                    showError(result.error);
-                    return;
-                }
-
-                const content = result.content;
-
-                // Security: Defense-in-depth validation of content size (HIGH-2 fix)
-                // Main process already validates, but renderer should also verify
-                if (content.length > RENDERER_SECURITY.MAX_CONTENT_LENGTH) {
-                    showError(`File too large. Maximum size is ${RENDERER_SECURITY.MAX_CONTENT_SIZE_MB}MB.`);
-                    return;
-                }
-
-                const existing = findDocumentByPath(filePath);
-
-                if (existing) {
-                    // Update existing document
-                    updateExistingDocument(existing.id, { content });
-                    setActiveTabId(existing.id);
-                } else {
-                    // Add new document
-                    addDocument({
-                        id: Date.now().toString() + Math.random(),
-                        name: file.name,
-                        content,
-                        filePath,
-                    });
-                }
-            } catch (err) {
-                showError(`Failed to read file: ${file.name}`);
-            }
-        });
-    }, [addDocument, updateExistingDocument, findDocumentByPath, setActiveTabId, showError, documents]);
+    // Integrate useIPCListeners hook (after handleCloseTab is declared)
+    useIPCListeners({
+        documents,
+        handleSave,
+        setActiveTabId,
+        handleFormat,
+        toggleWordWrap,
+        handleCloseTab,
+        activeTabId,
+    });
 
     return (
         <div
@@ -657,44 +329,8 @@ const App: React.FC = () => {
                         draggable={true}
                         onDragStart={(e) => handleDragStart(e, doc, documents.indexOf(doc))}
                         onDragEnd={(e) => handleDragEnd(e, doc)}
-                        onDragOver={(e) => {
-                            e.preventDefault();
-                            if (e.dataTransfer.types.includes('application/x-mdviewer-tab-index')) {
-                                e.dataTransfer.dropEffect = 'move';
-                            }
-                        }}
-                        onDrop={(e) => {
-                            e.preventDefault();
-
-                            // Check if this is an internal reorder (tab belongs to THIS window)
-                            // We do this by checking if the dragged document ID exists in our documents list
-                            let isInternal = false;
-                            try {
-                                const textData = e.dataTransfer.getData('application/x-mdviewer-tab');
-                                if (textData) {
-                                    const draggedDoc = JSON.parse(textData) as DraggableDocument;
-                                    if (draggedDoc.id && documents.some(d => d.id === draggedDoc.id)) {
-                                        isInternal = true;
-                                    }
-                                }
-                            } catch (err) {
-                                // Ignore parse error, treat as external
-                            }
-
-                            if (isInternal) {
-                                e.stopPropagation(); // Stop bubbling only if we handle it here
-                                const fromIndexStr = e.dataTransfer.getData('application/x-mdviewer-tab-index');
-                                if (fromIndexStr) {
-                                    const fromIndex = parseInt(fromIndexStr, 10);
-                                    const toIndex = documents.indexOf(doc);
-
-                                    if (fromIndex !== toIndex && fromIndex >= 0 && toIndex >= 0) {
-                                        reorderDocuments(fromIndex, toIndex);
-                                    }
-                                }
-                            }
-                            // If NOT internal (external drop), we let it bubble up to the container's handleFileDrop
-                        }}
+                        onDragOver={handleTabDragOver}
+                        onDrop={(e) => handleTabDrop(e, doc)}
                         role="tab"
                         aria-selected={activeTabId === doc.id}
                         aria-controls="content-area"
@@ -1005,28 +641,7 @@ const App: React.FC = () => {
                         </div>
                         <div
                             className="split-divider"
-                            onMouseDown={(e) => {
-                                e.preventDefault();
-                                const startX = e.clientX;
-                                const startWidth = splitDividerPosition;
-                                // Capture container width at mousedown time (not during mousemove)
-                                const containerWidth = (e.currentTarget as HTMLElement).parentElement?.clientWidth || 1;
-
-                                const handleMouseMove = (moveEvent: MouseEvent): void => {
-                                    const deltaX = moveEvent.clientX - startX;
-                                    const deltaPercent = (deltaX / containerWidth) * 100;
-                                    const newWidth = Math.min(Math.max(20, startWidth + deltaPercent), 80);
-                                    setSplitDividerPosition(newWidth);
-                                };
-
-                                const handleMouseUp = (): void => {
-                                    document.removeEventListener('mousemove', handleMouseMove);
-                                    document.removeEventListener('mouseup', handleMouseUp);
-                                };
-
-                                document.addEventListener('mousemove', handleMouseMove);
-                                document.addEventListener('mouseup', handleMouseUp);
-                            }}
+                            onMouseDown={handleDividerMouseDown}
                         />
                         <div className="split-pane split-pane-right">
                             <MarkdownPreview
