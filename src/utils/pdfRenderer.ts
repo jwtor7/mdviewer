@@ -31,6 +31,14 @@ export const getPDFStyles = (): string => {
       max-width: 800px;
       margin: 0 auto;
     }
+    h1, h2, h3, h4, h5, h6 {
+      break-after: avoid;
+      page-break-after: avoid;
+    }
+    h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + * {
+      break-before: avoid;
+      page-break-before: avoid;
+    }
     h1 {
       font-size: 2em;
       border-bottom: 1px solid #e0e0e0;
@@ -50,21 +58,44 @@ export const getPDFStyles = (): string => {
       margin-top: 1em;
       margin-bottom: 0.5em;
     }
+    h4 {
+      font-size: 1.1em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    h5 {
+      font-size: 1em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
+    h6 {
+      font-size: 0.9em;
+      margin-top: 1em;
+      margin-bottom: 0.5em;
+    }
     p {
       margin-bottom: 1em;
+      orphans: 3;
+      widows: 3;
     }
     ul, ol {
       padding-left: 2em;
       margin-bottom: 1em;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     li {
       margin-bottom: 0.5em;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     blockquote {
       border-left: 4px solid #e0e0e0;
       padding-left: 1em;
       color: #666;
       margin: 1em 0;
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     code {
       background-color: #f5f5f5;

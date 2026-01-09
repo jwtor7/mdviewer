@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.0.7-blue.svg)
+![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -224,6 +224,12 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 3.2.0 - 2026-01-09
+- Intelligent PDF page breaking (headings stay with content)
+
+### 3.1.0 - 2026-01-05
+- Major refactoring: modular architecture, 395 tests, Zod IPC validation
+
 ### 3.0.7 - 2025-12-11
 - Security fix: Prevent tab drag data leak
 
@@ -233,13 +239,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 ### 3.0.5 - 2025-12-06
 - Fix tab dragging race conditions
 - Add Cmd+W to close tabs
-
-### 3.0.4 - 2025-12-06
-- Pasted screenshots use document filename
-
-### 3.0.3 - 2025-12-06
-- Image paste support for screenshots
-- Fix image rendering with spaces in filenames
 
 ## Contributing
 
