@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generatePDFHTML } from './pdfRenderer';
+import { generatePDFHTML, convertMarkdownToHTML, getPDFStyles } from './pdfRenderer';
 
 describe('generatePDFHTML', () => {
     it('should include nonce in CSP and style tag', async () => {
@@ -22,5 +22,50 @@ describe('generatePDFHTML', () => {
 
         // Ensure unsafe-inline is NOT present
         expect(html).not.toContain("'unsafe-inline'");
+    });
+});
+
+describe('convertMarkdownToHTML', () => {
+    it('should wrap headers in pdf-section elements', async () => {
+        const markdown = `## Section One
+
+Content for section one.
+
+## Section Two
+
+Content for section two.`;
+
+        const html = await convertMarkdownToHTML(markdown);
+
+        // Verify sections are created
+        expect(html).toContain('<section class="pdf-section">');
+        expect(html).toContain('<h2>Section One</h2>');
+        expect(html).toContain('<h2>Section Two</h2>');
+
+        // Count sections - should have 2
+        const sectionCount = (html.match(/<section class="pdf-section">/g) || []).length;
+        expect(sectionCount).toBe(2);
+    });
+
+    it('should include pdf-section in full PDF output', async () => {
+        const markdown = `# Main Title
+
+Some intro text.`;
+
+        const html = await generatePDFHTML(markdown);
+
+        // Verify section appears in complete PDF HTML
+        expect(html).toContain('<section class="pdf-section">');
+        expect(html).toContain('<h1>Main Title</h1>');
+    });
+});
+
+describe('getPDFStyles', () => {
+    it('should include pdf-section styles for page breaking', () => {
+        const styles = getPDFStyles();
+
+        expect(styles).toContain('.pdf-section');
+        expect(styles).toContain('break-inside: avoid');
+        expect(styles).toContain('page-break-inside: avoid');
     });
 });

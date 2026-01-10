@@ -8,10 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.2.0] - 2026-01-09
 
 ### Added
-- Intelligent PDF page breaking: headings now stay with their following content instead of appearing orphaned at page bottom
+- Intelligent PDF page breaking using section wrapping: headings now stay with their following content instead of appearing orphaned at page bottoms
+- Custom rehype plugin (`rehypeSectionWrap`) wraps each header + content in `<section>` elements with `break-inside: avoid`
 - CSS page-break rules for h1-h6, lists, blockquotes, and list items
 - Styling for h4, h5, h6 headings in PDF output
 - Orphan/widow control for paragraphs (minimum 3 lines before/after page breaks)
+- 15 new tests for section wrapping plugin (413 total tests)
 
 ## [3.1.0] - 2026-01-05
 

@@ -6,6 +6,7 @@ import rehypeSanitize from 'rehype-sanitize';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeStringify from 'rehype-stringify';
 import crypto from 'crypto';
+import { rehypeSectionWrap } from './rehypeSectionWrap';
 
 export const convertMarkdownToHTML = async (markdown: string): Promise<string> => {
   const file = await unified()
@@ -13,6 +14,7 @@ export const convertMarkdownToHTML = async (markdown: string): Promise<string> =
     .use(remarkGfm)
     .use(remarkRehype)
     .use(rehypeSanitize)
+    .use(rehypeSectionWrap)
     .use(rehypeHighlight)
     .use(rehypeStringify)
     .process(markdown);
@@ -38,6 +40,10 @@ export const getPDFStyles = (): string => {
     h1 + *, h2 + *, h3 + *, h4 + *, h5 + *, h6 + * {
       break-before: avoid;
       page-break-before: avoid;
+    }
+    .pdf-section {
+      break-inside: avoid;
+      page-break-inside: avoid;
     }
     h1 {
       font-size: 2em;
