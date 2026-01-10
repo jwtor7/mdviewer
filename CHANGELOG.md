@@ -605,9 +605,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rendered/Raw view toggle
 - Syntax highlighting
 
-[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v3.0.2...HEAD
+[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v3.3.0...HEAD
+[3.3.0]: https://github.com/jwtor7/mdviewer/compare/v3.1.0...v3.3.0
+[3.1.0]: https://github.com/jwtor7/mdviewer/compare/v3.0.16...v3.1.0
+[3.0.16]: https://github.com/jwtor7/mdviewer/compare/v3.0.15...v3.0.16
+[3.0.15]: https://github.com/jwtor7/mdviewer/compare/v3.0.14...v3.0.15
+[3.0.14]: https://github.com/jwtor7/mdviewer/compare/v3.0.13...v3.0.14
+[3.0.13]: https://github.com/jwtor7/mdviewer/compare/v3.0.12...v3.0.13
+[3.0.12]: https://github.com/jwtor7/mdviewer/compare/v3.0.11...v3.0.12
+[3.0.11]: https://github.com/jwtor7/mdviewer/compare/v3.0.10...v3.0.11
+[3.0.10]: https://github.com/jwtor7/mdviewer/compare/v3.0.9...v3.0.10
+[3.0.9]: https://github.com/jwtor7/mdviewer/compare/v3.0.8...v3.0.9
+[3.0.8]: https://github.com/jwtor7/mdviewer/compare/v3.0.7...v3.0.8
+[3.0.7]: https://github.com/jwtor7/mdviewer/compare/v3.0.6...v3.0.7
+[3.0.6]: https://github.com/jwtor7/mdviewer/compare/v3.0.5...v3.0.6
+[3.0.5]: https://github.com/jwtor7/mdviewer/compare/v3.0.4...v3.0.5
+[3.0.4]: https://github.com/jwtor7/mdviewer/compare/v3.0.3...v3.0.4
+[3.0.3]: https://github.com/jwtor7/mdviewer/compare/v3.0.2...v3.0.3
 [3.0.2]: https://github.com/jwtor7/mdviewer/compare/v3.0.1...v3.0.2
 [3.0.1]: https://github.com/jwtor7/mdviewer/compare/v3.0.0...v3.0.1
+[3.0.0]: https://github.com/jwtor7/mdviewer/compare/v2.8.11...v3.0.0
 [2.8.11]: https://github.com/jwtor7/mdviewer/compare/v2.8.10...v2.8.11
 [2.8.10]: https://github.com/jwtor7/mdviewer/compare/v2.8.9...v2.8.10
 [2.8.9]: https://github.com/jwtor7/mdviewer/compare/v2.8.8...v2.8.9
