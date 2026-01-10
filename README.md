@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -224,8 +224,8 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
-### 3.2.0 - 2026-01-09
-- Intelligent PDF page breaking (headings stay with content)
+### 3.3.0 - 2026-01-09
+- Intelligent PDF page breaking with section wrapping (headings stay with content)
 
 ### 3.1.0 - 2026-01-05
 - Major refactoring: modular architecture, 395 tests, Zod IPC validation
