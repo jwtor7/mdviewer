@@ -36,6 +36,15 @@ cp -R "$BUILD_PATH" "$INSTALL_PATH"
 VERSION=$(defaults read "$INSTALL_PATH/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "unknown")
 echo "=== Installed mdviewer v$VERSION ==="
 
+# Clean up build artifacts to prevent disk bloat
+BUILD_DIR="/Users/true/dev/mdviewer/out"
+if [ -d "$BUILD_DIR" ]; then
+    SIZE=$(du -sh "$BUILD_DIR" 2>/dev/null | cut -f1)
+    echo "Cleaning up build artifacts..."
+    rm -rf "$BUILD_DIR"
+    echo "Removed $BUILD_DIR (freed ${SIZE})"
+fi
+
 # Open the app
 echo "Launching mdviewer..."
 open "$INSTALL_PATH"

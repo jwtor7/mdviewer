@@ -66,6 +66,18 @@ fi
 cp -R "$BUILT_APP" /Applications/
 echo "✓ Installed mdviewer.app to /Applications"
 
+# Step 4: Clean up build artifacts to prevent disk bloat
+echo ""
+echo "Step 4: Cleaning up build artifacts..."
+echo ""
+
+BUILD_DIR="$PROJECT_DIR/out"
+if [ -d "$BUILD_DIR" ]; then
+    SIZE=$(du -sh "$BUILD_DIR" 2>/dev/null | cut -f1)
+    rm -rf "$BUILD_DIR"
+    echo "✓ Removed out/ directory (freed ${SIZE})"
+fi
+
 echo ""
 echo "=================="
 echo "Installation Complete!"

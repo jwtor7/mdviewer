@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.1] - 2026-01-10
+
+### Changed
+- Install scripts now auto-clean build artifacts after installation (prevents ~1.4GB disk bloat)
+- Build artifact size is calculated dynamically before cleanup
+
 ## [3.3.0] - 2026-01-09
 
 ### Added
@@ -605,7 +611,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rendered/Raw view toggle
 - Syntax highlighting
 
-[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v3.3.0...HEAD
+[Unreleased]: https://github.com/jwtor7/mdviewer/compare/v3.3.1...HEAD
+[3.3.1]: https://github.com/jwtor7/mdviewer/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/jwtor7/mdviewer/compare/v3.1.0...v3.3.0
 [3.1.0]: https://github.com/jwtor7/mdviewer/compare/v3.0.16...v3.1.0
 [3.0.16]: https://github.com/jwtor7/mdviewer/compare/v3.0.15...v3.0.16
