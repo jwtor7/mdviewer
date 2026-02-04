@@ -15,6 +15,10 @@ export interface SaveFileData {
   filePath: string | null;
 }
 
+export type IPCResult<T> =
+  | { success: true; data: T }
+  | { success: false; error: string };
+
 /**
  * Discriminated union representing all IPC message types in the application.
  *
@@ -34,14 +38,10 @@ export type IPCMessage =
   | { channel: 'file-open'; data: FileOpenData }
   /** Request to create a new window for a tab that was dragged out */
   | { channel: 'create-window-for-tab'; data: { filePath: string | null; content: string } }
-  /** Notify that a tab was dropped (for drag-and-drop tracking) */
-  | { channel: 'notify-tab-dropped'; data: { dragId: string } }
-  /** Check if a tab was dropped (for drag-and-drop validation) */
-  | { channel: 'check-tab-dropped'; data: { dragId: string } }
   /** Request to close the current window */
   | { channel: 'close-window'; data: void }
   /** Request to open an external URL in the default browser */
-  | { channel: 'open-external-url'; data: { url: string } }
+  | { channel: 'open-external-url'; data: string }
   /** Request to export document as PDF */
   | { channel: 'export-pdf'; data: PDFExportData }
   /** Request to save file to disk */
@@ -50,8 +50,6 @@ export type IPCMessage =
   | { channel: 'read-file'; data: { filePath: string } }
   /** Show confirmation dialog for unsaved changes */
   | { channel: 'show-unsaved-dialog'; data: { filename: string } }
-  /** Get list of unsaved document names */
-  | { channel: 'get-unsaved-documents'; data: void }
   /** Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux) */
   | { channel: 'reveal-in-finder'; data: { filePath: string } }
   /** Request to close the active tab */
@@ -70,20 +68,19 @@ export interface ElectronAPI {
   onToggleWordWrap: (callback: () => void) => () => void;
   onCloseTab: (callback: () => void) => () => void;
   onRequestUnsavedDocs: (callback: () => string[]) => () => void;
-  createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean }>;
+  createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean; error?: string }>;
   closeWindow: () => Promise<void>;
   openExternalUrl: (url: string) => Promise<void>;
-  exportPDF: (data: PDFExportData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
-  saveFile: (data: SaveFileData) => Promise<{ success: boolean; filePath?: string; error?: string }>;
-  readFile: (filePath: string) => Promise<{ content: string; error?: string }>;
+  exportPDF: (data: PDFExportData) => Promise<IPCResult<{ filePath?: string }>>;
+  saveFile: (data: SaveFileData) => Promise<IPCResult<{ filePath?: string }>>;
+  readFile: (filePath: string) => Promise<IPCResult<{ content: string }>>;
   getPathForFile: (file: File) => string;
   showUnsavedDialog: (filename: string) => Promise<{ response: 'save' | 'dont-save' | 'cancel' }>;
-  getUnsavedDocuments: () => Promise<string[]>;
   revealInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
   readImageFile: (imagePath: string, markdownFilePath: string) => Promise<{ dataUri?: string; error?: string }>;
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
-  logDebug: (message: string, data?: any) => void;
+  logDebug: (message: string, data?: unknown) => void;
 }
 
 declare global {

@@ -327,7 +327,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
             .finally(() => {
               setLoading(false);
             });
-        }, [src]);
+        }, [src, filePath]);
 
         if (loading) {
           return <span style={{ color: '#888', fontStyle: 'italic' }}>Loading image...</span>;
@@ -643,21 +643,6 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
       currentMark.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [searchTerm, currentMatchIndex]);
-
-  // Validation schema to allow relative paths (no protocol) in img src
-  const schema = useMemo(() => {
-    return {
-      ...defaultSchema,
-      protocols: {
-        ...defaultSchema.protocols,
-        src: ['http', 'https', 'data'] // Relative paths are allowed if not in this list? No, usually strict.
-        // Actually rehype-sanitize default behavior is strict.
-        // To allow relative paths (no protocol), we need to ensure the protocol check allows it or is disabled for src.
-        // Setting it to allow "no protocol" is tricky.
-        // Let's try merging with a custom setup.
-      }
-    };
-  }, []);
 
   // Custom schema to allow relative paths (which have no protocol)
   // By default, rehype-sanitize might strip src if it doesn't match known protocols.

@@ -164,7 +164,13 @@ export const useDocuments = (): UseDocumentsReturn => {
 
     // Update document without creating new history entry
     setDocuments(prev => prev.map(doc =>
-      doc.id === activeTabId ? { ...doc, content: previous } : doc
+      doc.id === activeTabId
+        ? {
+          ...doc,
+          content: previous,
+          dirty: previous !== (doc.lastSavedContent ?? doc.content),
+        }
+        : doc
     ));
 
     // Force re-render to update canUndo/canRedo
@@ -186,7 +192,13 @@ export const useDocuments = (): UseDocumentsReturn => {
 
     // Update document without creating new history entry
     setDocuments(prev => prev.map(doc =>
-      doc.id === activeTabId ? { ...doc, content: next } : doc
+      doc.id === activeTabId
+        ? {
+          ...doc,
+          content: next,
+          dirty: next !== (doc.lastSavedContent ?? doc.content),
+        }
+        : doc
     ));
 
     // Force re-render to update canUndo/canRedo

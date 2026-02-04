@@ -1,3 +1,4 @@
+/* eslint-disable no-secrets/no-secrets */
 import { describe, it, expect } from 'vitest';
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';

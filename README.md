@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.3.1-blue.svg)
+![Version](https://img.shields.io/badge/version-3.3.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -42,6 +42,7 @@
 - Find & Replace with case-sensitive search, match navigation, bulk replace
 - Formatting toolbar: headings, bold, italic, lists, code, quotes, links
 - Custom undo/redo history (Cmd+Z, Cmd+Shift+Z)
+- Unsaved changes indicators in tabs and window title
 - Word wrap toggle for code-heavy content
 - Rich text copy (HTML + plain text)
 
@@ -62,7 +63,7 @@
 - WCAG 2.1 with full ARIA support and keyboard navigation
 
 ### Privacy & Security
-- 100% offline: no telemetry, no external requests
+- No telemetry; no external requests unless you open a link or use web search actions
 - Sandboxed environment, CSP, input validation
 
 ### Keyboard Shortcuts

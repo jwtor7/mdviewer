@@ -5,6 +5,7 @@
 
 import { app, BrowserWindow, Menu, dialog, shell, MenuItemConstructorOptions, ipcMain } from 'electron';
 import path from 'node:path';
+/* eslint-disable security/detect-non-literal-fs-filename */
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from '../constants/index.js';
 

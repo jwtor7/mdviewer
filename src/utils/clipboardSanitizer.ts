@@ -278,6 +278,7 @@ export const sanitizeTextForClipboard = (text: string): string => {
     // Remove null bytes
     .replace(/\0/g, '')
     // Remove other problematic control characters (except newlines and tabs)
+    // eslint-disable-next-line no-control-regex
     .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
 };
 

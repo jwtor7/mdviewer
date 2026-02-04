@@ -79,6 +79,7 @@ export const useFileHandler = (
           // Find the highest number in existing "Untitled N" documents
           const numbers = untitledDocs
             .map(d => {
+              // eslint-disable-next-line security/detect-unsafe-regex
               const match = d.name.match(/^Untitled(?: (\d+))?$/);
               return match ? (match[1] ? parseInt(match[1], 10) : 1) : 0;
             })

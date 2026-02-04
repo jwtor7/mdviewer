@@ -5,7 +5,6 @@
 
 import { describe, it, expect } from 'vitest';
 import { validateFileContent, type FileValidationResult } from './fileValidator';
-import { FILE_INTEGRITY, SECURITY_CONFIG } from '../constants/index';
 
 describe('validateFileContent', () => {
   // Helper to create buffers with specific byte sequences

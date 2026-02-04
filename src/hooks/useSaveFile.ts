@@ -40,7 +40,7 @@ export const useSaveFile = ({
 
       if (result.success) {
         // Show format-specific success message based on file extension
-        const filePath = result.filePath?.toLowerCase() || '';
+        const filePath = result.data.filePath?.toLowerCase() || '';
         let message = 'Markdown saved successfully!';
         if (filePath.endsWith('.pdf')) {
           message = 'PDF exported successfully!';
@@ -50,10 +50,10 @@ export const useSaveFile = ({
         showError(message, 'info');
 
         // Update document with new filepath and filename
-        if (result.filePath) {
-          const filename = result.filePath.split('/').pop() || 'Untitled';
+        if (result.data.filePath) {
+          const filename = result.data.filePath.split('/').pop() || 'Untitled';
           updateExistingDocument(activeDoc.id, {
-            filePath: result.filePath,
+            filePath: result.data.filePath,
             name: filename
           });
         }
@@ -65,7 +65,7 @@ export const useSaveFile = ({
           showError(result.error || 'Failed to save file');
         }
       }
-    } catch (err) {
+    } catch {
       showError('Failed to save file');
     }
   }, [

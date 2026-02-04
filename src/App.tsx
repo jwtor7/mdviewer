@@ -39,8 +39,6 @@ const App: React.FC = () => {
         markDocumentSaved,
         undo,
         redo,
-        canUndo,
-        canRedo,
         reorderDocuments,
     } = useDocuments();
 
@@ -128,40 +126,11 @@ const App: React.FC = () => {
         setShowHeadingsMenu(false);
     }, [handleFormat]);
 
-    // Security: Use proper IPC to respond to unsaved documents requests (LOW PRIORITY fix)
+    // Keep the window title in sync with the active document state
     useEffect(() => {
-        const cleanup = window.electronAPI?.onRequestUnsavedDocs?.(() => {
-            return documents.filter(d => d.dirty).map(d => d.name);
-        });
-
-        return () => cleanup?.();
-    }, [documents]);
-
-    // Handle save-all-and-quit event from main process
-    useEffect(() => {
-        if (!window.electronAPI?.onSaveAllAndQuit) return;
-
-        const cleanup = window.electronAPI.onSaveAllAndQuit(async () => {
-            // Save all dirty documents
-            const dirtyDocs = documents.filter(d => d.dirty);
-
-            for (const doc of dirtyDocs) {
-                // Switch to the document
-                setActiveTabId(doc.id);
-                // Wait a bit for state to update
-                await new Promise(resolve => setTimeout(resolve, 100));
-                // Save it
-                await handleSave();
-            }
-
-            // After all saves, close the window
-            if (window.electronAPI?.closeWindow) {
-                window.electronAPI.closeWindow();
-            }
-        });
-
-        return cleanup;
-    }, [documents, handleSave, setActiveTabId]);
+        const dirtyPrefix = activeDoc.dirty ? '* ' : '';
+        document.title = `${dirtyPrefix}${activeDoc.name} - mdviewer`;
+    }, [activeDoc.name, activeDoc.dirty]);
 
     // Wire up file handlers (open, new, save from menu)
     useFileHandler(
@@ -256,14 +225,13 @@ const App: React.FC = () => {
                         setActiveTabId(id);
                     }
                     await handleSave();
-                    await handleSave();
                     // Close after save
                     closeTabOrWindow(id);
                 } else {
                     // Don't save, just close
                     closeTabOrWindow(id);
                 }
-            } catch (err) {
+            } catch {
                 showError('Failed to show unsaved changes dialog');
                 return;
             }
@@ -294,7 +262,7 @@ const App: React.FC = () => {
             if (!result.success) {
                 showError(result.error || 'Failed to reveal file in Finder');
             }
-        } catch (err) {
+        } catch {
             showError('Failed to reveal file in Finder');
         } finally {
             setContextMenu(null);
@@ -323,7 +291,7 @@ const App: React.FC = () => {
                 {documents.map((doc: Document) => (
                     <div
                         key={doc.id}
-                        className={`tab ${activeTabId === doc.id ? 'active' : ''}`}
+                        className={`tab ${activeTabId === doc.id ? 'active' : ''} ${doc.dirty ? 'dirty' : ''}`}
                         onClick={() => setActiveTabId(doc.id)}
                         onContextMenu={(e) => handleTabContextMenu(e, doc.id)}
                         draggable={true}
@@ -333,10 +301,13 @@ const App: React.FC = () => {
                         onDrop={(e) => handleTabDrop(e, doc)}
                         role="tab"
                         aria-selected={activeTabId === doc.id}
+                        aria-label={`${doc.name}${doc.dirty ? ' (unsaved changes)' : ''}`}
                         aria-controls="content-area"
                         tabIndex={activeTabId === doc.id ? 0 : -1}
+                        title={doc.filePath ? doc.filePath : doc.name}
                     >
-                        <span>{doc.name}</span>
+                        {doc.dirty && <span className="tab-dirty-indicator" aria-hidden="true" />}
+                        <span className="tab-label">{doc.name}</span>
                         <button
                             className="tab-close"
                             onClick={(e) => handleCloseTab(e, doc.id)}

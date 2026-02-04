@@ -1,15 +1,16 @@
-import { app, BrowserWindow, ipcMain, Menu, dialog, shell, IpcMainInvokeEvent, MenuItemConstructorOptions } from 'electron';
+/* eslint-disable security/detect-non-literal-fs-filename */
+import { app, BrowserWindow, ipcMain, dialog, shell, IpcMainInvokeEvent } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import os from 'node:os';
-import { WINDOW_CONFIG, SECURITY_CONFIG, URL_SECURITY, IMAGE_CONFIG } from './constants/index.js';
-import type { FileOpenData, IPCMessage } from './types/electron';
+import { SECURITY_CONFIG, URL_SECURITY, IMAGE_CONFIG } from './constants/index.js';
+import type { FileOpenData } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
-import { withIPCHandlerNoInput, withValidatedIPCHandler, type IPCResult } from './main/security/ipcValidation.js';
+import { withIPCHandlerNoInput, withValidatedIPCHandler } from './main/security/ipcValidation.js';
 import {
   SaveFileDataSchema,
   ReadFileDataSchema,
@@ -21,26 +22,9 @@ import {
 import {
   createMenu,
   createWindow,
-  getMainWindow,
   setMainWindow,
   getOpenWindowCount,
-  incrementWindowCount,
-  decrementWindowCount
 } from './main/windowManager.js';
-
-/**
- * Type helper for IPC handlers that extracts the correct data type for a given channel.
- * This ensures handlers receive properly typed data based on the IPCMessage union.
- *
- * @example
- * const handler: IPCHandler<'file-open'> = (event, data) => {
- *   // data is correctly typed as FileOpenData
- * };
- */
-type IPCHandler<T extends IPCMessage['channel']> = (
-  event: IpcMainInvokeEvent,
-  data: Extract<IPCMessage, { channel: T }>['data']
-) => any;
 
 /**
  * Security utility: Validates that a file path is safe to open.
@@ -292,19 +276,6 @@ interface AppPreferences {
 }
 
 let appPreferences: AppPreferences = { alwaysOnTop: false };
-
-
-const createMenuWrapper = (): void => {
-  createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
-};
-
-const createWindowWrapper = (initialFile: string | null = null): BrowserWindow => {
-  return createWindow(appPreferences, openFile, initialFile);
-};
-
-// Use these wrapper functions everywhere in main.ts
-const createMenuForMenu = createMenuWrapper;
-const createWindowForWindow = createWindowWrapper;
 
 
 /**
@@ -1050,7 +1021,8 @@ ipcMain.handle('read-image-file', async (event: IpcMainInvokeEvent, data: unknow
 
     // Security: Verify resolved image path is within markdown directory or its subdirectories
     // This prevents accessing files outside the markdown file's directory tree
-    if (!resolvedImagePath.startsWith(markdownDir)) {
+    const relativePath = path.relative(markdownDir, resolvedImagePath);
+    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
       console.warn(`Blocked attempt to read image outside markdown directory: ${resolvedImagePath}`);
       return { error: 'Image path must be relative to markdown file' };
     }
@@ -1212,8 +1184,7 @@ ipcMain.handle('save-image-from-data', async (event: IpcMainInvokeEvent, data: u
     const buffer = Buffer.from(base64Data, 'base64');
 
     // Security: Validate extension
-    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
-    // Note: mime type handling might be slightly different than extensions (jpeg vs jpg). 
+    // Note: mime type handling might be slightly different than extensions (jpeg vs jpg).
     // We'll normalize generic check.
     if (!['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) {
       return { error: 'Invalid image type' };
@@ -1234,7 +1205,8 @@ ipcMain.handle('save-image-from-data', async (event: IpcMainInvokeEvent, data: u
     // Sanitize basename slightly to avoid really bad chars in image filenames, 
     // but keep spaces if user uses them (as requested "match file name")
     // We mainly want to avoid chars that might be problematic in some filesystems/urls even if valid in doc names
-    const safeDocName = docBasename.replace(/[\/\\:*?"<>|]/g, '-');
+    const invalidFilenameChars = new RegExp('[\\\\/:*?"<>|]', 'g');
+    const safeDocName = docBasename.replace(invalidFilenameChars, '-');
 
     let counter = 1;
     let destFilename = `${safeDocName}-${counter}${ext}`;

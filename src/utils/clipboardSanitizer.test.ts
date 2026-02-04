@@ -4,6 +4,7 @@
  * Covers HTML sanitization, protocol validation, attribute filtering,
  * and XSS prevention for clipboard operations.
  */
+/* eslint-disable no-secrets/no-secrets */
 
 import { describe, it, expect } from 'vitest';
 import { sanitizeHtmlForClipboard, sanitizeTextForClipboard } from './clipboardSanitizer';

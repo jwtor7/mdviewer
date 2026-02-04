@@ -57,7 +57,7 @@ export const useClipboardCopy = ({
               'text/plain': textBlob
             })];
             await navigator.clipboard.write(data);
-          } catch (richCopyErr) {
+          } catch {
             // Fallback to plain text if rich text copy fails
             // Security: Still sanitize the text fallback
             const sanitizedText = sanitizeTextForClipboard(previewElement.innerText);
@@ -65,7 +65,7 @@ export const useClipboardCopy = ({
           }
         }
       }
-    } catch (err) {
+    } catch {
       showError('Failed to copy to clipboard');
     }
   }, [viewMode, content, showError]);

@@ -82,7 +82,7 @@ export const useTextFormatting = (
           newText = `\`\`\`\n${selectedText}\n\`\`\``;
           cursorOffset = newText.length;
         } else {
-          newText = '\`\`\`\n\n\`\`\`';
+          newText = '```\n\n```';
           cursorOffset = 4; // Position cursor between the backticks
         }
         break;

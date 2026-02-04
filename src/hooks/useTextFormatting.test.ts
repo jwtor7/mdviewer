@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { useTextFormatting } from './useTextFormatting';
 import { VIEW_MODES } from '../constants/index';
-import type { ViewMode } from '../constants/index';
 
 describe('useTextFormatting', () => {
   let mockSetContent: ReturnType<typeof vi.fn>;

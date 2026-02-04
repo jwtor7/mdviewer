@@ -1,6 +1,7 @@
 import { app } from 'electron';
 import path from 'node:path';
 import { promises as fsPromises } from 'node:fs';
+/* eslint-disable security/detect-non-literal-fs-filename */
 import fs from 'node:fs';
 
 /**

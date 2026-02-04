@@ -20,7 +20,8 @@
 - Renderer stays sandboxed: interact with OS only through typed `electronAPI` exposed in preload; never access Node APIs directly from the renderer.
 
 ## Testing Guidelines
-- No automated test suite yet; always run `npm run lint` and `npm run typecheck` before pushing.
+- Automated tests use Vitest + React Testing Library; run `npm test` or `npm run test:watch` when touching UI, IPC, or stateful flows.
+- Always run `npm run lint` and `npm run typecheck` before pushing.
 - Add focused unit or integration coverage when touching parsing, IPC, or stateful flows; colocate tests beside the source they cover.
 - Manual smoke test: open several `.md` files, toggle Rendered/Raw/Split, switch themes, and confirm save/export paths work.
 

@@ -84,7 +84,6 @@ describe('useErrorHandler', () => {
     });
 
     expect(result.current.errors).toHaveLength(1);
-    const errorId = result.current.errors[0].id;
 
     // Advance time to trigger auto-dismiss
     act(() => {

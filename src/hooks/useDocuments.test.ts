@@ -412,7 +412,6 @@ describe('useDocuments', () => {
 
     it('should restore previous content on undo', () => {
       const { result } = renderHook(() => useDocuments());
-      const originalContent = result.current.activeDoc.content;
 
       act(() => {
         result.current.updateContent('Changed content');

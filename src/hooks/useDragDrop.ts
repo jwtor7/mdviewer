@@ -142,19 +142,23 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
     // The dropEffect check was preventing tab tear-off from working
     if (isOutside) {
       if (window.electronAPI && window.electronAPI.createWindowForTab) {
-        window.electronAPI.createWindowForTab({
+        const result = await window.electronAPI.createWindowForTab({
           filePath: doc.filePath,
           content: doc.content
         });
-        // Close the tab as we created a new window for it
-        closeTabOrWindow(doc.id);
+        if (result.success) {
+          // Close the tab as we created a new window for it
+          closeTabOrWindow(doc.id);
+        } else {
+          showError(result.error || 'Failed to open a new window for the tab');
+        }
       }
     }
 
     // Reset drag ID
     dragIdRef.current = null;
     draggedDocIdRef.current = null;
-  }, [closeTabOrWindow]);
+  }, [closeTabOrWindow, showError]);
 
   /**
    * Handle file drag over the app window
@@ -227,7 +231,7 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
           }
           return; // Handled
         }
-      } catch (err) {
+      } catch {
         // Not JSON or not our tab, ignore
       }
     }
@@ -261,8 +265,8 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
             if (window.electronAPI?.getPathForFile) {
               try {
                 imagePath = window.electronAPI.getPathForFile(imageFile);
-              } catch (e) {
-                console.error('Failed to get path for image file', e);
+              } catch (error) {
+                console.error('Failed to get path for image file', error);
               }
             }
 
@@ -290,7 +294,7 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
 
               showError(`Image embedded: ${filename}`, 'info');
             }
-          } catch (err) {
+          } catch {
             showError(`Failed to embed image: ${imageFile.name}`);
           }
         }
@@ -305,8 +309,8 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
       if (window.electronAPI?.getPathForFile) {
         try {
           filePath = window.electronAPI.getPathForFile(file);
-        } catch (e) {
-          console.error('Failed to get path for file', e);
+        } catch (error) {
+          console.error('Failed to get path for file', error);
         }
       } else {
         // Fallback for older Electron versions or dev mode if API missing
@@ -322,12 +326,12 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
       try {
         const result = await window.electronAPI.readFile(filePath);
 
-        if (result.error) {
+        if (!result.success) {
           showError(result.error);
           return;
         }
 
-        const content = result.content;
+        const content = result.data.content;
 
         // Security: Defense-in-depth validation of content size (HIGH-2 fix)
         // Main process already validates, but renderer should also verify
@@ -351,7 +355,7 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
             filePath,
           });
         }
-      } catch (err) {
+      } catch {
         showError(`Failed to read file: ${file.name}`);
       }
     });
@@ -396,7 +400,7 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
           isInternal = true;
         }
       }
-    } catch (err) {
+    } catch {
       // Ignore parse error, treat as external
     }
 

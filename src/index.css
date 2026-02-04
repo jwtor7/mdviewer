@@ -7,6 +7,7 @@
   --editor-text: #d4d4d4;
   --btn-hover: #3e4451;
   --btn-active: #3e4451;
+  --dirty-indicator: #f39c12;
   /* Syntax Highlighting - VS Code Dark+ theme */
   --hljs-bg: #1e1e1e;
   --hljs-color: #d4d4d4;
@@ -829,6 +830,18 @@ body {
   -webkit-app-region: no-drag;
   transition: all 0.2s;
   user-select: none;
+  flex-shrink: 0;
+}
+
+.tab-label {
+  white-space: nowrap;
+}
+
+.tab-dirty-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--dirty-indicator);
   flex-shrink: 0;
 }
 

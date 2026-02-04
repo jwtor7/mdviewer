@@ -190,7 +190,7 @@ export function withIPCHandler<TInput, TOutput>(
  *
  * @example
  * ipcMain.handle('close-window',
- *   withIPCHandlerNoInput<void>(
+ *   withIPCHandlerNoInput(
  *     { handlerName: 'close-window' },
  *     async (event) => {
  *       const win = BrowserWindow.fromWebContents(event.sender);

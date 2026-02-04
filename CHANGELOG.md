@@ -5,6 +5,23 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.3.3] - 2026-02-04
+
+### Added
+- Unsaved changes indicator in tabs plus window title sync with the active document
+- Tab tooltips now show full file paths when available
+
+### Fixed
+- Removed an accidental double-save when closing dirty tabs
+- Eliminated redundant IPC listener wiring in `App.tsx`
+
+## [3.3.2] - 2026-01-11
+
+### Changed
+- Addressed lint errors across hooks, tests, and utilities to restore clean lint runs
+- Hardened filename sanitization in image paste handling
+- Refreshed documentation and version metadata for the new release
+
 ## [3.3.1] - 2026-01-10
 
 ### Changed
