@@ -5,6 +5,30 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.1] - 2026-02-12
+
+### Changed
+- Added copyright notice "© Junior Williams" to status bar
+
+## [3.4.0] - 2026-02-04
+
+### Added
+- Zod validation for all remaining IPC handlers (external links, window spawn, dialogs, image ops)
+- Request correlation for unsaved-docs IPC responses
+- Debounced Find & Replace search for large documents
+- UUID-based document IDs to avoid collisions
+
+### Changed
+- Rendered search highlighting now runs in a rehype pass for better performance
+- PDF export waits for font readiness instead of using a fixed timeout
+- Tightened allowed image protocols during markdown sanitization
+- Renderer debug logging IPC is disabled in production builds
+
+### Fixed
+- Prevented overwriting dirty tabs when reopening the same file
+- Consolidated close-tab state updates to avoid race conditions
+- Validated markdown file paths before image read/write operations
+
 ## [3.3.3] - 2026-02-04
 
 ### Added

@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.3.3-blue.svg)
+![Version](https://img.shields.io/badge/version-3.4.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -224,6 +224,14 @@ src/
 ## Changelog
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
+
+### 3.4.1 - 2026-02-12
+- Added copyright notice to status bar
+
+### 3.4.0 - 2026-02-04
+- IPC validation and security hardening across all handlers
+- Faster rendered search highlighting + debounced Find & Replace
+- PDF export waits for font readiness for more reliable output
 
 ### 3.3.1 - 2026-01-10
 - Install scripts auto-clean build artifacts (saves ~1.4GB disk space)
