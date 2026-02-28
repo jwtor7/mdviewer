@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Smart reload protection: documents with unsaved local edits are never overwritten by external changes
 - Content comparison prevents unnecessary re-renders when mdviewer itself saves a file
 
+### Fixed
+- File watcher now handles macOS atomic saves (rename events) that editors like vim, VSCode, and TextEdit use
+- Watcher automatically re-establishes after file replacement to maintain monitoring across saves
+
 ## [3.4.2] - 2026-02-27
 
 ### Added

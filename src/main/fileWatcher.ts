@@ -23,6 +23,75 @@ const watchers = new Map<string, WatcherEntry>();
 const DEBOUNCE_MS = 250;
 
 /**
+ * Notify all windows watching a given file path that it changed.
+ * Debounced to coalesce rapid fs.watch events.
+ */
+function notifyChange(resolved: string): void {
+  const entry = watchers.get(resolved);
+  if (!entry) return;
+
+  if (entry.debounceTimer) {
+    clearTimeout(entry.debounceTimer);
+  }
+
+  entry.debounceTimer = setTimeout(() => {
+    entry.debounceTimer = null;
+    for (const win of entry.windows) {
+      if (!win.isDestroyed()) {
+        win.webContents.send('file-changed', { filePath: resolved });
+      }
+    }
+  }, DEBOUNCE_MS);
+}
+
+/**
+ * Create (or re-create) the fs.watch watcher for a resolved path.
+ * Preserves the existing window set if re-creating after a rename event.
+ */
+function createWatcher(resolved: string, windows: Set<BrowserWindow>): void {
+  try {
+    const watcher = fs.watch(resolved, { persistent: false }, (eventType) => {
+      // Handle both 'change' and 'rename' events.
+      // macOS editors often use atomic saves (write temp + rename),
+      // which fires 'rename' instead of 'change'.
+      notifyChange(resolved);
+
+      // After a 'rename', the watcher may be stale (inode changed).
+      // Re-create it so we keep watching the new file at the same path.
+      if (eventType === 'rename') {
+        const entry = watchers.get(resolved);
+        if (!entry) return;
+        entry.watcher.close();
+
+        // Brief delay: the file may not exist yet mid-atomic-write
+        setTimeout(() => {
+          try {
+            fs.accessSync(resolved);
+            createWatcher(resolved, entry.windows);
+          } catch {
+            // File was deleted, not replaced — stop watching
+            watchers.delete(resolved);
+          }
+        }, 100);
+      }
+    });
+
+    watcher.on('error', (err) => {
+      console.error(`[FileWatcher] Error watching ${path.basename(resolved)}:`, err.message);
+      const entry = watchers.get(resolved);
+      if (entry) {
+        entry.watcher.close();
+        watchers.delete(resolved);
+      }
+    });
+
+    watchers.set(resolved, { watcher, windows, debounceTimer: null });
+  } catch (err) {
+    console.error(`[FileWatcher] Failed to watch ${path.basename(resolved)}:`, (err as Error).message);
+  }
+}
+
+/**
  * Start watching a file for external changes.
  * Multiple windows can watch the same file; the watcher is shared.
  */
@@ -38,37 +107,7 @@ export function watchFile(filePath: string, window: BrowserWindow): void {
     return;
   }
 
-  try {
-    const watcher = fs.watch(resolved, { persistent: false }, (eventType) => {
-      if (eventType !== 'change') return;
-
-      const entry = watchers.get(resolved);
-      if (!entry) return;
-
-      // Debounce: fs.watch fires multiple events per write
-      if (entry.debounceTimer) {
-        clearTimeout(entry.debounceTimer);
-      }
-
-      entry.debounceTimer = setTimeout(() => {
-        entry.debounceTimer = null;
-        for (const win of entry.windows) {
-          if (!win.isDestroyed()) {
-            win.webContents.send('file-changed', { filePath: resolved });
-          }
-        }
-      }, DEBOUNCE_MS);
-    });
-
-    watcher.on('error', (err) => {
-      console.error(`[FileWatcher] Error watching ${path.basename(resolved)}:`, err.message);
-      unwatchFile(resolved, window);
-    });
-
-    watchers.set(resolved, { watcher, windows: new Set([window]), debounceTimer: null });
-  } catch (err) {
-    console.error(`[FileWatcher] Failed to watch ${path.basename(resolved)}:`, (err as Error).message);
-  }
+  createWatcher(resolved, new Set([window]));
 }
 
 /**
