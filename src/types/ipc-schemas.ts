@@ -174,6 +174,7 @@ export const IPCSchemaRegistry = {
   'read-image-file': ReadImageFileDataSchema,
   'copy-image-to-document': CopyImageToDocumentDataSchema,
   'save-image-from-data': SaveImageFromDataSchema,
+  'open-external-url': OpenExternalUrlDataSchema,
 } as const;
 
 export type IPCChannel = keyof typeof IPCSchemaRegistry;

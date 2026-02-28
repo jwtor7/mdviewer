@@ -29,6 +29,7 @@ const FindReplace: React.FC<FindReplaceProps> = ({
 }) => {
   const [findText, setFindText] = useState('');
   const [replaceText, setReplaceText] = useState('');
+  const [debouncedFindText, setDebouncedFindText] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
   const [matches, setMatches] = useState<Match[]>([]);
   const [currentMatchIndex, setCurrentMatchIndex] = useState(-1);
@@ -43,16 +44,24 @@ const FindReplace: React.FC<FindReplaceProps> = ({
     findInputRef.current?.focus();
   }, []);
 
+  // Debounce find text to avoid expensive scans on every keystroke
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedFindText(findText);
+    }, 150);
+    return () => window.clearTimeout(timeoutId);
+  }, [findText]);
+
   // Find all matches when search text or case sensitivity changes
   useEffect(() => {
-    if (!findText) {
+    if (!debouncedFindText) {
       setMatches([]);
       setCurrentMatchIndex(-1);
       return;
     }
 
     const foundMatches: Match[] = [];
-    const searchText = caseSensitive ? findText : findText.toLowerCase();
+    const searchText = caseSensitive ? debouncedFindText : debouncedFindText.toLowerCase();
     const searchContent = caseSensitive ? content : content.toLowerCase();
 
     let index = 0;
@@ -62,19 +71,19 @@ const FindReplace: React.FC<FindReplaceProps> = ({
 
       foundMatches.push({
         start: foundIndex,
-        end: foundIndex + findText.length,
+        end: foundIndex + debouncedFindText.length,
       });
       index = foundIndex + 1;
     }
 
     setMatches(foundMatches);
     setCurrentMatchIndex(foundMatches.length > 0 ? 0 : -1);
-  }, [findText, content, caseSensitive]);
+  }, [debouncedFindText, content, caseSensitive]);
 
   // Generate highlighted content for the CodeEditor (Raw and Split views)
   useEffect(() => {
     if (viewMode === 'raw' || viewMode === 'split') {
-      if (!findText || matches.length === 0) {
+      if (!debouncedFindText || matches.length === 0) {
         onHighlightedContentChange(null);
         return;
       }
@@ -110,20 +119,20 @@ const FindReplace: React.FC<FindReplaceProps> = ({
     } else {
       onHighlightedContentChange(null);
     }
-  }, [matches, currentMatchIndex, content, findText, onHighlightedContentChange, viewMode]);
+  }, [matches, currentMatchIndex, content, debouncedFindText, onHighlightedContentChange, viewMode]);
 
   // Notify parent components about highlighting needs for Rendered and Text views
   useEffect(() => {
     if (viewMode === 'rendered') {
-      if (onRenderedHighlight && findText) {
-        onRenderedHighlight(findText, caseSensitive, currentMatchIndex);
+      if (onRenderedHighlight && debouncedFindText) {
+        onRenderedHighlight(debouncedFindText, caseSensitive, currentMatchIndex);
       }
     } else if (viewMode === 'text') {
-      if (onTextHighlight && findText) {
-        onTextHighlight(findText, caseSensitive, currentMatchIndex);
+      if (onTextHighlight && debouncedFindText) {
+        onTextHighlight(debouncedFindText, caseSensitive, currentMatchIndex);
       }
     }
-  }, [findText, caseSensitive, currentMatchIndex, viewMode, onRenderedHighlight, onTextHighlight]);
+  }, [debouncedFindText, caseSensitive, currentMatchIndex, viewMode, onRenderedHighlight, onTextHighlight]);
 
   // Scroll to current match and sync highlight layer
   useEffect(() => {
@@ -171,7 +180,7 @@ const FindReplace: React.FC<FindReplaceProps> = ({
 
     textarea.addEventListener('scroll', syncScroll);
     return () => textarea.removeEventListener('scroll', syncScroll);
-  }, [textareaRef, findText, matches]);
+  }, [textareaRef, debouncedFindText, matches]);
 
   const handleNext = (): void => {
     if (matches.length === 0) return;
@@ -213,7 +222,7 @@ const FindReplace: React.FC<FindReplaceProps> = ({
   const handleReplaceAll = (): void => {
     // Only allow replace in Raw and Split views
     if (viewMode !== 'raw' && viewMode !== 'split') return;
-    if (!findText || matches.length === 0 || !textareaRef.current) return;
+    if (!debouncedFindText || matches.length === 0 || !textareaRef.current) return;
 
     const textarea = textareaRef.current;
 

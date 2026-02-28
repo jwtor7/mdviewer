@@ -278,15 +278,15 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
             // Copy image to document's images directory
             const result = await window.electronAPI.copyImageToDocument(imagePath, activeDoc.filePath!);
 
-            if (result.error) {
-              showError(result.error);
+            if (!result.success) {
+              showError(result.error || 'Failed to embed image');
               continue;
             }
 
-            if (result.relativePath) {
+            if (result.data.relativePath) {
               // Insert markdown image syntax at cursor or end of content
               const filename = imageFile.name;
-              const imageMarkdown = `![${filename}](${encodeURI(result.relativePath)})`;
+              const imageMarkdown = `![${filename}](${encodeURI(result.data.relativePath)})`;
 
               // Append to content (you could enhance this to insert at cursor position)
               const newContent = activeDoc.content + '\n\n' + imageMarkdown;
@@ -349,7 +349,6 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
         } else {
           // Add new document
           addDocument({
-            id: Date.now().toString() + Math.random(),
             name: file.name,
             content,
             filePath,

@@ -18,95 +18,93 @@ export interface MarkdownPreviewProps {
   onContentChange?: (content: string) => void;
 }
 
-// Helper to highlight text content with search term
-const highlightText = (text: string, searchTerm: string, caseSensitive: boolean, globalIndexRef: { current: number }, currentMatchIndex: number): React.ReactNode => {
-  if (!searchTerm) return text;
-
-  const searchText = caseSensitive ? searchTerm : searchTerm.toLowerCase();
-  const compareText = caseSensitive ? text : text.toLowerCase();
-
-  const matches: { start: number; end: number }[] = [];
-  let index = 0;
-  while (index < compareText.length) {
-    const foundIndex = compareText.indexOf(searchText, index);
-    if (foundIndex === -1) break;
-    matches.push({ start: foundIndex, end: foundIndex + searchTerm.length });
-    index = foundIndex + 1;
-  }
-
-  if (matches.length === 0) return text;
-
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-
-  matches.forEach((match) => {
-    if (match.start > lastIndex) {
-      parts.push(text.substring(lastIndex, match.start));
-    }
-
-    const isCurrent = globalIndexRef.current === currentMatchIndex;
-    parts.push(
-      <mark
-        key={`match-${globalIndexRef.current}`}
-        className={isCurrent ? 'search-highlight-current' : 'search-highlight'}
-        data-match-index={globalIndexRef.current}
-      >
-        {text.substring(match.start, match.end)}
-      </mark>
-    );
-    globalIndexRef.current++;
-    lastIndex = match.end;
-  });
-
-  if (lastIndex < text.length) {
-    parts.push(text.substring(lastIndex));
-  }
-
-  return <>{parts}</>;
+type HastNode = {
+  type: string;
+  value?: string;
+  tagName?: string;
+  children?: HastNode[];
+  properties?: Record<string, unknown>;
 };
 
-// Recursively process children to add highlights
-const processChildren = (children: React.ReactNode, searchTerm: string, caseSensitive: boolean, globalIndexRef: { current: number }, currentMatchIndex: number, skipHighlight: boolean = false): React.ReactNode => {
-  if (!children) return children;
+type HighlightOptions = {
+  searchTerm: string;
+  caseSensitive: boolean;
+  currentMatchIndex: number;
+};
 
-  if (typeof children === 'string') {
-    if (skipHighlight) return children;
-    return highlightText(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
+const createRehypeSearchHighlight = ({ searchTerm, caseSensitive, currentMatchIndex }: HighlightOptions) => {
+  if (!searchTerm) {
+    return () => undefined;
   }
 
-  if (typeof children === 'number') {
-    return children;
-  }
+  const needle = caseSensitive ? searchTerm : searchTerm.toLowerCase();
 
-  if (Array.isArray(children)) {
-    return children.map((child, idx) => {
-      const processed = processChildren(child, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex, skipHighlight);
-      // If it's a string that was converted to an array of elements, wrap in fragment with key
-      if (React.isValidElement(processed)) {
-        return React.cloneElement(processed, { key: processed.key || `child-${idx}` });
+  return (tree: HastNode): void => {
+    let globalIndex = 0;
+
+    const processNodes = (nodes: HastNode[], inCode: boolean): void => {
+      for (let i = 0; i < nodes.length; i++) {
+        const node = nodes[i];
+
+        if (node.type === 'element') {
+          const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+          const nextInCode = inCode || tagName === 'code' || tagName === 'pre';
+          if (node.children && node.children.length > 0) {
+            processNodes(node.children, nextInCode);
+          }
+          continue;
+        }
+
+        if (node.type !== 'text' || inCode || typeof node.value !== 'string') {
+          continue;
+        }
+
+        const rawText = node.value;
+        const compareText = caseSensitive ? rawText : rawText.toLowerCase();
+        let index = compareText.indexOf(needle);
+
+        if (index === -1) {
+          continue;
+        }
+
+        const parts: HastNode[] = [];
+        let lastIndex = 0;
+
+        while (index !== -1) {
+          if (index > lastIndex) {
+            parts.push({ type: 'text', value: rawText.slice(lastIndex, index) });
+          }
+
+          const matchText = rawText.slice(index, index + searchTerm.length);
+          const isCurrent = globalIndex === currentMatchIndex;
+
+          parts.push({
+            type: 'element',
+            tagName: 'mark',
+            properties: {
+              className: isCurrent ? 'search-highlight-current' : 'search-highlight'
+            },
+            children: [{ type: 'text', value: matchText }],
+          });
+
+          globalIndex++;
+          lastIndex = index + searchTerm.length;
+          index = compareText.indexOf(needle, lastIndex);
+        }
+
+        if (lastIndex < rawText.length) {
+          parts.push({ type: 'text', value: rawText.slice(lastIndex) });
+        }
+
+        nodes.splice(i, 1, ...parts);
+        i += parts.length - 1;
       }
-      if (Array.isArray(processed)) {
-        return <React.Fragment key={`frag-${idx}`}>{processed}</React.Fragment>;
-      }
-      return processed;
-    });
-  }
+    };
 
-  if (React.isValidElement(children)) {
-    const element = children as React.ReactElement<{ children?: React.ReactNode }>;
-    // Skip highlighting inside code elements
-    const isCode = element.type === 'code' || (typeof element.type === 'string' && element.type === 'code');
-    const newSkipHighlight = skipHighlight || isCode;
-
-    if (element.props.children) {
-      return React.cloneElement(element, {
-        ...element.props,
-        children: processChildren(element.props.children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex, newSkipHighlight)
-      } as React.Attributes & { children?: React.ReactNode });
+    if (tree.children) {
+      processNodes(tree.children, false);
     }
-  }
-
-  return children;
+  };
 };
 
 const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange }: MarkdownPreviewProps) => {
@@ -202,7 +200,11 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
 
         if (sourcePath && window.electronAPI?.copyImageToDocument) {
           const result = await window.electronAPI.copyImageToDocument(sourcePath, filePath);
-          relativePath = result.relativePath;
+          if (result.success) {
+            relativePath = result.data.relativePath;
+          } else {
+            throw new Error(result.error || 'Failed to copy image');
+          }
         } else if (window.electronAPI?.saveImageFromData) {
           // Fallback: Read file as data URI and save
           const reader = new FileReader();
@@ -213,7 +215,11 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
           });
 
           const result = await window.electronAPI.saveImageFromData(dataUri, filePath);
-          relativePath = result.relativePath;
+          if (result.success) {
+            relativePath = result.data.relativePath;
+          } else {
+            throw new Error(result.error || 'Failed to save image');
+          }
         }
 
         if (relativePath) {
@@ -262,9 +268,6 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
 
   // Create components with search highlighting
   const components: Components = useMemo(() => {
-    // Create a ref object to track global match index across all text processing
-    const globalIndexRef = { current: 0 };
-
     return {
       // Use pre component to wrap code blocks with copy button
       pre(props) {
@@ -312,10 +315,10 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
           // Use decoded path for file system access
           window.electronAPI?.readImageFile(decodedSrc, filePath)
             .then((result) => {
-              if (result.dataUri) {
-                imageCache.current.set(src, result.dataUri);
-                setDataUri(result.dataUri);
-              } else if (result.error) {
+              if (result.success) {
+                imageCache.current.set(src, result.data.dataUri);
+                setDataUri(result.data.dataUri);
+              } else {
                 console.error('Failed to load image:', result.error);
                 setError(true);
               }
@@ -345,14 +348,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
           e.preventDefault();
           if (href && window.electronAPI?.openExternalUrl) {
-            window.electronAPI.openExternalUrl(href).catch((err) => {
+            window.electronAPI.openExternalUrl(href).then((result) => {
+              if (!result.success) {
+                console.error('Failed to open external URL:', result.error);
+              }
+            }).catch((err) => {
               console.error('Failed to open external URL:', err);
             });
           }
         };
-
-        // Process children for highlighting
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         return (
           <a
@@ -362,14 +366,13 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
             className="markdown-link"
             {...rest}
           >
-            {processedChildren}
+            {children}
           </a>
         );
       },
       // Process text in paragraph elements
       p(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         // Make editable if onContentChange is provided
         if (onContentChange && node?.position) {
@@ -383,17 +386,16 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </p>
           );
         }
 
-        return <p {...rest}>{processedChildren}</p>;
+        return <p {...rest}>{children}</p>;
       },
       // Process text in list items
       li(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         // Make editable if onContentChange is provided
         if (onContentChange && node?.position) {
@@ -407,17 +409,16 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </li>
           );
         }
 
-        return <li {...rest}>{processedChildren}</li>;
+        return <li {...rest}>{children}</li>;
       },
       // Process headings
       h1(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -430,16 +431,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h1>
           );
         }
 
-        return <h1 {...rest}>{processedChildren}</h1>;
+        return <h1 {...rest}>{children}</h1>;
       },
       h2(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -452,16 +452,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h2>
           );
         }
 
-        return <h2 {...rest}>{processedChildren}</h2>;
+        return <h2 {...rest}>{children}</h2>;
       },
       h3(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -474,16 +473,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h3>
           );
         }
 
-        return <h3 {...rest}>{processedChildren}</h3>;
+        return <h3 {...rest}>{children}</h3>;
       },
       h4(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -496,16 +494,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h4>
           );
         }
 
-        return <h4 {...rest}>{processedChildren}</h4>;
+        return <h4 {...rest}>{children}</h4>;
       },
       h5(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -518,16 +515,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h5>
           );
         }
 
-        return <h5 {...rest}>{processedChildren}</h5>;
+        return <h5 {...rest}>{children}</h5>;
       },
       h6(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -540,17 +536,16 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </h6>
           );
         }
 
-        return <h6 {...rest}>{processedChildren}</h6>;
+        return <h6 {...rest}>{children}</h6>;
       },
       // Process table cells
       td(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -563,16 +558,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </td>
           );
         }
 
-        return <td {...rest}>{processedChildren}</td>;
+        return <td {...rest}>{children}</td>;
       },
       th(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -585,17 +579,16 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </th>
           );
         }
 
-        return <th {...rest}>{processedChildren}</th>;
+        return <th {...rest}>{children}</th>;
       },
       // Process blockquotes
       blockquote(props) {
         const { children, node, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
 
         if (onContentChange && node?.position) {
           return (
@@ -608,31 +601,28 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
               onBlur={handleTextEdit}
               onPaste={handlePaste}
             >
-              {processedChildren}
+              {children}
             </blockquote>
           );
         }
 
-        return <blockquote {...rest}>{processedChildren}</blockquote>;
+        return <blockquote {...rest}>{children}</blockquote>;
       },
       // Process strong/em/del
       strong(props) {
         const { children, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
-        return <strong {...rest}>{processedChildren}</strong>;
+        return <strong {...rest}>{children}</strong>;
       },
       em(props) {
         const { children, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
-        return <em {...rest}>{processedChildren}</em>;
+        return <em {...rest}>{children}</em>;
       },
       del(props) {
         const { children, ...rest } = props;
-        const processedChildren = processChildren(children, searchTerm, caseSensitive, globalIndexRef, currentMatchIndex);
-        return <del {...rest}>{processedChildren}</del>;
+        return <del {...rest}>{children}</del>;
       },
     };
-  }, [searchTerm, caseSensitive, currentMatchIndex, extractTextContent, filePath, onContentChange, content, handleTextEdit]);
+  }, [extractTextContent, filePath, onContentChange, content, handleTextEdit, handlePaste]);
 
   // Scroll to current match after render
   useEffect(() => {
@@ -644,20 +634,18 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     }
   }, [searchTerm, currentMatchIndex]);
 
-  // Custom schema to allow relative paths (which have no protocol)
-  // By default, rehype-sanitize might strip src if it doesn't match known protocols.
-  // We need to permit src to be relative.
+  // Allow safe protocols for images while still permitting relative paths
   const customSchema = useMemo(() => ({
     ...defaultSchema,
     protocols: {
       ...defaultSchema.protocols,
-      // To allow relative URLs, we generally need to be careful.
-      // But standard rehype-sanitize behavior for src usually allows http/https/mailto.
-      // If we want relative, we might need to basically disable protocol check for src,
-      // or rely on the fact that if we pass null/undefined to a property in protocols, it allows everything.
-      src: null
+      src: ['http', 'https', 'data']
     }
   }), []);
+
+  const rehypeSearchHighlight = useMemo(() => (
+    createRehypeSearchHighlight({ searchTerm, caseSensitive, currentMatchIndex })
+  ), [searchTerm, caseSensitive, currentMatchIndex]);
 
   return (
     <div
@@ -669,7 +657,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeSanitize, customSchema], rehypeHighlight]}
+        rehypePlugins={[[rehypeSanitize, customSchema], rehypeHighlight, rehypeSearchHighlight]}
         components={components}
       >
         {content}

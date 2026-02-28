@@ -3,8 +3,9 @@
  * Handles Electron BrowserWindow creation and application menu building.
  */
 
-import { app, BrowserWindow, Menu, dialog, shell, MenuItemConstructorOptions, ipcMain } from 'electron';
+import { app, BrowserWindow, Menu, dialog, shell, MenuItemConstructorOptions, ipcMain, IpcMainEvent } from 'electron';
 import path from 'node:path';
+import crypto from 'node:crypto';
 /* eslint-disable security/detect-non-literal-fs-filename */
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from '../constants/index.js';
@@ -221,12 +222,34 @@ export const createWindow = (
   win.on('close', async (e) => {
     try {
       const unsavedDocs = await new Promise<string[]>((resolve) => {
-        const timeout = setTimeout(() => resolve([]), 1000);
-        ipcMain.once('unsaved-docs-response', (_event, docs) => {
+        const requestId = crypto.randomUUID();
+        let resolved = false;
+
+        let timeout: NodeJS.Timeout;
+
+        const cleanup = (docs: string[]) => {
+          if (resolved) return;
+          resolved = true;
           clearTimeout(timeout);
-          resolve(Array.isArray(docs) ? docs : []);
-        });
-        win.webContents.send('request-unsaved-docs');
+          ipcMain.removeListener('unsaved-docs-response', handleResponse);
+          resolve(docs);
+        };
+
+        const handleResponse = (event: IpcMainEvent, payload: unknown) => {
+          // Only accept responses from the requesting window
+          if (event.sender !== win.webContents) return;
+
+          if (!payload || typeof payload !== 'object') return;
+          const data = payload as { requestId?: string; docs?: unknown };
+
+          if (data.requestId !== requestId) return;
+          const docs = Array.isArray(data.docs) ? data.docs.filter((doc): doc is string => typeof doc === 'string') : [];
+          cleanup(docs);
+        };
+
+        timeout = setTimeout(() => cleanup([]), 1000);
+        ipcMain.on('unsaved-docs-response', handleResponse);
+        win.webContents.send('request-unsaved-docs', { requestId });
       });
 
       if (unsavedDocs && unsavedDocs.length > 0) {

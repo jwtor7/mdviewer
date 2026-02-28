@@ -70,18 +70,18 @@ const mockElectronAPI = {
   onCloseTab: vi.fn(() => vi.fn()),
 
   // IPC invoke functions
-  createWindowForTab: vi.fn(() => Promise.resolve({ success: true })),
+  createWindowForTab: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
   closeWindow: vi.fn(() => Promise.resolve()),
-  openExternalUrl: vi.fn(() => Promise.resolve()),
+  openExternalUrl: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
   exportPDF: vi.fn(() => Promise.resolve({ success: true, data: { filePath: '/test/path.pdf' } })),
   saveFile: vi.fn(() => Promise.resolve({ success: true, data: { filePath: '/test/path.md' } })),
   readFile: vi.fn(() => Promise.resolve({ success: true, data: { content: 'test content' } })),
   getPathForFile: vi.fn((file: File) => `/mock/path/${file.name}`),
-  showUnsavedDialog: vi.fn(() => Promise.resolve({ response: 'dont-save' as const })),
-  revealInFinder: vi.fn(() => Promise.resolve({ success: true })),
-  readImageFile: vi.fn(() => Promise.resolve({ dataUri: 'data:image/png;base64,test' })),
-  copyImageToDocument: vi.fn(() => Promise.resolve({ relativePath: './images/test.png' })),
-  saveImageFromData: vi.fn(() => Promise.resolve({ relativePath: './images/pasted.png' })),
+  showUnsavedDialog: vi.fn(() => Promise.resolve({ success: true, data: { response: 'dont-save' as const } })),
+  revealInFinder: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  readImageFile: vi.fn(() => Promise.resolve({ success: true, data: { dataUri: 'data:image/png;base64,test' } })),
+  copyImageToDocument: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/test.png' } })),
+  saveImageFromData: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/pasted.png' } })),
   logDebug: vi.fn(),
 };
 

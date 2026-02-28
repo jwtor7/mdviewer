@@ -5,6 +5,26 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.4.2] - 2026-02-27
+
+### Added
+- `crypto.randomUUID()` document ID generation utility (`src/utils/id.ts`)
+- Rehype-based search highlighting plugin for improved performance and code block skipping
+
+### Changed
+- Standardized all IPC handlers to `IPCResult<T>` discriminated union pattern with `withValidatedIPCHandler` wrapper
+- Moved document ID generation internal to `useDocuments.addDocument`
+- Tightened Content Security Policy to explicit protocol whitelist
+
+### Fixed
+- Race condition in unsaved-docs IPC flow using requestId validation
+- Race condition in `closeTab` with consolidated state update
+- Stale tests asserting on removed ID parameter
+- Missing `IpcMainEvent` type annotation in `windowManager.ts`
+
+### Removed
+- `mdviewer-lead-dev.md` project agent
+
 ## [3.4.1] - 2026-02-12
 
 ### Changed

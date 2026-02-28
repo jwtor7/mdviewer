@@ -38,6 +38,16 @@ export const useFileHandler = (
         // Check if document with this path already exists
         const existing = filePath ? findDocumentByPath(filePath) : undefined;
         if (existing && filePath) {
+          // Guard against overwriting unsaved changes
+          if (existing.dirty && existing.content !== fileContent) {
+            const confirmReload = window.confirm(
+              `"${existing.name}" has unsaved changes. Reload from disk and discard changes?`
+            );
+            if (!confirmReload) {
+              return;
+            }
+          }
+
           // Update existing document
           updateExistingDocument(existing.id, { content: fileContent });
           setActiveTabId(existing.id);
@@ -59,9 +69,7 @@ export const useFileHandler = (
             });
           } else {
             // Add new document
-            const newId = Date.now().toString();
             addDocument({
-              id: newId,
               name: fileName,
               content: fileContent,
               filePath,
@@ -89,9 +97,7 @@ export const useFileHandler = (
         }
 
         // Create new empty document
-        const newId = Date.now().toString();
         addDocument({
-          id: newId,
           name: newName,
           content: '',
           filePath: null,

@@ -2,12 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## ⚠️ Agent Requirement
+## Workflow
 
-**ALL tasks in this project MUST use `@agent-mdviewer-lead-dev`** unless explicitly told otherwise. This includes coding, file creation, documentation, and any other work - no exceptions.
+After completing any feature or fix:
+1. Summarize what changed and why
+2. Suggest 2-4 related next steps (specific, feasible, contextual)
+3. If approved, update the README.md Feature Roadmap
 
 Additional reminders:
 - Update default content (`src/constants/defaultContent.ts`) when roadmap/changelog changes
+- Always check `types/` directory for new IPC messages or document types
+- Don't skip ErrorNotification.tsx or FindReplace.tsx when changes touch component patterns
 
 ## Project Overview
 

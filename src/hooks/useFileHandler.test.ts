@@ -694,52 +694,7 @@ describe('useFileHandler', () => {
       expect(callArg.name).toBe('File.md');
       expect(callArg.content).toBe('Test content');
       expect(callArg.filePath).toBe('/test/file.md');
-      expect(callArg.id).toBeDefined();
-    });
-
-    it('should generate ID for new document based on timestamp', () => {
-      let fileOpenCallback: ((value: any) => void) | null = null;
-
-      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementation(
-        (cb: (value: any) => void) => {
-          fileOpenCallback = cb;
-          return vi.fn();
-        }
-      );
-
-      mockFindDocumentByPath.mockReturnValue(undefined);
-      const now = 1234567890;
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-
-      renderHook(() =>
-        useFileHandler(
-          mockAddDocument,
-          mockUpdateExistingDocument,
-          mockFindDocumentByPath,
-          mockSetActiveTabId,
-          [
-            {
-              id: 'default',
-              name: 'Other',
-              content: 'Other',
-              filePath: null,
-            },
-          ],
-          mockCloseTab,
-          mockShowError
-        )
-      );
-
-      act(() => {
-        fileOpenCallback?.({
-          filePath: '/test/file.md',
-          content: 'Test',
-          name: 'File.md',
-        });
-      });
-
-      const callArg = mockAddDocument.mock.calls[0][0];
-      expect(callArg.id).toBe('1234567890');
+      expect(callArg.id).toBeUndefined();
     });
   });
 

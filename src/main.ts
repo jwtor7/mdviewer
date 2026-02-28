@@ -1,20 +1,28 @@
 /* eslint-disable security/detect-non-literal-fs-filename */
-import { app, BrowserWindow, ipcMain, dialog, shell, IpcMainInvokeEvent } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell } from 'electron';
 import path from 'node:path';
 import started from 'electron-squirrel-startup';
 import fs from 'node:fs';
 import { promises as fsPromises } from 'node:fs';
 import os from 'node:os';
-import { SECURITY_CONFIG, URL_SECURITY, IMAGE_CONFIG } from './constants/index.js';
+import { SECURITY_CONFIG, IMAGE_CONFIG } from './constants/index.js';
 import type { FileOpenData } from './types/electron';
 import { generatePDFHTML } from './utils/pdfRenderer.js';
 import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
 import { withIPCHandlerNoInput, withValidatedIPCHandler } from './main/security/ipcValidation.js';
+import { isPathSafe, sanitizeError, validateExternalUrl } from './main/security/pathValidation.js';
 import {
   SaveFileDataSchema,
   ReadFileDataSchema,
   ExportPdfDataSchema,
+  CreateWindowForTabDataSchema,
+  ShowUnsavedDialogDataSchema,
+  RevealInFinderDataSchema,
+  ReadImageFileDataSchema,
+  CopyImageToDocumentDataSchema,
+  SaveImageFromDataSchema,
+  OpenExternalUrlDataSchema,
   type SaveFileDataInput,
   type ReadFileDataInput,
   type ExportPdfDataInput,
@@ -25,212 +33,6 @@ import {
   setMainWindow,
   getOpenWindowCount,
 } from './main/windowManager.js';
-
-/**
- * Security utility: Validates that a file path is safe to open.
- * Prevents path traversal attacks and enforces allowed file extensions.
- *
- * @param filepath - The file path to validate
- * @returns true if the path is safe, false otherwise
- */
-const isPathSafe = (filepath: string): boolean => {
-  try {
-    // Resolve to absolute path to prevent traversal
-    const resolved = path.resolve(filepath);
-
-    // Check file extension (only allow markdown files)
-    const ext = path.extname(resolved).toLowerCase();
-    if (!SECURITY_CONFIG.ALLOWED_EXTENSIONS.includes(ext as '.md' | '.markdown')) {
-      console.warn(`Rejected file with invalid extension: ${ext}`);
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('Path validation error:', error);
-    return false;
-  }
-};
-
-/**
- * Security utility: Sanitizes error messages to prevent information disclosure.
- * Removes sensitive file paths and system information from error messages.
- *
- * @param error - The error to sanitize
- * @returns A safe error message string
- */
-const sanitizeError = (error: Error | NodeJS.ErrnoException): string => {
-  // In production (packaged app), return generic error message to prevent information disclosure
-  if (app.isPackaged) {
-    return 'An error occurred while processing the file';
-  }
-
-  // In development (npm start), return detailed error with sanitized paths for debugging
-  let message = error.message;
-
-  // Remove absolute paths, keep only basenames
-  message = message.replace(/\/[^\s]+\//g, (match) => {
-    const basename = path.basename(match);
-    return basename ? `.../${basename}` : match;
-  });
-
-  return message;
-};
-
-/**
- * Security utility: Creates a rate limiter for IPC handlers.
- * Prevents resource exhaustion attacks by limiting the number of calls per time window.
- * Includes automatic cleanup to prevent memory leaks from abandoned identifiers.
- *
- * @param maxCalls - Maximum number of calls allowed in the time window
- * @param windowMs - Time window in milliseconds
- * @returns A function that returns true if the call is allowed, false if rate limited
- */
-const createRateLimiter = (maxCalls: number, windowMs: number) => {
-  const calls = new Map<string, number[]>();
-  const lastAccess = new Map<string, number>();
-  const CLEANUP_INTERVAL = 60000; // 60 seconds
-
-  // Security: Periodically remove stale entries to prevent memory leak (CRITICAL-4 fix)
-  setInterval(() => {
-    const now = Date.now();
-    const staleIdentifiers: string[] = [];
-
-    // Find identifiers that haven't been accessed for 2x the window time
-    for (const [identifier, lastAccessTime] of lastAccess.entries()) {
-      if (now - lastAccessTime > windowMs * 2) {
-        staleIdentifiers.push(identifier);
-      }
-    }
-
-    // Remove stale entries from both maps
-    for (const identifier of staleIdentifiers) {
-      calls.delete(identifier);
-      lastAccess.delete(identifier);
-    }
-
-    if (staleIdentifiers.length > 0) {
-      console.log(`Rate limiter cleanup: removed ${staleIdentifiers.length} stale entries`);
-    }
-  }, CLEANUP_INTERVAL);
-
-  return (identifier: string): boolean => {
-    const now = Date.now();
-    const timestamps = calls.get(identifier) || [];
-
-    // Security: Track last access time for cleanup (CRITICAL-4 fix)
-    lastAccess.set(identifier, now);
-
-    // Remove old timestamps outside the time window
-    const recentCalls = timestamps.filter(t => now - t < windowMs);
-
-    if (recentCalls.length >= maxCalls) {
-      return false; // Rate limit exceeded
-    }
-
-    recentCalls.push(now);
-    calls.set(identifier, recentCalls);
-    return true; // Allow
-  };
-};
-
-/**
- * Security utility: Validates and sanitizes external URLs before opening.
- * Implements defense-in-depth against malicious URLs that could:
- * - Execute code (javascript:, vbscript:)
- * - Access local files (file://)
- * - Inject content (data:, blob:)
- * - Exploit browser internals (about:, chrome:)
- *
- * @param url - The URL string to validate
- * @returns Object with isValid boolean, sanitizedUrl, and error message if invalid
- */
-const validateExternalUrl = (url: string): { isValid: boolean; sanitizedUrl?: string; error?: string } => {
-  // Security: Check URL length to prevent DoS via extremely long URLs
-  if (url.length > URL_SECURITY.MAX_URL_LENGTH) {
-    return {
-      isValid: false,
-      error: `URL exceeds maximum length of ${URL_SECURITY.MAX_URL_LENGTH} characters`
-    };
-  }
-
-  // Security: Trim whitespace and normalize the URL
-  const trimmedUrl = url.trim();
-
-  // Security: Block empty URLs
-  if (!trimmedUrl) {
-    return { isValid: false, error: 'URL cannot be empty' };
-  }
-
-  try {
-    // Security: Parse URL to validate format and extract protocol
-    const parsedUrl = new URL(trimmedUrl);
-
-    // Security: Get lowercase protocol for comparison
-    const protocol = parsedUrl.protocol.toLowerCase();
-
-    // Security: Check against explicit blocklist first (for logging purposes)
-    const blockedProtocols = URL_SECURITY.BLOCKED_PROTOCOLS as readonly string[];
-    if (blockedProtocols.includes(protocol)) {
-      console.warn(`[SECURITY] Blocked dangerous URL protocol: ${protocol}`);
-      return {
-        isValid: false,
-        error: `Protocol "${protocol}" is not allowed for security reasons`
-      };
-    }
-
-    // Security: Only allow explicitly permitted protocols (allowlist approach)
-    const allowedProtocols = URL_SECURITY.ALLOWED_PROTOCOLS as readonly string[];
-    if (!allowedProtocols.includes(protocol)) {
-      console.warn(`[SECURITY] Blocked URL with unknown protocol: ${protocol}`);
-      return {
-        isValid: false,
-        error: 'Only HTTP and HTTPS URLs are allowed'
-      };
-    }
-
-    // Security: Return the normalized URL (parsed and re-stringified)
-    // This ensures consistent format and prevents encoding tricks
-    return {
-      isValid: true,
-      sanitizedUrl: parsedUrl.href
-    };
-  } catch {
-    // Security: Invalid URL format
-    return { isValid: false, error: 'Invalid URL format' };
-  }
-};
-
-/**
- * Security utility: Validates that an IPC event originated from a known BrowserWindow.
- * Prevents unauthorized IPC calls from external processes or compromised contexts.
- *
- * @param event - The IPC event to validate
- * @returns true if the sender is from a known window, false otherwise
- */
-const isValidIPCOrigin = (event: IpcMainInvokeEvent): boolean => {
-  try {
-    const senderWindow = BrowserWindow.fromWebContents(event.sender);
-
-    // Verify sender is associated with a valid BrowserWindow we created
-    if (!senderWindow || senderWindow.isDestroyed()) {
-      console.error('IPC call from invalid or destroyed window');
-      return false;
-    }
-
-    // Verify the window is in our list of known windows
-    const allWindows = BrowserWindow.getAllWindows();
-    if (!allWindows.includes(senderWindow)) {
-      console.error('IPC call from unknown window');
-      return false;
-    }
-
-    return true;
-  } catch (error) {
-    console.error('IPC origin validation error:', error);
-    return false;
-  }
-};
 
 /**
  * Gets the default directory for save dialogs.
@@ -500,18 +302,14 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
   }
 };
 
-// Security: Create rate limiters for IPC handlers
-const rateLimiter = createRateLimiter(
-  SECURITY_CONFIG.RATE_LIMIT.MAX_CALLS,
-  SECURITY_CONFIG.RATE_LIMIT.WINDOW_MS
-);
-
 // Tab drag and drop status tracking
 
 
-ipcMain.on('log-debug', (_event, { message, data }) => {
-  console.log(`[RENDERER-DEBUG] ${message}`, data ? JSON.stringify(data) : '');
-});
+if (!app.isPackaged) {
+  ipcMain.on('log-debug', (_event, { message, data }) => {
+    console.log(`[RENDERER-DEBUG] ${message}`, data ? JSON.stringify(data) : '');
+  });
+}
 
 // close-window: Refactored to use IPC validation wrapper
 ipcMain.handle(
@@ -524,132 +322,93 @@ ipcMain.handle(
   })
 );
 
-ipcMain.handle('open-external-url', async (event: IpcMainInvokeEvent, url: string): Promise<void> => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('[SECURITY] Rejected open-external-url from invalid origin');
-    throw new Error('Invalid IPC origin');
-  }
+ipcMain.handle(
+  'open-external-url',
+  withValidatedIPCHandler(
+    { schema: OpenExternalUrlDataSchema, handlerName: 'open-external-url' },
+    async (url: string, event): Promise<void> => {
+      // Security: Comprehensive URL validation (HIGH-3 fix)
+      // Uses allowlist approach with explicit blocklist for logging
+      const validation = validateExternalUrl(url);
+      if (!validation.isValid || !validation.sanitizedUrl) {
+        console.warn(`[SECURITY] Blocked external URL: ${validation.error}`);
+        throw new Error(validation.error || 'Invalid URL');
+      }
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-open-external-url')) {
-    console.warn('[SECURITY] Rate limit exceeded for open-external-url');
-    throw new Error('Rate limit exceeded');
-  }
+      const sanitizedUrl = validation.sanitizedUrl;
 
-  // Security: Validate URL type
-  if (typeof url !== 'string') {
-    console.warn('[SECURITY] Rejected open-external-url with non-string URL');
-    throw new Error('URL must be a string');
-  }
+      // Get the window to show the dialog
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win) {
+        throw new Error('Window not found');
+      }
 
-  // Security: Comprehensive URL validation (HIGH-3 fix)
-  // Uses allowlist approach with explicit blocklist for logging
-  const validation = validateExternalUrl(url);
-  if (!validation.isValid || !validation.sanitizedUrl) {
-    console.warn(`[SECURITY] Blocked external URL: ${validation.error}`);
-    throw new Error(validation.error || 'Invalid URL');
-  }
+      try {
+        // Security: Show confirmation dialog before opening external URL
+        // This prevents unintended navigation from malicious markdown content
+        const result = await dialog.showMessageBox(win, {
+          type: 'question',
+          buttons: ['Open in Browser', 'Cancel'],
+          defaultId: 0,
+          cancelId: 1,
+          title: 'Open External Link',
+          message: 'Do you want to open this link in your default browser?',
+          detail: sanitizedUrl,
+        });
 
-  const sanitizedUrl = validation.sanitizedUrl;
-
-  // Get the window to show the dialog
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) {
-    throw new Error('Window not found');
-  }
-
-  try {
-    // Security: Show confirmation dialog before opening external URL
-    // This prevents unintended navigation from malicious markdown content
-    const result = await dialog.showMessageBox(win, {
-      type: 'question',
-      buttons: ['Open in Browser', 'Cancel'],
-      defaultId: 0,
-      cancelId: 1,
-      title: 'Open External Link',
-      message: 'Do you want to open this link in your default browser?',
-      detail: sanitizedUrl,
-    });
-
-    // If user clicked "Open in Browser" (index 0)
-    if (result.response === 0) {
-      // Security: Use sanitized URL (normalized by URL parser)
-      await shell.openExternal(sanitizedUrl);
-      const parsedUrl = new URL(sanitizedUrl);
-      console.log(`[SECURITY] Opened external URL: ${parsedUrl.origin}${parsedUrl.pathname}`);
-    } else {
-      console.log('[SECURITY] User cancelled external URL open');
+        // If user clicked "Open in Browser" (index 0)
+        if (result.response === 0) {
+          // Security: Use sanitized URL (normalized by URL parser)
+          await shell.openExternal(sanitizedUrl);
+          const parsedUrl = new URL(sanitizedUrl);
+          console.log(`[SECURITY] Opened external URL: ${parsedUrl.origin}${parsedUrl.pathname}`);
+        } else {
+          console.log('[SECURITY] User cancelled external URL open');
+        }
+      } catch (err) {
+        const error = err as Error;
+        console.error('[SECURITY] Failed to open external URL:', error.message);
+        throw new Error('Failed to open URL in browser');
+      }
     }
-  } catch (err) {
-    const error = err as Error;
-    console.error('[SECURITY] Failed to open external URL:', error.message);
-    throw new Error('Failed to open URL in browser');
-  }
-});
+  )
+);
 
-ipcMain.handle('create-window-for-tab', (event: IpcMainInvokeEvent, data: unknown): { success: boolean; error?: string } => {
-  // Security: Validate IPC origin (CRITICAL-5 fix)
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected create-window-for-tab from invalid origin');
-    return { success: false, error: 'Invalid IPC origin' };
-  }
+ipcMain.handle(
+  'create-window-for-tab',
+  withValidatedIPCHandler(
+    { schema: CreateWindowForTabDataSchema, handlerName: 'create-window-for-tab' },
+    async (data): Promise<void> => {
+      const { filePath, content } = data;
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-create-window-for-tab')) {
-    console.warn('Rate limit exceeded for create-window-for-tab');
-    return { success: false, error: 'Rate limit exceeded' };
-  }
+      // Security: Validate content size
+      if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+        const maxSizeMB = SECURITY_CONFIG.MAX_CONTENT_SIZE / (1024 * 1024);
+        console.warn(`Content exceeds maximum size of ${maxSizeMB}MB`);
+        throw new Error('Content too large');
+      }
 
-  // Security: Validate input type
-  if (typeof data !== 'object' || data === null) {
-    console.error('Invalid IPC data type for create-window-for-tab');
-    return { success: false, error: 'Invalid data' };
-  }
+      // Security: Enforce window limit to prevent resource exhaustion
+      if (getOpenWindowCount() >= SECURITY_CONFIG.MAX_WINDOWS) {
+        console.warn(`Maximum window limit (${SECURITY_CONFIG.MAX_WINDOWS}) reached`);
+        throw new Error('Too many windows open');
+      }
 
-  const { filePath, content } = data as { filePath: unknown; content: unknown };
+      // Security: Sanitize filePath to prevent path traversal
+      const safePath = filePath ? path.basename(filePath) : null;
 
-  // Security: Validate content type and size
-  if (typeof content !== 'string') {
-    console.error('Content must be a string');
-    return { success: false, error: 'Content must be string' };
-  }
-
-  if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
-    const maxSizeMB = SECURITY_CONFIG.MAX_CONTENT_SIZE / (1024 * 1024);
-    console.warn(`Content exceeds maximum size of ${maxSizeMB}MB`);
-    return { success: false, error: 'Content too large' };
-  }
-
-  // Security: Validate filePath if provided
-  if (filePath !== null && typeof filePath !== 'string') {
-    console.error('FilePath must be string or null');
-    return { success: false, error: 'Invalid filePath' };
-  }
-
-  // Security: Enforce window limit to prevent resource exhaustion
-  if (getOpenWindowCount() >= SECURITY_CONFIG.MAX_WINDOWS) {
-    console.warn(`Maximum window limit (${SECURITY_CONFIG.MAX_WINDOWS}) reached`);
-    return { success: false, error: 'Too many windows open' };
-  }
-
-  // Security: Sanitize filePath to prevent path traversal
-  const safePath = filePath && typeof filePath === 'string' ? path.basename(filePath) : null;
-
-  const win = createWindow(appPreferences, openFile);
-  win.once('ready-to-show', () => {
-    const fileData: FileOpenData = {
-      filePath: safePath,
-      content: content as string,
-      name: safePath ? path.basename(safePath) : 'Untitled'
-    };
-    win.webContents.send('file-open', fileData);
-  });
-
-  return { success: true };
-});
+      const win = createWindow(appPreferences, openFile);
+      win.once('ready-to-show', () => {
+        const fileData: FileOpenData = {
+          filePath: safePath,
+          content,
+          name: safePath ? path.basename(safePath) : 'Untitled'
+        };
+        win.webContents.send('file-open', fileData);
+      });
+    }
+  )
+);
 
 // export-pdf: Refactored to use Zod validation wrapper
 ipcMain.handle(
@@ -699,8 +458,14 @@ ipcMain.handle(
           `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
         );
 
-        // Wait for page to finish loading
-        await new Promise((resolve) => setTimeout(resolve, 1000));
+        // Ensure fonts are ready before printing (more reliable than a fixed timeout)
+        try {
+          await pdfWindow.webContents.executeJavaScript(
+            'document.fonts ? document.fonts.ready : Promise.resolve()'
+          );
+        } catch {
+          // Ignore font readiness errors and proceed to print
+        }
 
         // Generate PDF
         const pdfData = await pdfWindow.webContents.printToPDF({
@@ -792,8 +557,14 @@ ipcMain.handle(
             `data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`
           );
 
-          // Wait for page to finish loading
-          await new Promise((resolve) => setTimeout(resolve, 1000));
+          // Ensure fonts are ready before printing (more reliable than a fixed timeout)
+          try {
+            await pdfWindow.webContents.executeJavaScript(
+              'document.fonts ? document.fonts.ready : Promise.resolve()'
+            );
+          } catch {
+            // Ignore font readiness errors and proceed to print
+          }
 
           // Generate PDF
           const pdfData = await pdfWindow.webContents.printToPDF({
@@ -883,350 +654,299 @@ ipcMain.handle(
   )
 );
 
-ipcMain.handle('show-unsaved-dialog', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected show-unsaved-dialog from invalid origin');
-    return { response: 'cancel' };
-  }
+ipcMain.handle(
+  'show-unsaved-dialog',
+  withValidatedIPCHandler(
+    { schema: ShowUnsavedDialogDataSchema, handlerName: 'show-unsaved-dialog' },
+    async (data, event): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> => {
+      const { filename } = data;
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-show-unsaved-dialog')) {
-    console.warn('Rate limit exceeded for show-unsaved-dialog');
-    return { response: 'cancel' };
-  }
+      const win = BrowserWindow.fromWebContents(event.sender);
+      if (!win) {
+        return { response: 'cancel' };
+      }
 
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { response: 'cancel' };
-  }
+      try {
+        const result = await dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Save', "Don't Save", 'Cancel'],
+          defaultId: 0,
+          cancelId: 2,
+          title: 'Unsaved Changes',
+          message: `Do you want to save changes to "${filename}"?`,
+          detail: 'Your changes will be lost if you don\'t save them.',
+        });
 
-  const { filename } = data as { filename: unknown };
-
-  if (typeof filename !== 'string') {
-    return { response: 'cancel' };
-  }
-
-  const win = BrowserWindow.fromWebContents(event.sender);
-  if (!win) {
-    return { response: 'cancel' };
-  }
-
-  try {
-    const result = await dialog.showMessageBox(win, {
-      type: 'warning',
-      buttons: ['Save', "Don't Save", 'Cancel'],
-      defaultId: 0,
-      cancelId: 2,
-      title: 'Unsaved Changes',
-      message: `Do you want to save changes to "${filename}"?`,
-      detail: 'Your changes will be lost if you don\'t save them.',
-    });
-
-    if (result.response === 0) return { response: 'save' };
-    if (result.response === 1) return { response: 'dont-save' };
-    return { response: 'cancel' };
-  } catch (err) {
-    console.error('Show unsaved dialog error:', err);
-    return { response: 'cancel' };
-  }
-});
-
-ipcMain.handle('reveal-in-finder', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ success: boolean; error?: string }> => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected reveal-in-finder from invalid origin');
-    return { success: false, error: 'Invalid IPC origin' };
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-reveal-in-finder')) {
-    console.warn('Rate limit exceeded for reveal-in-finder');
-    return { success: false, error: 'Rate limit exceeded' };
-  }
-
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { success: false, error: 'Invalid data' };
-  }
-
-  const { filePath } = data as { filePath: unknown };
-
-  if (typeof filePath !== 'string') {
-    return { success: false, error: 'Invalid filePath' };
-  }
-
-  try {
-    // Security: Validate file path to prevent path traversal
-    if (!isPathSafe(filePath)) {
-      console.warn(`Blocked attempt to reveal unsafe file: ${filePath}`);
-      return { success: false, error: 'Invalid file path' };
+        if (result.response === 0) return { response: 'save' };
+        if (result.response === 1) return { response: 'dont-save' };
+        return { response: 'cancel' };
+      } catch (err) {
+        console.error('Show unsaved dialog error:', err);
+        return { response: 'cancel' };
+      }
     }
+  )
+);
 
-    // Security: Verify file exists before revealing
-    const stats = await fsPromises.stat(filePath);
-    if (!stats.isFile()) {
-      return { success: false, error: 'Path is not a file' };
+ipcMain.handle(
+  'reveal-in-finder',
+  withValidatedIPCHandler(
+    { schema: RevealInFinderDataSchema, handlerName: 'reveal-in-finder' },
+    async (data): Promise<void> => {
+      const { filePath } = data;
+
+      try {
+        // Security: Validate file path to prevent path traversal
+        if (!isPathSafe(filePath)) {
+          console.warn(`Blocked attempt to reveal unsafe file: ${filePath}`);
+          throw new Error('Invalid file path');
+        }
+
+        // Security: Verify file exists before revealing
+        const stats = await fsPromises.stat(filePath);
+        if (!stats.isFile()) {
+          throw new Error('Path is not a file');
+        }
+
+        // Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux)
+        shell.showItemInFolder(filePath);
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
+        console.error('Reveal in Finder error:', sanitizeError(error));
+        throw new Error('Failed to reveal file');
+      }
     }
+  )
+);
 
-    // Reveal file in Finder (macOS), Explorer (Windows), or file manager (Linux)
-    shell.showItemInFolder(filePath);
-    return { success: true };
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    console.error('Reveal in Finder error:', sanitizeError(error));
-    return { success: false, error: 'Failed to reveal file' };
-  }
-});
+ipcMain.handle(
+  'read-image-file',
+  withValidatedIPCHandler(
+    { schema: ReadImageFileDataSchema, handlerName: 'read-image-file' },
+    async (data): Promise<{ dataUri: string }> => {
+      const { imagePath, markdownFilePath } = data;
 
-ipcMain.handle('read-image-file', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ dataUri?: string; error?: string }> => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected read-image-file from invalid origin');
-    return { error: 'Invalid IPC origin' };
-  }
+      try {
+        // Security: Validate markdown file path to avoid writing/reading beside arbitrary paths
+        if (!isPathSafe(markdownFilePath)) {
+          throw new Error('Invalid markdown file path');
+        }
 
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-read-image-file')) {
-    console.warn('Rate limit exceeded for read-image-file');
-    return { error: 'Rate limit exceeded' };
-  }
+        const markdownStats = await fsPromises.stat(markdownFilePath);
+        if (!markdownStats.isFile()) {
+          throw new Error('Markdown path is not a file');
+        }
 
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { error: 'Invalid data' };
-  }
+        // Security: Resolve paths to prevent traversal
+        const resolvedMarkdownPath = path.resolve(markdownFilePath);
+        const markdownDir = path.dirname(resolvedMarkdownPath);
 
-  const { imagePath, markdownFilePath } = data as { imagePath: unknown; markdownFilePath: unknown };
+        // If image path is relative, resolve it relative to markdown file directory
+        let resolvedImagePath: string;
+        if (path.isAbsolute(imagePath)) {
+          resolvedImagePath = path.resolve(imagePath);
+        } else {
+          resolvedImagePath = path.resolve(markdownDir, imagePath);
+        }
 
-  if (typeof imagePath !== 'string' || typeof markdownFilePath !== 'string') {
-    return { error: 'Invalid parameters' };
-  }
+        // Security: Verify resolved image path is within markdown directory or its subdirectories
+        // This prevents accessing files outside the markdown file's directory tree
+        const relativePath = path.relative(markdownDir, resolvedImagePath);
+        if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+          console.warn(`Blocked attempt to read image outside markdown directory: ${resolvedImagePath}`);
+          throw new Error('Image path must be relative to markdown file');
+        }
 
-  try {
-    // Security: Resolve paths to prevent traversal
-    const resolvedMarkdownPath = path.resolve(markdownFilePath);
-    const markdownDir = path.dirname(resolvedMarkdownPath);
+        // Security: Validate image file extension
+        const ext = path.extname(resolvedImagePath).toLowerCase();
+        const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
+        if (!allowedExtensions.includes(ext)) {
+          console.warn(`Rejected image file with invalid extension: ${ext}`);
+          throw new Error(`Invalid image type. Allowed: ${allowedExtensions.join(', ')}`);
+        }
 
-    // If image path is relative, resolve it relative to markdown file directory
-    let resolvedImagePath: string;
-    if (path.isAbsolute(imagePath)) {
-      resolvedImagePath = path.resolve(imagePath);
-    } else {
-      resolvedImagePath = path.resolve(markdownDir, imagePath);
+        // Security: Check file size to prevent memory exhaustion
+        const stats = await fsPromises.stat(resolvedImagePath);
+        if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+          const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
+          throw new Error(`Image exceeds maximum size of ${maxSizeMB}MB`);
+        }
+
+        // Read file as buffer
+        const buffer = await fsPromises.readFile(resolvedImagePath);
+
+        // Determine MIME type based on extension
+        const mimeTypes: Record<string, string> = {
+          '.png': 'image/png',
+          '.jpg': 'image/jpeg',
+          '.jpeg': 'image/jpeg',
+          '.gif': 'image/gif',
+          '.svg': 'image/svg+xml',
+          '.webp': 'image/webp',
+        };
+        const mimeType = mimeTypes[ext] || 'application/octet-stream';
+
+        // Convert to base64 data URI
+        const base64 = buffer.toString('base64');
+        const dataUri = `data:${mimeType};base64,${base64}`;
+
+        return { dataUri };
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
+        console.error('Read image file error:', sanitizeError(error));
+        throw new Error('Failed to read image file');
+      }
     }
+  )
+);
 
-    // Security: Verify resolved image path is within markdown directory or its subdirectories
-    // This prevents accessing files outside the markdown file's directory tree
-    const relativePath = path.relative(markdownDir, resolvedImagePath);
-    if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
-      console.warn(`Blocked attempt to read image outside markdown directory: ${resolvedImagePath}`);
-      return { error: 'Image path must be relative to markdown file' };
+ipcMain.handle(
+  'copy-image-to-document',
+  withValidatedIPCHandler(
+    { schema: CopyImageToDocumentDataSchema, handlerName: 'copy-image-to-document' },
+    async (data): Promise<{ relativePath: string }> => {
+      const { imagePath, markdownFilePath } = data;
+
+      try {
+        // Security: Validate markdown file path to avoid writing beside arbitrary paths
+        if (!isPathSafe(markdownFilePath)) {
+          throw new Error('Invalid markdown file path');
+        }
+
+        const markdownStats = await fsPromises.stat(markdownFilePath);
+        if (!markdownStats.isFile()) {
+          throw new Error('Markdown path is not a file');
+        }
+
+        // Security: Resolve paths to prevent traversal
+        const resolvedImagePath = path.resolve(imagePath);
+        const resolvedMarkdownPath = path.resolve(markdownFilePath);
+
+        // Security: Validate image file extension
+        const ext = path.extname(resolvedImagePath).toLowerCase();
+        const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
+        if (!allowedExtensions.includes(ext)) {
+          console.warn(`Rejected image file with invalid extension: ${ext}`);
+          throw new Error(`Invalid image type. Allowed: ${allowedExtensions.join(', ')}`);
+        }
+
+        // Security: Check source file size to prevent memory exhaustion
+        const stats = await fsPromises.stat(resolvedImagePath);
+        if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+          const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
+          throw new Error(`Image exceeds maximum size of ${maxSizeMB}MB`);
+        }
+
+        // Create images directory next to markdown file
+        const markdownDir = path.dirname(resolvedMarkdownPath);
+        const imagesDir = path.join(markdownDir, 'images');
+        await fsPromises.mkdir(imagesDir, { recursive: true });
+
+        // Generate destination filename (handle collisions)
+        const originalBasename = path.basename(resolvedImagePath);
+        const baseName = path.basename(originalBasename, ext);
+        let destFilename = originalBasename;
+        let counter = 1;
+
+        while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
+          destFilename = `${baseName}-${counter}${ext}`;
+          counter++;
+        }
+
+        const destPath = path.join(imagesDir, destFilename);
+
+        // Copy the file
+        await fsPromises.copyFile(resolvedImagePath, destPath);
+
+        // Return relative path from markdown file
+        const relativePath = `./images/${destFilename}`;
+        return { relativePath };
+      } catch (err) {
+        const error = err as NodeJS.ErrnoException;
+        console.error('Copy image to document error:', sanitizeError(error));
+        throw new Error('Failed to copy image file');
+      }
     }
+  )
+);
 
-    // Security: Validate image file extension
-    const ext = path.extname(resolvedImagePath).toLowerCase();
-    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
-    if (!allowedExtensions.includes(ext)) {
-      console.warn(`Rejected image file with invalid extension: ${ext}`);
-      return { error: `Invalid image type. Allowed: ${allowedExtensions.join(', ')}` };
+ipcMain.handle(
+  'save-image-from-data',
+  withValidatedIPCHandler(
+    { schema: SaveImageFromDataSchema, handlerName: 'save-image-from-data' },
+    async (data): Promise<{ relativePath: string }> => {
+      const { imageData, markdownFilePath } = data;
+
+      try {
+        // Security: Validate markdown file path to avoid writing beside arbitrary paths
+        if (!isPathSafe(markdownFilePath)) {
+          throw new Error('Invalid markdown file path');
+        }
+
+        const markdownStats = await fsPromises.stat(markdownFilePath);
+        if (!markdownStats.isFile()) {
+          throw new Error('Markdown path is not a file');
+        }
+
+        const resolvedMarkdownPath = path.resolve(markdownFilePath);
+
+        // Parse data URI
+        // Format: data:image/png;base64,.....
+        const matches = imageData.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
+        if (!matches) {
+          throw new Error('Invalid data URI format');
+        }
+
+        const ext = '.' + matches[1];
+        const base64Data = matches[2];
+        const buffer = Buffer.from(base64Data, 'base64');
+
+        // Security: Validate extension
+        // Note: mime type handling might be slightly different than extensions (jpeg vs jpg).
+        // We'll normalize generic check.
+        if (!['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) {
+          throw new Error('Invalid image type');
+        }
+
+        // Security: Check size
+        if (buffer.length > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
+          throw new Error('Image too large');
+        }
+
+        // Create images directory
+        const markdownDir = path.dirname(resolvedMarkdownPath);
+        const imagesDir = path.join(markdownDir, 'images');
+        await fsPromises.mkdir(imagesDir, { recursive: true });
+
+        // Generate filename based on document name
+        const docBasename = path.basename(resolvedMarkdownPath, path.extname(resolvedMarkdownPath));
+        // Sanitize basename slightly to avoid really bad chars in image filenames,
+        // but keep spaces if user uses them (as requested "match file name")
+        // We mainly want to avoid chars that might be problematic in some filesystems/urls even if valid in doc names
+        const invalidFilenameChars = new RegExp('[\\\\/:*?"<>|]', 'g');
+        const safeDocName = docBasename.replace(invalidFilenameChars, '-');
+
+        let counter = 1;
+        let destFilename = `${safeDocName}-${counter}${ext}`;
+
+        while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
+          counter++;
+          destFilename = `${safeDocName}-${counter}${ext}`;
+        }
+
+        const destPath = path.join(imagesDir, destFilename);
+        await fsPromises.writeFile(destPath, buffer);
+
+        const relativePath = `./images/${destFilename}`;
+        return { relativePath };
+
+      } catch (err) {
+        console.error('Save image from data error:', err);
+        throw new Error('Failed to save pasted image');
+      }
     }
-
-    // Security: Check file size to prevent memory exhaustion
-    const stats = await fsPromises.stat(resolvedImagePath);
-    if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
-      const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
-      return { error: `Image exceeds maximum size of ${maxSizeMB}MB` };
-    }
-
-    // Read file as buffer
-    const buffer = await fsPromises.readFile(resolvedImagePath);
-
-    // Determine MIME type based on extension
-    const mimeTypes: Record<string, string> = {
-      '.png': 'image/png',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.gif': 'image/gif',
-      '.svg': 'image/svg+xml',
-      '.webp': 'image/webp',
-    };
-    const mimeType = mimeTypes[ext] || 'application/octet-stream';
-
-    // Convert to base64 data URI
-    const base64 = buffer.toString('base64');
-    const dataUri = `data:${mimeType};base64,${base64}`;
-
-    return { dataUri };
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    console.error('Read image file error:', sanitizeError(error));
-    return { error: 'Failed to read image file' };
-  }
-});
-
-ipcMain.handle('copy-image-to-document', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ relativePath?: string; error?: string }> => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected copy-image-to-document from invalid origin');
-    return { error: 'Invalid IPC origin' };
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-copy-image-to-document')) {
-    console.warn('Rate limit exceeded for copy-image-to-document');
-    return { error: 'Rate limit exceeded' };
-  }
-
-  // Security: Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { error: 'Invalid data' };
-  }
-
-  const { imagePath, markdownFilePath } = data as { imagePath: unknown; markdownFilePath: unknown };
-
-  if (typeof imagePath !== 'string' || typeof markdownFilePath !== 'string') {
-    return { error: 'Invalid parameters' };
-  }
-
-  try {
-    // Security: Resolve paths to prevent traversal
-    const resolvedImagePath = path.resolve(imagePath);
-    const resolvedMarkdownPath = path.resolve(markdownFilePath);
-
-    // Security: Validate image file extension
-    const ext = path.extname(resolvedImagePath).toLowerCase();
-    const allowedExtensions = IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[];
-    if (!allowedExtensions.includes(ext)) {
-      console.warn(`Rejected image file with invalid extension: ${ext}`);
-      return { error: `Invalid image type. Allowed: ${allowedExtensions.join(', ')}` };
-    }
-
-    // Security: Check source file size to prevent memory exhaustion
-    const stats = await fsPromises.stat(resolvedImagePath);
-    if (stats.size > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
-      const maxSizeMB = IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE / (1024 * 1024);
-      return { error: `Image exceeds maximum size of ${maxSizeMB}MB` };
-    }
-
-    // Create images directory next to markdown file
-    const markdownDir = path.dirname(resolvedMarkdownPath);
-    const imagesDir = path.join(markdownDir, 'images');
-    await fsPromises.mkdir(imagesDir, { recursive: true });
-
-    // Generate destination filename (handle collisions)
-    const originalBasename = path.basename(resolvedImagePath);
-    const baseName = path.basename(originalBasename, ext);
-    let destFilename = originalBasename;
-    let counter = 1;
-
-    while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
-      destFilename = `${baseName}-${counter}${ext}`;
-      counter++;
-    }
-
-    const destPath = path.join(imagesDir, destFilename);
-
-    // Copy the file
-    await fsPromises.copyFile(resolvedImagePath, destPath);
-
-    // Return relative path from markdown file
-    const relativePath = `./images/${destFilename}`;
-    return { relativePath };
-  } catch (err) {
-    const error = err as NodeJS.ErrnoException;
-    console.error('Copy image to document error:', sanitizeError(error));
-    return { error: 'Failed to copy image file' };
-  }
-});
-
-ipcMain.handle('save-image-from-data', async (event: IpcMainInvokeEvent, data: unknown): Promise<{ relativePath?: string; error?: string }> => {
-  // Security: Validate IPC origin
-  if (!isValidIPCOrigin(event)) {
-    console.warn('Rejected save-image-from-data from invalid origin');
-    return { error: 'Invalid IPC origin' };
-  }
-
-  // Security: Apply rate limiting
-  const senderId = event.sender.id.toString();
-  if (!rateLimiter(senderId + '-save-image-from-data')) {
-    console.warn('Rate limit exceeded for save-image-from-data');
-    return { error: 'Rate limit exceeded' };
-  }
-
-  // Validate input
-  if (typeof data !== 'object' || data === null) {
-    return { error: 'Invalid data' };
-  }
-
-  const { imageData, markdownFilePath } = data as { imageData: unknown; markdownFilePath: unknown };
-
-  if (typeof imageData !== 'string' || typeof markdownFilePath !== 'string') {
-    return { error: 'Invalid parameters' };
-  }
-
-  try {
-    const resolvedMarkdownPath = path.resolve(markdownFilePath);
-
-    // Parse data URI
-    // Format: data:image/png;base64,.....
-    const matches = imageData.match(/^data:image\/([a-zA-Z0-9]+);base64,(.+)$/);
-    if (!matches) {
-      return { error: 'Invalid data URI format' };
-    }
-
-    const ext = '.' + matches[1];
-    const base64Data = matches[2];
-    const buffer = Buffer.from(base64Data, 'base64');
-
-    // Security: Validate extension
-    // Note: mime type handling might be slightly different than extensions (jpeg vs jpg).
-    // We'll normalize generic check.
-    if (!['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext)) {
-      return { error: 'Invalid image type' };
-    }
-
-    // Security: Check size
-    if (buffer.length > IMAGE_CONFIG.MAX_IMAGE_FILE_SIZE) {
-      return { error: 'Image too large' };
-    }
-
-    // Create images directory
-    const markdownDir = path.dirname(resolvedMarkdownPath);
-    const imagesDir = path.join(markdownDir, 'images');
-    await fsPromises.mkdir(imagesDir, { recursive: true });
-
-    // Generate filename based on document name
-    const docBasename = path.basename(resolvedMarkdownPath, path.extname(resolvedMarkdownPath));
-    // Sanitize basename slightly to avoid really bad chars in image filenames, 
-    // but keep spaces if user uses them (as requested "match file name")
-    // We mainly want to avoid chars that might be problematic in some filesystems/urls even if valid in doc names
-    const invalidFilenameChars = new RegExp('[\\\\/:*?"<>|]', 'g');
-    const safeDocName = docBasename.replace(invalidFilenameChars, '-');
-
-    let counter = 1;
-    let destFilename = `${safeDocName}-${counter}${ext}`;
-
-    while (await fsPromises.access(path.join(imagesDir, destFilename)).then(() => true).catch(() => false)) {
-      counter++;
-      destFilename = `${safeDocName}-${counter}${ext}`;
-    }
-
-    const destPath = path.join(imagesDir, destFilename);
-    await fsPromises.writeFile(destPath, buffer);
-
-    const relativePath = `./images/${destFilename}`;
-    return { relativePath };
-
-  } catch (err) {
-    console.error('Save image from data error:', err);
-    return { error: 'Failed to save pasted image' };
-  }
-});
+  )
+);
 
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)

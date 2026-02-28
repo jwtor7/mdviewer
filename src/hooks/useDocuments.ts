@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import { DEFAULT_DOCUMENT } from '../constants/index.js';
+import { createDocumentId } from '../utils/id.js';
 import type { Document } from '../types/document.js';
 
 // Undo/Redo history configuration
@@ -93,7 +94,7 @@ export const useDocuments = (): UseDocumentsReturn => {
 
   const addDocument = useCallback((doc: Partial<Document>): string => {
     const newDoc: Document = {
-      id: doc.id || Date.now().toString(),
+      id: doc.id || createDocumentId(),
       name: doc.name || 'Untitled',
       content: doc.content || '',
       filePath: doc.filePath || null,
@@ -124,7 +125,6 @@ export const useDocuments = (): UseDocumentsReturn => {
 
   const closeTab = useCallback((id: string): void => {
     setDocuments(prev => {
-      // Calculate new state
       const newDocs = prev.filter(d => d.id !== id);
 
       // Clean up history for closed document
@@ -137,15 +137,11 @@ export const useDocuments = (): UseDocumentsReturn => {
         return [defaultDoc];
       }
 
-      return newDocs;
-    });
-
-    // If closing the active tab, switch to the last tab
-    setDocuments(currentDocs => {
-      if (activeTabId === id && currentDocs.length > 0) {
-        setActiveTabId(currentDocs[currentDocs.length - 1].id);
+      if (activeTabId === id) {
+        setActiveTabId(newDocs[newDocs.length - 1].id);
       }
-      return currentDocs;
+
+      return newDocs;
     });
   }, [activeTabId]);
 

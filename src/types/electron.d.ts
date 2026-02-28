@@ -68,18 +68,18 @@ export interface ElectronAPI {
   onToggleWordWrap: (callback: () => void) => () => void;
   onCloseTab: (callback: () => void) => () => void;
   onRequestUnsavedDocs: (callback: () => string[]) => () => void;
-  createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<{ success: boolean; error?: string }>;
+  createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<IPCResult<void>>;
   closeWindow: () => Promise<void>;
-  openExternalUrl: (url: string) => Promise<void>;
+  openExternalUrl: (url: string) => Promise<IPCResult<void>>;
   exportPDF: (data: PDFExportData) => Promise<IPCResult<{ filePath?: string }>>;
   saveFile: (data: SaveFileData) => Promise<IPCResult<{ filePath?: string }>>;
   readFile: (filePath: string) => Promise<IPCResult<{ content: string }>>;
   getPathForFile: (file: File) => string;
-  showUnsavedDialog: (filename: string) => Promise<{ response: 'save' | 'dont-save' | 'cancel' }>;
-  revealInFinder: (filePath: string) => Promise<{ success: boolean; error?: string }>;
-  readImageFile: (imagePath: string, markdownFilePath: string) => Promise<{ dataUri?: string; error?: string }>;
-  copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
-  saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<{ relativePath?: string; error?: string }>;
+  showUnsavedDialog: (filename: string) => Promise<IPCResult<{ response: 'save' | 'dont-save' | 'cancel' }>>;
+  revealInFinder: (filePath: string) => Promise<IPCResult<void>>;
+  readImageFile: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ dataUri: string }>>;
+  copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
+  saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   logDebug: (message: string, data?: unknown) => void;
 }
 

@@ -215,10 +215,14 @@ const App: React.FC = () => {
         if (doc?.dirty && window.electronAPI?.showUnsavedDialog) {
             try {
                 const result = await window.electronAPI.showUnsavedDialog(doc.name);
+                if (!result.success) {
+                    showError(result.error || 'Failed to show unsaved changes dialog');
+                    return;
+                }
 
-                if (result.response === 'cancel') {
+                if (result.data.response === 'cancel') {
                     return; // Don't close
-                } else if (result.response === 'save') {
+                } else if (result.data.response === 'save') {
                     // Save first, then close
                     // Switch to the document to save it
                     if (id !== activeTabId) {
@@ -258,10 +262,10 @@ const App: React.FC = () => {
         }
 
         try {
-            const result = await window.electronAPI.revealInFinder(doc.filePath);
-            if (!result.success) {
-                showError(result.error || 'Failed to reveal file in Finder');
-            }
+                const result = await window.electronAPI.revealInFinder(doc.filePath);
+                if (!result.success) {
+                    showError(result.error || 'Failed to reveal file in Finder');
+                }
         } catch {
             showError('Failed to reveal file in Finder');
         } finally {
@@ -633,6 +637,7 @@ const App: React.FC = () => {
                 <div className="status-item" aria-label="Character count">Chars: {textStats.charCount}</div>
                 <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
                 <div className="status-item status-version" aria-label="App version">v{pkg.version}</div>
+                <div className="status-item status-copyright" aria-label="Copyright">© Junior Williams</div>
             </div>
             {contextMenu && (
                 <div

@@ -33,9 +33,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     return () => ipcRenderer.removeListener('toggle-word-wrap', subscription);
   },
   onRequestUnsavedDocs: (callback: () => string[]): (() => void) => {
-    const handler = (_event: IpcRendererEvent): void => {
+    const handler = (_event: IpcRendererEvent, payload?: { requestId?: string }): void => {
       const docs = callback();
-      ipcRenderer.send('unsaved-docs-response', docs);
+      const requestId = payload && typeof payload === 'object' ? payload.requestId : undefined;
+      ipcRenderer.send('unsaved-docs-response', { requestId, docs });
     };
     ipcRenderer.on('request-unsaved-docs', handler);
     // Return cleanup function to remove listener
@@ -51,11 +52,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('close-tab', handler);
     };
   },
-  createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: boolean; error?: string }> =>
+  createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
   closeWindow: (): Promise<void> =>
     ipcRenderer.invoke('close-window'),
-  openExternalUrl: (url: string): Promise<void> =>
+  openExternalUrl: (url: string): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('open-external-url', url),
   exportPDF: (data: { content: string; filename: string }): Promise<{ success: true; data: { filePath?: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('export-pdf', data),
@@ -64,15 +65,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readFile: (filePath: string): Promise<{ success: true; data: { content: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('read-file', { filePath }),
   getPathForFile: (file: File): string => webUtils.getPathForFile(file),
-  showUnsavedDialog: (filename: string): Promise<{ response: 'save' | 'dont-save' | 'cancel' }> =>
+  showUnsavedDialog: (filename: string): Promise<{ success: true; data: { response: 'save' | 'dont-save' | 'cancel' } } | { success: false; error: string }> =>
     ipcRenderer.invoke('show-unsaved-dialog', { filename }),
-  revealInFinder: (filePath: string): Promise<{ success: boolean; error?: string }> =>
+  revealInFinder: (filePath: string): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('reveal-in-finder', { filePath }),
-  readImageFile: (imagePath: string, markdownFilePath: string): Promise<{ dataUri?: string; error?: string }> =>
+  readImageFile: (imagePath: string, markdownFilePath: string): Promise<{ success: true; data: { dataUri: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('read-image-file', { imagePath, markdownFilePath }),
-  copyImageToDocument: (imagePath: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
+  copyImageToDocument: (imagePath: string, markdownFilePath: string): Promise<{ success: true; data: { relativePath: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('copy-image-to-document', { imagePath, markdownFilePath }),
-  saveImageFromData: (imageData: string, markdownFilePath: string): Promise<{ relativePath?: string; error?: string }> =>
+  saveImageFromData: (imageData: string, markdownFilePath: string): Promise<{ success: true; data: { relativePath: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('save-image-from-data', { imageData, markdownFilePath }),
   logDebug: (message: string, data?: any): void => ipcRenderer.send('log-debug', { message, data }),
 } satisfies ElectronAPI);
