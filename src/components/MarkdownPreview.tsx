@@ -33,77 +33,79 @@ type HighlightOptions = {
 };
 
 const createRehypeSearchHighlight = ({ searchTerm, caseSensitive, currentMatchIndex }: HighlightOptions) => {
-  if (!searchTerm) {
-    return () => undefined;
-  }
+  // Return an attacher (what unified expects as a plugin)
+  return () => {
+    if (!searchTerm) return undefined;
 
-  const needle = caseSensitive ? searchTerm : searchTerm.toLowerCase();
+    const needle = caseSensitive ? searchTerm : searchTerm.toLowerCase();
 
-  return (tree: HastNode): void => {
-    let globalIndex = 0;
+    // Return the transformer
+    return (tree: HastNode): void => {
+      let globalIndex = 0;
 
-    const processNodes = (nodes: HastNode[], inCode: boolean): void => {
-      for (let i = 0; i < nodes.length; i++) {
-        const node = nodes[i];
+      const processNodes = (nodes: HastNode[], inCode: boolean): void => {
+        for (let i = 0; i < nodes.length; i++) {
+          const node = nodes[i];
 
-        if (node.type === 'element') {
-          const tagName = node.tagName ? node.tagName.toLowerCase() : '';
-          const nextInCode = inCode || tagName === 'code' || tagName === 'pre';
-          if (node.children && node.children.length > 0) {
-            processNodes(node.children, nextInCode);
-          }
-          continue;
-        }
-
-        if (node.type !== 'text' || inCode || typeof node.value !== 'string') {
-          continue;
-        }
-
-        const rawText = node.value;
-        const compareText = caseSensitive ? rawText : rawText.toLowerCase();
-        let index = compareText.indexOf(needle);
-
-        if (index === -1) {
-          continue;
-        }
-
-        const parts: HastNode[] = [];
-        let lastIndex = 0;
-
-        while (index !== -1) {
-          if (index > lastIndex) {
-            parts.push({ type: 'text', value: rawText.slice(lastIndex, index) });
+          if (node.type === 'element') {
+            const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+            const nextInCode = inCode || tagName === 'code' || tagName === 'pre';
+            if (node.children && node.children.length > 0) {
+              processNodes(node.children, nextInCode);
+            }
+            continue;
           }
 
-          const matchText = rawText.slice(index, index + searchTerm.length);
-          const isCurrent = globalIndex === currentMatchIndex;
+          if (node.type !== 'text' || inCode || typeof node.value !== 'string') {
+            continue;
+          }
 
-          parts.push({
-            type: 'element',
-            tagName: 'mark',
-            properties: {
-              className: isCurrent ? 'search-highlight-current' : 'search-highlight'
-            },
-            children: [{ type: 'text', value: matchText }],
-          });
+          const rawText = node.value;
+          const compareText = caseSensitive ? rawText : rawText.toLowerCase();
+          let index = compareText.indexOf(needle);
 
-          globalIndex++;
-          lastIndex = index + searchTerm.length;
-          index = compareText.indexOf(needle, lastIndex);
+          if (index === -1) {
+            continue;
+          }
+
+          const parts: HastNode[] = [];
+          let lastIndex = 0;
+
+          while (index !== -1) {
+            if (index > lastIndex) {
+              parts.push({ type: 'text', value: rawText.slice(lastIndex, index) });
+            }
+
+            const matchText = rawText.slice(index, index + searchTerm.length);
+            const isCurrent = globalIndex === currentMatchIndex;
+
+            parts.push({
+              type: 'element',
+              tagName: 'mark',
+              properties: {
+                className: isCurrent ? 'search-highlight-current' : 'search-highlight'
+              },
+              children: [{ type: 'text', value: matchText }],
+            });
+
+            globalIndex++;
+            lastIndex = index + searchTerm.length;
+            index = compareText.indexOf(needle, lastIndex);
+          }
+
+          if (lastIndex < rawText.length) {
+            parts.push({ type: 'text', value: rawText.slice(lastIndex) });
+          }
+
+          nodes.splice(i, 1, ...parts);
+          i += parts.length - 1;
         }
+      };
 
-        if (lastIndex < rawText.length) {
-          parts.push({ type: 'text', value: rawText.slice(lastIndex) });
-        }
-
-        nodes.splice(i, 1, ...parts);
-        i += parts.length - 1;
+      if (tree.children) {
+        processNodes(tree.children, false);
       }
     };
-
-    if (tree.children) {
-      processNodes(tree.children, false);
-    }
   };
 };
 
