@@ -93,6 +93,7 @@ export const useIPCListeners = ({
     });
     return cleanup;
   }, [activeTabId, handleCloseTab]);
+
 };
 
 export default useIPCListeners;

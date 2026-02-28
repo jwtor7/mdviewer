@@ -52,6 +52,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.removeListener('close-tab', handler);
     };
   },
+  watchFile: (filePath: string): void => {
+    ipcRenderer.send('watch-file', { filePath });
+  },
+  unwatchFile: (filePath: string): void => {
+    ipcRenderer.send('unwatch-file', { filePath });
+  },
+  onFileChanged: (callback: (data: { filePath: string }) => void): (() => void) => {
+    const handler = (_event: IpcRendererEvent, data: { filePath: string }): void => callback(data);
+    ipcRenderer.on('file-changed', handler);
+    return (): void => {
+      ipcRenderer.removeListener('file-changed', handler);
+    };
+  },
   createWindowForTab: (data: { filePath: string | null; content: string }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('create-window-for-tab', data),
   closeWindow: (): Promise<void> =>

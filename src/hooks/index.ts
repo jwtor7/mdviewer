@@ -11,6 +11,7 @@ export { useSaveFile } from './useSaveFile.js';
 export { useIPCListeners } from './useIPCListeners.js';
 export { useSplitPaneDivider } from './useSplitPaneDivider.js';
 export { useOutsideClickHandler } from './useOutsideClickHandler.js';
+export { useFileWatcher } from './useFileWatcher.js';
 
 // Re-export types
 export type { UseDocumentsReturn, DocumentUpdate } from './useDocuments.js';
@@ -25,3 +26,4 @@ export type { UseSaveFileProps, UseSaveFileReturn } from './useSaveFile.js';
 export type { UseIPCListenersProps } from './useIPCListeners.js';
 export type { UseSplitPaneDividerProps, UseSplitPaneDividerReturn } from './useSplitPaneDivider.js';
 export type { UseOutsideClickHandlerProps } from './useOutsideClickHandler.js';
+export type { UseFileWatcherProps } from './useFileWatcher.js';

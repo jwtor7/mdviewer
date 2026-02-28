@@ -54,6 +54,12 @@ export type IPCMessage =
   | { channel: 'reveal-in-finder'; data: { filePath: string } }
   /** Request to close the active tab */
   | { channel: 'close-tab'; data: void }
+  /** Start watching a file for external changes */
+  | { channel: 'watch-file'; data: { filePath: string } }
+  /** Stop watching a file for external changes */
+  | { channel: 'unwatch-file'; data: { filePath: string } }
+  /** Notification that a watched file changed on disk */
+  | { channel: 'file-changed'; data: { filePath: string } }
   /** Read an image file and return as base64 data URI */
   | { channel: 'read-image-file'; data: { imagePath: string; markdownFilePath: string } }
   /** Copy an image file to the document's images directory */
@@ -67,6 +73,9 @@ export interface ElectronAPI {
   onFormatText: (callback: (format: string) => void) => () => void;
   onToggleWordWrap: (callback: () => void) => () => void;
   onCloseTab: (callback: () => void) => () => void;
+  watchFile: (filePath: string) => void;
+  unwatchFile: (filePath: string) => void;
+  onFileChanged: (callback: (data: { filePath: string }) => void) => () => void;
   onRequestUnsavedDocs: (callback: () => string[]) => () => void;
   createWindowForTab: (data: { filePath: string | null; content: string }) => Promise<IPCResult<void>>;
   closeWindow: () => Promise<void>;

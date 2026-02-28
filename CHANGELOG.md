@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.0] - 2026-02-27
+
+### Added
+- Automatic file watching for external changes with `fs.watch`
+- New hook `useFileWatcher` syncs open documents with file system changes
+- New main process module `fileWatcher.ts` handles per-file debouncing (250ms) and window tracking
+- IPC methods `watchFile` and `unwatchFile` for starting/stopping file watches
+- IPC callback `onFileChanged` for notifying renderer of external file changes
+- Smart reload protection: documents with unsaved local edits are never overwritten by external changes
+- Content comparison prevents unnecessary re-renders when mdviewer itself saves a file
+
 ## [3.4.2] - 2026-02-27
 
 ### Added

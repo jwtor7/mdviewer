@@ -9,6 +9,7 @@ import crypto from 'node:crypto';
 /* eslint-disable security/detect-non-literal-fs-filename */
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from '../constants/index.js';
+import { unwatchAllForWindow } from './fileWatcher.js';
 
 /**
  * Vite-injected global variables for dev/prod environments
@@ -127,9 +128,11 @@ export const createMenu = (
           }
         },
         { type: 'separator' },
-        { role: 'reload' },
-        { role: 'forceReload' },
-        ...(app.isPackaged ? [] : [{ role: 'toggleDevTools' as const }]),
+        ...(app.isPackaged ? [] : [
+          { role: 'reload' as const },
+          { role: 'forceReload' as const },
+          { role: 'toggleDevTools' as const },
+        ]),
         { type: 'separator' },
         { role: 'resetZoom' },
         { role: 'zoomIn' },
@@ -279,6 +282,7 @@ export const createWindow = (
   });
 
   win.on('closed', () => {
+    unwatchAllForWindow(win);
     decrementWindowCount();
     if (mainWindow === win) {
       mainWindow = null;

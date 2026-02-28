@@ -11,6 +11,7 @@ import {
     useFileHandler,
     useErrorHandler,
     useKeyboardShortcuts,
+    useFileWatcher,
     useWordWrap,
     useDragDrop,
     useClipboardCopy,
@@ -282,6 +283,13 @@ const App: React.FC = () => {
         toggleWordWrap,
         handleCloseTab,
         activeTabId,
+    });
+
+    // Watch open files for external changes and auto-reload when clean
+    useFileWatcher({
+        documents,
+        updateExistingDocument,
+        markDocumentSaved,
     });
 
     return (

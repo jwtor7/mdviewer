@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.4.2-blue.svg)
+![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -225,6 +225,11 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 3.5.0 - 2026-02-27
+- Automatic file watching for external changes with smart reload protection
+- `useFileWatcher` hook syncs open documents with file system changes
+- Documents with unsaved edits never overwritten by external changes
+
 ### 3.4.2 - 2026-02-27
 - IPC response standardization with `IPCResult<T>` pattern
 - Document ID generation using `crypto.randomUUID()`
@@ -243,19 +248,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 
 ### 3.3.0 - 2026-01-09
 - Intelligent PDF page breaking with section wrapping (headings stay with content)
-
-### 3.1.0 - 2026-01-05
-- Major refactoring: modular architecture, 395 tests, Zod IPC validation
-
-### 3.0.7 - 2025-12-11
-- Security fix: Prevent tab drag data leak
-
-### 3.0.6 - 2025-12-10
-- Fix tab tear-off (drag tabs out to create new windows)
-
-### 3.0.5 - 2025-12-06
-- Fix tab dragging race conditions
-- Add Cmd+W to close tabs
 
 ## Contributing
 

@@ -68,6 +68,9 @@ const mockElectronAPI = {
   onFormatText: vi.fn(() => vi.fn()),
   onToggleWordWrap: vi.fn(() => vi.fn()),
   onCloseTab: vi.fn(() => vi.fn()),
+  watchFile: vi.fn(),
+  unwatchFile: vi.fn(),
+  onFileChanged: vi.fn(() => vi.fn()),
 
   // IPC invoke functions
   createWindowForTab: vi.fn(() => Promise.resolve({ success: true, data: undefined })),

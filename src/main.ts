@@ -33,6 +33,7 @@ import {
   setMainWindow,
   getOpenWindowCount,
 } from './main/windowManager.js';
+import { watchFile, unwatchFile, unwatchAllForWindow } from './main/fileWatcher.js';
 
 /**
  * Gets the default directory for save dialogs.
@@ -310,6 +311,23 @@ if (!app.isPackaged) {
     console.log(`[RENDERER-DEBUG] ${message}`, data ? JSON.stringify(data) : '');
   });
 }
+
+// File watcher IPC: renderer tells main which files to watch for external changes
+ipcMain.on('watch-file', (event, data: unknown) => {
+  if (!data || typeof data !== 'object' || !('filePath' in data)) return;
+  const { filePath } = data as { filePath: string };
+  if (typeof filePath !== 'string') return;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) watchFile(filePath, win);
+});
+
+ipcMain.on('unwatch-file', (event, data: unknown) => {
+  if (!data || typeof data !== 'object' || !('filePath' in data)) return;
+  const { filePath } = data as { filePath: string };
+  if (typeof filePath !== 'string') return;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) unwatchFile(filePath, win);
+});
 
 // close-window: Refactored to use IPC validation wrapper
 ipcMain.handle(
