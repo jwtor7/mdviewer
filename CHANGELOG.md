@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.5.1] - 2026-03-08
+
+### Added
+- Common Ground assumptions tracking for project alignment and knowledge capture
+- Project memory file with user preferences and foundational assumptions
+
 ## [3.5.0] - 2026-02-27
 
 ### Added

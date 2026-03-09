@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-3.5.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -224,6 +224,10 @@ src/
 ## Changelog
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
+
+### 3.5.1 - 2026-03-08
+- Common Ground assumptions tracking for project alignment
+- Project memory file with user preferences
 
 ### 3.5.0 - 2026-02-27
 - Automatic file watching for external changes with smart reload protection
