@@ -73,6 +73,29 @@ describe('MermaidDiagram', () => {
     });
   });
 
+  it('sanitizes labels with hyphens and colons before rendering', async () => {
+    const chart = 'flowchart TD\n    P7 --> I7[Pre-push: CHANGELOG + README mandatory]';
+
+    render(<MermaidDiagram chart={chart} theme="dark" />);
+
+    await waitFor(() => {
+      const renderCall = vi.mocked(mermaid.render).mock.calls[0];
+      expect(renderCall[1]).toContain('["Pre-push: CHANGELOG + README mandatory"]');
+    });
+  });
+
+  it('does not quote labels without special characters', async () => {
+    const chart = 'flowchart TD\n    A1[Single location]';
+
+    render(<MermaidDiagram chart={chart} theme="dark" />);
+
+    await waitFor(() => {
+      const renderCall = vi.mocked(mermaid.render).mock.calls[0];
+      expect(renderCall[1]).toContain('[Single location]');
+      expect(renderCall[1]).not.toContain('["Single location"]');
+    });
+  });
+
   it('maps solarized-light theme to neutral', async () => {
     render(
       <MermaidDiagram chart="graph TD; A-->B;" theme="solarized-light" />

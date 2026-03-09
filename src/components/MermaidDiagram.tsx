@@ -27,6 +27,25 @@ function getMermaidTheme(theme: ThemeMode): MermaidTheme {
   }
 }
 
+/**
+ * Quote unquoted node labels that contain characters mermaid's lexer
+ * can't handle (hyphens, colons, plus signs, etc.).
+ * Transforms: I7[Pre-push: text] -> I7["Pre-push: text"]
+ * Leaves already-quoted labels like ["text"] and style/class lines untouched.
+ */
+function sanitizeChart(raw: string): string {
+  return raw.replace(
+    /\[([^\]"]+)\]/g,
+    (_match, content: string) => {
+      // Only quote if the label contains problematic characters
+      if (/[-:+/\\]/.test(content)) {
+        return `["${content}"]`;
+      }
+      return `[${content}]`;
+    }
+  );
+}
+
 const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +68,7 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
       try {
         // Use a unique ID for each render to avoid conflicts
         const renderId = `${idRef.current}-${Date.now()}`;
-        const { svg } = await mermaid.render(renderId, chart);
+        const { svg } = await mermaid.render(renderId, sanitizeChart(chart));
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
           setError(null);
