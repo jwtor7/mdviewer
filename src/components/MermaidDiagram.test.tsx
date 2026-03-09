@@ -27,7 +27,7 @@ describe('MermaidDiagram', () => {
         expect.objectContaining({
           startOnLoad: false,
           securityLevel: 'strict',
-          theme: 'dark',
+          theme: 'base',
         })
       );
     });
@@ -53,14 +53,18 @@ describe('MermaidDiagram', () => {
     });
   });
 
-  it('re-renders on theme change', async () => {
+  it('re-renders on theme change with different theme variables', async () => {
     const { rerender } = render(
       <MermaidDiagram chart="graph TD; A-->B;" theme="dark" />
     );
 
     await waitFor(() => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
-        expect.objectContaining({ theme: 'dark' })
+        expect.objectContaining({
+          themeVariables: expect.objectContaining({
+            lineColor: '#8899aa',
+          }),
+        })
       );
     });
 
@@ -68,7 +72,11 @@ describe('MermaidDiagram', () => {
 
     await waitFor(() => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
-        expect.objectContaining({ theme: 'default' })
+        expect.objectContaining({
+          themeVariables: expect.objectContaining({
+            lineColor: '#666666',
+          }),
+        })
       );
     });
   });
@@ -107,14 +115,18 @@ describe('MermaidDiagram', () => {
     });
   });
 
-  it('maps solarized-light theme to neutral', async () => {
+  it('always uses dark node text for contrast on colored fills', async () => {
     render(
-      <MermaidDiagram chart="graph TD; A-->B;" theme="solarized-light" />
+      <MermaidDiagram chart="graph TD; A-->B;" theme="dark" />
     );
 
     await waitFor(() => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
-        expect.objectContaining({ theme: 'neutral' })
+        expect.objectContaining({
+          themeVariables: expect.objectContaining({
+            nodeTextColor: '#1a1a1a',
+          }),
+        })
       );
     });
   });

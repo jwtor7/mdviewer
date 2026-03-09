@@ -9,21 +9,18 @@ interface MermaidDiagramProps {
 
 let instanceCounter = 0;
 
-type MermaidTheme = 'default' | 'dark' | 'neutral' | 'base' | 'forest';
-
-function getMermaidTheme(theme: ThemeMode): MermaidTheme {
+function isDarkMode(theme: ThemeMode): boolean {
   switch (theme) {
     case 'dark':
     case 'solarized-dark':
-      return 'dark';
+      return true;
     case 'light':
-      return 'default';
     case 'solarized-light':
-      return 'neutral';
+      return false;
     case 'system':
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'default';
+      return window.matchMedia('(prefers-color-scheme: dark)').matches;
     default:
-      return 'default';
+      return false;
   }
 }
 
@@ -55,19 +52,36 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
   useEffect(() => {
     if (!containerRef.current || !chart.trim()) return;
 
-    const mermaidTheme = getMermaidTheme(theme);
+    const dark = isDarkMode(theme);
 
     mermaid.initialize({
       startOnLoad: false,
       securityLevel: 'strict',
-      theme: mermaidTheme,
-      flowchart: {
-        nodeSpacing: 30,
-        rankSpacing: 50,
-        padding: 15,
-        useMaxWidth: false,
+      theme: 'base',
+      themeVariables: {
+        // Use dark text on nodes so colored fills stay readable
+        primaryColor: dark ? '#3b4252' : '#e8e8e8',
+        primaryTextColor: '#1a1a1a',
+        primaryBorderColor: dark ? '#5a6270' : '#999999',
+        secondaryColor: dark ? '#434c5e' : '#f0f0f0',
+        tertiaryColor: dark ? '#4c566a' : '#fafafa',
+        lineColor: dark ? '#8899aa' : '#666666',
+        textColor: dark ? '#d8dee9' : '#2e3440',
+        // Node label text is always dark for contrast on colored fills
+        nodeTextColor: '#1a1a1a',
+        // Large, readable fonts
+        fontSize: '18px',
+        fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+        // Edge labels
+        edgeLabelBackground: dark ? '#2e3440' : '#ffffff',
       },
-      fontSize: 16,
+      flowchart: {
+        nodeSpacing: 40,
+        rankSpacing: 60,
+        padding: 20,
+        useMaxWidth: false,
+        htmlLabels: true,
+      },
     });
 
     let cancelled = false;
@@ -78,7 +92,22 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
         const { svg } = await mermaid.render(renderId, sanitizeChart(chart));
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
-          setSvgContent(svg);
+          // Force dark text on all node labels for contrast on colored fills
+          const svgEl = containerRef.current.querySelector('svg');
+          if (svgEl) {
+            svgEl.querySelectorAll('.nodeLabel, .label').forEach((el) => {
+              (el as HTMLElement).style.color = '#1a1a1a';
+              (el as HTMLElement).style.fill = '#1a1a1a';
+            });
+            // Also fix edge labels for readability
+            svgEl.querySelectorAll('.edgeLabel').forEach((el) => {
+              (el as HTMLElement).style.color = dark ? '#d8dee9' : '#2e3440';
+              (el as HTMLElement).style.fill = dark ? '#d8dee9' : '#2e3440';
+            });
+          }
+          // Re-read the SVG after DOM modifications so expand window gets fixed version
+          const finalSvg = containerRef.current.innerHTML;
+          setSvgContent(finalSvg);
           setError(null);
         }
       } catch (err) {
