@@ -1252,16 +1252,16 @@ body {
   min-height: 200px;
 }
 
-/* Force readable text on mermaid nodes regardless of theme */
+/* Mermaid text sizing - contrast colors are set per-node in JS */
 .mermaid-diagram-container .nodeLabel,
 .mermaid-diagram-container .label div {
-  color: #1a1a1a !important;
-  fill: #1a1a1a !important;
   font-size: 16px !important;
+  font-weight: 500 !important;
 }
 
 .mermaid-diagram-container .edgeLabel {
   font-size: 14px !important;
+  font-weight: 500 !important;
 }
 
 .mermaid-expand-btn {

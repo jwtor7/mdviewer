@@ -62,7 +62,7 @@ describe('MermaidDiagram', () => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
         expect.objectContaining({
           themeVariables: expect.objectContaining({
-            lineColor: '#8899aa',
+            primaryTextColor: '#eceff4',
           }),
         })
       );
@@ -74,7 +74,7 @@ describe('MermaidDiagram', () => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
         expect.objectContaining({
           themeVariables: expect.objectContaining({
-            lineColor: '#666666',
+            primaryTextColor: '#1a1a1a',
           }),
         })
       );
@@ -115,10 +115,22 @@ describe('MermaidDiagram', () => {
     });
   });
 
-  it('always uses dark node text for contrast on colored fills', async () => {
-    render(
+  it('uses light node text in dark mode and dark in light mode', async () => {
+    const { rerender } = render(
       <MermaidDiagram chart="graph TD; A-->B;" theme="dark" />
     );
+
+    await waitFor(() => {
+      expect(mermaid.initialize).toHaveBeenCalledWith(
+        expect.objectContaining({
+          themeVariables: expect.objectContaining({
+            nodeTextColor: '#eceff4',
+          }),
+        })
+      );
+    });
+
+    rerender(<MermaidDiagram chart="graph TD; A-->B;" theme="light" />);
 
     await waitFor(() => {
       expect(mermaid.initialize).toHaveBeenCalledWith(
