@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-3.5.1-blue.svg)
+![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -36,6 +36,7 @@
 - Four view modes: Rendered, Raw, Split (side-by-side), Text (plain)
 - GitHub Flavored Markdown (tables, task lists, strikethrough)
 - Syntax highlighting for code blocks
+- Mermaid diagram rendering with adaptive contrast and zoomable window
 - Synchronized selection highlighting in Split mode
 
 ### Editing
@@ -199,14 +200,14 @@ rm -rf out/ node_modules/ && npm install
 
 ## Architecture
 
-**Tech Stack**: Electron 39.2.3, React 19.2.0, TypeScript 5.9.3, Vite, react-markdown, remark-gfm, rehype-highlight
+**Tech Stack**: Electron 39.2.3, React 19.2.0, TypeScript 5.9.3, Vite, react-markdown, remark-gfm, rehype-highlight, mermaid
 
 **Project Structure**:
 ```
 src/
 ├── main.ts, preload.ts, renderer.tsx, App.tsx
 ├── main/           # Modular main process (security/, storage/, windowManager)
-├── components/     # MarkdownPreview, CodeEditor, ErrorNotification, FindReplace
+├── components/     # MarkdownPreview, CodeEditor, MermaidDiagram, ErrorNotification, FindReplace
 ├── hooks/          # useDocuments, useTheme, useTextFormatting, useFileHandler, etc.
 ├── types/          # TypeScript definitions + Zod IPC schemas
 ├── utils/          # Utility functions
@@ -217,7 +218,7 @@ src/
 - Modular main process: security (IPC validation, rate limiting, path validation), storage (preferences, recent files), window management
 - Custom React hooks for state management (12 hooks extracted from App.tsx)
 - Zod-based runtime validation for all IPC handlers
-- 395+ tests with Vitest and React Testing Library
+- 419 tests with Vitest and React Testing Library
 
 **Security Model**: Sandboxed renderer with context isolation, Zod IPC validation, rate limiting, path traversal protection, URL allowlisting, strict CSP. See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for details.
 
@@ -225,33 +226,22 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 4.0.0 - 2026-03-08
+- Mermaid diagram rendering in preview mode with adaptive text contrast
+- Zoomable diagram window with mouse-wheel zoom and click-drag pan
+- Auto-quoting of mermaid node labels with special characters
+
 ### 3.5.1 - 2026-03-08
 - Common Ground assumptions tracking for project alignment
-- Project memory file with user preferences
 
 ### 3.5.0 - 2026-02-27
 - Automatic file watching for external changes with smart reload protection
-- `useFileWatcher` hook syncs open documents with file system changes
-- Documents with unsaved edits never overwritten by external changes
 
 ### 3.4.2 - 2026-02-27
 - IPC response standardization with `IPCResult<T>` pattern
-- Document ID generation using `crypto.randomUUID()`
-- Rehype-based search highlighting and race condition fixes
-
-### 3.4.1 - 2026-02-12
-- Added copyright notice to status bar
 
 ### 3.4.0 - 2026-02-04
 - IPC validation and security hardening across all handlers
-- Faster rendered search highlighting + debounced Find & Replace
-- PDF export waits for font readiness for more reliable output
-
-### 3.3.1 - 2026-01-10
-- Install scripts auto-clean build artifacts (saves ~1.4GB disk space)
-
-### 3.3.0 - 2026-01-09
-- Intelligent PDF page breaking with section wrapping (headings stay with content)
 
 ## Contributing
 

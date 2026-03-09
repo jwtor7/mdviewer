@@ -5,6 +5,20 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.0] - 2026-03-08
+
+### Added
+- Mermaid diagram rendering in preview mode - `mermaid` code fences now render as interactive SVG diagrams
+- Expand button on diagrams opens a dedicated zoomable window with mouse-wheel zoom, click-drag pan, and fit-to-window
+- Adaptive text contrast on diagram nodes - automatically picks light or dark text based on each node's fill luminance (WCAG-based)
+- Auto-quoting of mermaid node labels containing special characters (hyphens, colons, plus signs)
+- New IPC channel `open-mermaid-window` with Zod schema validation
+
+### Changed
+- Mermaid uses `theme: 'base'` with custom `themeVariables` for full control over colors and fonts
+- Node labels render at 16px with font-weight 500 for improved readability
+- Edge labels render at 14px with theme-appropriate contrast colors
+
 ## [3.5.1] - 2026-03-08
 
 ### Added
