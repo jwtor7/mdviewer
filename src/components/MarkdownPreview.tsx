@@ -6,6 +6,7 @@ import rehypeHighlight from 'rehype-highlight';
 import type { Components } from 'react-markdown';
 import { ThemeMode, IMAGE_CONFIG } from '../constants/index.js';
 import CodeBlock from './CodeBlock';
+import MermaidDiagram from './MermaidDiagram';
 import { replaceTextContent } from '../utils/textEditing';
 
 export interface MarkdownPreviewProps {
@@ -276,6 +277,17 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         const { children, ...rest } = props;
         // Extract raw text from the code element for copying
         const rawText = extractTextContent(children).replace(/\n$/, '');
+
+        // Check if child code element has language-mermaid class
+        const childArray = React.Children.toArray(children);
+        const isMermaid = childArray.some(
+          (child) => React.isValidElement(child) &&
+            (child.props as Record<string, string>)?.className?.includes('language-mermaid')
+        );
+
+        if (isMermaid) {
+          return <MermaidDiagram chart={rawText} theme={_theme} />;
+        }
 
         return (
           <CodeBlock raw={rawText}>
