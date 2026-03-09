@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, memo } from 'react';
+import React, { useEffect, useRef, useState, useCallback, memo } from 'react';
 import mermaid from 'mermaid';
 import type { ThemeMode } from '../constants/index.js';
 
@@ -49,6 +49,7 @@ function sanitizeChart(raw: string): string {
 const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [error, setError] = useState<string | null>(null);
+  const [svgContent, setSvgContent] = useState<string | null>(null);
   const idRef = useRef<string>(`mermaid-${++instanceCounter}`);
 
   useEffect(() => {
@@ -60,23 +61,30 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
       startOnLoad: false,
       securityLevel: 'strict',
       theme: mermaidTheme,
+      flowchart: {
+        nodeSpacing: 30,
+        rankSpacing: 50,
+        padding: 15,
+        useMaxWidth: false,
+      },
+      fontSize: 16,
     });
 
     let cancelled = false;
 
     const renderDiagram = async () => {
       try {
-        // Use a unique ID for each render to avoid conflicts
         const renderId = `${idRef.current}-${Date.now()}`;
         const { svg } = await mermaid.render(renderId, sanitizeChart(chart));
         if (!cancelled && containerRef.current) {
           containerRef.current.innerHTML = svg;
+          setSvgContent(svg);
           setError(null);
         }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Failed to render diagram');
-          // Clean up any error elements mermaid may have inserted into the DOM
+          setSvgContent(null);
           const errorEl = document.getElementById(`d${idRef.current}-${Date.now()}`);
           errorEl?.remove();
         }
@@ -90,6 +98,11 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
     };
   }, [chart, theme]);
 
+  const handleExpand = useCallback(() => {
+    if (!svgContent || !window.electronAPI?.openMermaidWindow) return;
+    window.electronAPI.openMermaidWindow({ svg: svgContent, theme });
+  }, [svgContent, theme]);
+
   if (error) {
     return (
       <div className="mermaid-diagram-error">
@@ -100,10 +113,26 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="mermaid-diagram-container"
-    />
+    <div className="mermaid-diagram-wrapper">
+      <div
+        ref={containerRef}
+        className="mermaid-diagram-container"
+      />
+      {svgContent && (
+        <button
+          className="mermaid-expand-btn"
+          onClick={handleExpand}
+          title="Open in new window (zoom & pan)"
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <polyline points="8,1 13,1 13,6" />
+            <line x1="13" y1="1" x2="7.5" y2="6.5" />
+            <polyline points="6,13 1,13 1,8" />
+            <line x1="1" y1="13" x2="6.5" y2="7.5" />
+          </svg>
+        </button>
+      )}
+    </div>
   );
 });
 

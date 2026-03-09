@@ -85,6 +85,7 @@ const mockElectronAPI = {
   readImageFile: vi.fn(() => Promise.resolve({ success: true, data: { dataUri: 'data:image/png;base64,test' } })),
   copyImageToDocument: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/test.png' } })),
   saveImageFromData: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/pasted.png' } })),
+  openMermaidWindow: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
   logDebug: vi.fn(),
 };
 

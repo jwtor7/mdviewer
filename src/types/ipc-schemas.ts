@@ -157,6 +157,21 @@ export const OpenExternalUrlDataSchema = z.string().min(1, 'URL cannot be empty'
 export type OpenExternalUrlDataInput = z.infer<typeof OpenExternalUrlDataSchema>;
 
 // ============================================================================
+// Mermaid Diagram Schemas
+// ============================================================================
+
+/**
+ * Schema for open-mermaid-window IPC handler.
+ * Validates SVG content and theme for opening a diagram in a dedicated window.
+ */
+export const OpenMermaidWindowDataSchema = z.object({
+  svg: z.string().min(1, 'SVG content cannot be empty'),
+  theme: z.string().min(1, 'Theme cannot be empty'),
+});
+
+export type OpenMermaidWindowDataInput = z.infer<typeof OpenMermaidWindowDataSchema>;
+
+// ============================================================================
 // Schema Registry
 // ============================================================================
 
@@ -175,6 +190,7 @@ export const IPCSchemaRegistry = {
   'copy-image-to-document': CopyImageToDocumentDataSchema,
   'save-image-from-data': SaveImageFromDataSchema,
   'open-external-url': OpenExternalUrlDataSchema,
+  'open-mermaid-window': OpenMermaidWindowDataSchema,
 } as const;
 
 export type IPCChannel = keyof typeof IPCSchemaRegistry;

@@ -63,7 +63,9 @@ export type IPCMessage =
   /** Read an image file and return as base64 data URI */
   | { channel: 'read-image-file'; data: { imagePath: string; markdownFilePath: string } }
   /** Copy an image file to the document's images directory */
-  | { channel: 'copy-image-to-document'; data: { imagePath: string; markdownFilePath: string } };
+  | { channel: 'copy-image-to-document'; data: { imagePath: string; markdownFilePath: string } }
+  /** Open a mermaid diagram in a dedicated zoomable window */
+  | { channel: 'open-mermaid-window'; data: { svg: string; theme: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -89,6 +91,7 @@ export interface ElectronAPI {
   readImageFile: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ dataUri: string }>>;
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
+  openMermaidWindow: (data: { svg: string; theme: string }) => Promise<IPCResult<void>>;
   logDebug: (message: string, data?: unknown) => void;
 }
 

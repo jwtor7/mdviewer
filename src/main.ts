@@ -23,6 +23,7 @@ import {
   CopyImageToDocumentDataSchema,
   SaveImageFromDataSchema,
   OpenExternalUrlDataSchema,
+  OpenMermaidWindowDataSchema,
   type SaveFileDataInput,
   type ReadFileDataInput,
   type ExportPdfDataInput,
@@ -966,6 +967,228 @@ ipcMain.handle(
   )
 );
 
+
+ipcMain.handle(
+  'open-mermaid-window',
+  withValidatedIPCHandler(
+    { schema: OpenMermaidWindowDataSchema, handlerName: 'open-mermaid-window' },
+    async (data, event): Promise<void> => {
+      const { svg, theme } = data;
+
+      // Security: Limit SVG size
+      if (svg.length > 5 * 1024 * 1024) {
+        throw new Error('SVG content too large');
+      }
+
+      // Security: Enforce window limit
+      if (getOpenWindowCount() >= SECURITY_CONFIG.MAX_WINDOWS) {
+        throw new Error('Too many windows open');
+      }
+
+      const parentWindow = BrowserWindow.fromWebContents(event.sender);
+
+      const isDark = theme === 'dark' || theme === 'solarized-dark';
+      const bgColor = isDark ? '#1e1e1e' : '#ffffff';
+      const textColor = isDark ? '#d4d4d4' : '#333333';
+
+      const mermaidWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
+        title: 'Mermaid Diagram',
+        parent: parentWindow || undefined,
+        webPreferences: {
+          contextIsolation: true,
+          nodeIntegration: false,
+          sandbox: true,
+        },
+      });
+
+      // Encode SVG safely for embedding
+      const encodedSvg = Buffer.from(svg, 'utf-8').toString('base64');
+
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Mermaid Diagram</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: ${bgColor};
+    color: ${textColor};
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    cursor: grab;
+    user-select: none;
+  }
+  body.dragging { cursor: grabbing; }
+  #container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform-origin: 0 0;
+  }
+  #diagram {
+    transform-origin: center center;
+  }
+  #diagram svg {
+    display: block;
+    max-width: none;
+    max-height: none;
+  }
+  #controls {
+    position: fixed;
+    bottom: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 100;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+  #controls:hover { opacity: 1; }
+  #controls button {
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    border: 1px solid ${isDark ? '#555' : '#ccc'};
+    background: ${isDark ? '#333' : '#f0f0f0'};
+    color: ${textColor};
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #controls button:hover {
+    background: ${isDark ? '#444' : '#e0e0e0'};
+  }
+  #zoom-level {
+    font-size: 12px;
+    color: ${textColor};
+    opacity: 0.6;
+    position: fixed;
+    bottom: 20px;
+    left: 16px;
+  }
+</style>
+</head>
+<body>
+<div id="container">
+  <div id="diagram"></div>
+</div>
+<div id="controls">
+  <button id="zoom-in" title="Zoom In">+</button>
+  <button id="zoom-out" title="Zoom Out">-</button>
+  <button id="zoom-fit" title="Fit to Window">&#8635;</button>
+</div>
+<div id="zoom-level"></div>
+<script>
+  const diagram = document.getElementById('diagram');
+  const container = document.getElementById('container');
+  const zoomLabel = document.getElementById('zoom-level');
+
+  // Decode and insert SVG
+  diagram.innerHTML = atob('${encodedSvg}');
+
+  let scale = 1;
+  let panX = 0;
+  let panY = 0;
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+
+  function updateTransform() {
+    container.style.transform = 'translate(' + panX + 'px, ' + panY + 'px) scale(' + scale + ')';
+    zoomLabel.textContent = Math.round(scale * 100) + '%';
+  }
+
+  function fitToWindow() {
+    const svg = diagram.querySelector('svg');
+    if (!svg) return;
+    const svgRect = svg.getBoundingClientRect();
+    const winW = window.innerWidth;
+    const winH = window.innerHeight;
+    // Reset transform first to get natural size
+    scale = 1; panX = 0; panY = 0;
+    updateTransform();
+    // Measure natural size
+    const naturalRect = svg.getBoundingClientRect();
+    const scaleX = (winW - 40) / naturalRect.width;
+    const scaleY = (winH - 40) / naturalRect.height;
+    scale = Math.min(scaleX, scaleY, 2);
+    // Center
+    const scaledW = naturalRect.width * scale;
+    const scaledH = naturalRect.height * scale;
+    panX = (winW - scaledW) / 2;
+    panY = (winH - scaledH) / 2;
+    updateTransform();
+  }
+
+  // Mouse wheel zoom
+  window.addEventListener('wheel', function(e) {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.max(0.1, Math.min(10, scale * delta));
+    // Zoom toward cursor
+    const rect = container.getBoundingClientRect();
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    panX = mouseX - (mouseX - panX) * (newScale / scale);
+    panY = mouseY - (mouseY - panY) * (newScale / scale);
+    scale = newScale;
+    updateTransform();
+  }, { passive: false });
+
+  // Pan with mouse drag
+  window.addEventListener('mousedown', function(e) {
+    isDragging = true;
+    startX = e.clientX - panX;
+    startY = e.clientY - panY;
+    document.body.classList.add('dragging');
+  });
+  window.addEventListener('mousemove', function(e) {
+    if (!isDragging) return;
+    panX = e.clientX - startX;
+    panY = e.clientY - startY;
+    updateTransform();
+  });
+  window.addEventListener('mouseup', function() {
+    isDragging = false;
+    document.body.classList.remove('dragging');
+  });
+
+  // Button controls
+  document.getElementById('zoom-in').addEventListener('click', function() {
+    scale = Math.min(10, scale * 1.25);
+    updateTransform();
+  });
+  document.getElementById('zoom-out').addEventListener('click', function() {
+    scale = Math.max(0.1, scale * 0.8);
+    updateTransform();
+  });
+  document.getElementById('zoom-fit').addEventListener('click', fitToWindow);
+
+  // Initial fit
+  fitToWindow();
+
+  // Re-fit on resize
+  window.addEventListener('resize', fitToWindow);
+</script>
+</body>
+</html>`;
+
+      await mermaidWindow.loadURL(
+        `data:text/html;charset=utf-8,${encodeURIComponent(html)}`
+      );
+    }
+  )
+);
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon

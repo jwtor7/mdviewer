@@ -96,6 +96,17 @@ describe('MermaidDiagram', () => {
     });
   });
 
+  it('shows expand button after successful render', async () => {
+    const { container } = render(
+      <MermaidDiagram chart="graph TD; A-->B;" theme="dark" />
+    );
+
+    await waitFor(() => {
+      const expandBtn = container.querySelector('.mermaid-expand-btn');
+      expect(expandBtn).toBeInTheDocument();
+    });
+  });
+
   it('maps solarized-light theme to neutral', async () => {
     render(
       <MermaidDiagram chart="graph TD; A-->B;" theme="solarized-light" />
