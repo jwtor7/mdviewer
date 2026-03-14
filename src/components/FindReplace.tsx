@@ -162,26 +162,6 @@ const FindReplace: React.FC<FindReplaceProps> = ({
     }
   }, [currentMatchIndex, matches, textareaRef, content]);
 
-  // Sync scroll between textarea and highlight layer
-  useEffect(() => {
-    if (!textareaRef.current) return;
-
-    const textarea = textareaRef.current;
-    const wrapper = textarea.closest('.code-editor-wrapper');
-    if (!wrapper) return;
-
-    const highlightLayer = wrapper.querySelector('.code-editor-highlight-layer') as HTMLElement;
-    if (!highlightLayer) return;
-
-    const syncScroll = () => {
-      highlightLayer.scrollTop = textarea.scrollTop;
-      highlightLayer.scrollLeft = textarea.scrollLeft;
-    };
-
-    textarea.addEventListener('scroll', syncScroll);
-    return () => textarea.removeEventListener('scroll', syncScroll);
-  }, [textareaRef, debouncedFindText, matches]);
-
   const handleNext = (): void => {
     if (matches.length === 0) return;
     setCurrentMatchIndex((prev) => (prev + 1) % matches.length);

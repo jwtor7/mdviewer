@@ -1,4 +1,4 @@
-import React, { forwardRef, memo, useEffect, useRef } from 'react';
+import React, { forwardRef, memo, useCallback, useEffect, useRef } from 'react';
 
 export interface CodeEditorProps {
   content: string;
@@ -52,10 +52,36 @@ const CodeEditor = memo(forwardRef<HTMLTextAreaElement, CodeEditorProps>(
       };
     }, [content, textareaRef]);
 
+    // Sync scroll between textarea and highlight layer
+    const highlightLayerRef = useRef<HTMLDivElement>(null);
+
+    const syncScroll = useCallback(() => {
+      const textarea = textareaRef.current;
+      const highlightLayer = highlightLayerRef.current;
+      if (!textarea || !highlightLayer) return;
+      highlightLayer.scrollTop = textarea.scrollTop;
+      highlightLayer.scrollLeft = textarea.scrollLeft;
+    }, [textareaRef]);
+
+    useEffect(() => {
+      const textarea = textareaRef.current;
+      if (!textarea || !highlightedContent) return;
+
+      // Initial sync so highlight layer matches textarea scroll position
+      syncScroll();
+
+      textarea.addEventListener('scroll', syncScroll);
+      return () => textarea.removeEventListener('scroll', syncScroll);
+    }, [textareaRef, highlightedContent, syncScroll]);
+
     return (
       <div className="code-editor-wrapper">
         {highlightedContent && (
-          <div className={`code-editor-highlight-layer ${wordWrap ? 'word-wrap' : 'no-wrap'}`} aria-hidden="true">
+          <div
+            ref={highlightLayerRef}
+            className={`code-editor-highlight-layer ${wordWrap ? 'word-wrap' : 'no-wrap'}`}
+            aria-hidden="true"
+          >
             {highlightedContent}
           </div>
         )}
