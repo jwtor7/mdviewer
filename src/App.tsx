@@ -76,6 +76,7 @@ const App: React.FC = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
     const [searchCurrentMatch, setSearchCurrentMatch] = useState(0);
+    const [tabTooltip, setTabTooltip] = useState<{ text: string; x: number; y: number } | null>(null);
     const [showHeadingsMenu, setShowHeadingsMenu] = useState(false);
     const [contextMenu, setContextMenu] = useState<{ x: number; y: number; docId: string } | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -316,8 +317,13 @@ const App: React.FC = () => {
                         aria-label={`${doc.name}${doc.dirty ? ' (unsaved changes)' : ''}`}
                         aria-controls="content-area"
                         tabIndex={activeTabId === doc.id ? 0 : -1}
-                        data-tooltip={doc.filePath ?? undefined}
-                        title={doc.filePath ? undefined : doc.name}
+                        onMouseEnter={(e) => {
+                            if (doc.filePath) {
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                setTabTooltip({ text: doc.filePath, x: rect.left, y: rect.bottom + 4 });
+                            }
+                        }}
+                        onMouseLeave={() => setTabTooltip(null)}
                     >
                         {doc.dirty && <span className="tab-dirty-indicator" aria-hidden="true" />}
                         <span className="tab-label">{doc.name}</span>
@@ -341,6 +347,14 @@ const App: React.FC = () => {
                     +
                 </button>
             </div>
+            {tabTooltip && (
+                <div
+                    className="tab-tooltip"
+                    style={{ left: tabTooltip.x, top: tabTooltip.y }}
+                >
+                    {tabTooltip.text}
+                </div>
+            )}
             <div className="toolbar">
                 <div className="toolbar-group">
                     <button

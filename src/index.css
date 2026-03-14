@@ -831,7 +831,6 @@ body {
   transition: all 0.2s;
   user-select: none;
   flex-shrink: 0;
-  position: relative;
 }
 
 .tab-label {
@@ -851,40 +850,19 @@ body {
   background-color: var(--btn-hover);
 }
 
-.tab[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  left: 0;
-  bottom: calc(100% + 8px);
-  max-width: min(32rem, calc(100vw - 24px));
-  padding: 6px 10px;
-  background-color: rgba(0, 0, 0, 0.9);
-  color: #ffffff;
+
+.tab-tooltip {
+  position: fixed;
+  max-width: min(36rem, calc(100vw - 24px));
+  padding: 5px 10px;
+  background-color: rgba(0, 0, 0, 0.92);
+  color: #fff;
   font-size: 12px;
   line-height: 1.4;
-  white-space: normal;
-  overflow-wrap: anywhere;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-  opacity: 0;
   pointer-events: none;
-  transform: translateY(4px);
-  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-  z-index: 1000;
-}
-
-[data-theme='light'] .tab[data-tooltip]::after,
-[data-theme='solarized-light'] .tab[data-tooltip]::after {
-  background-color: rgba(0, 0, 0, 0.85);
-}
-
-.tab[data-tooltip]:hover::after {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.tab[data-tooltip]:has(.tab-close:hover)::after {
-  opacity: 0;
+  z-index: 10000;
+  overflow-wrap: anywhere;
 }
 
 .tab.active {

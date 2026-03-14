@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { mockElectronAPI } from './test/setup';
@@ -136,7 +136,7 @@ describe('App Integration Tests', () => {
       expect(tabs.length).toBeGreaterThanOrEqual(1);
     });
 
-    it('should expose the saved file path on document tabs for hover tooltips', async () => {
+    it('should show file path tooltip on tab hover', async () => {
       const openedFile = {
         filePath: '/Users/true/Documents/project/notes/meeting.md',
         content: '# Meeting notes',
@@ -153,8 +153,11 @@ describe('App Integration Tests', () => {
       render(<App />);
 
       await waitFor(() => {
-        expect(screen.getByRole('tab', { name: /meeting\.md/i })).toHaveAttribute('data-tooltip', openedFile.filePath);
+        const tab = screen.getByRole('tab', { name: /meeting\.md/i });
+        fireEvent.mouseEnter(tab);
       });
+
+      expect(screen.getByText(openedFile.filePath)).toBeInTheDocument();
     });
   });
 

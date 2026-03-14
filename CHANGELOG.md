@@ -8,9 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.1.0] - 2026-03-13
 
 ### Added
-- CSS-driven file path tooltips on tabs replacing native title attribute
-- Animated fade-in tooltip with theme-aware styling
-- Tooltip suppression when hovering the tab close button
+- File path tooltip on tabs — hover any tab with a saved file to see its full path
+- React-rendered tooltip positioned outside tab-bar overflow for reliable display
 
 ## [4.0.0] - 2026-03-08
 
