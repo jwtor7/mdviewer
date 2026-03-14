@@ -5,6 +5,13 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.1.0] - 2026-03-13
+
+### Added
+- CSS-driven file path tooltips on tabs replacing native title attribute
+- Animated fade-in tooltip with theme-aware styling
+- Tooltip suppression when hovering the tab close button
+
 ## [4.0.0] - 2026-03-08
 
 ### Added

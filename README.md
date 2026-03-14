@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-4.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-4.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -226,10 +226,11 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 4.1.0 - 2026-03-13
+- CSS-driven file path tooltips on tabs with animated fade-in
+
 ### 4.0.0 - 2026-03-08
-- Mermaid diagram rendering in preview mode with adaptive text contrast
-- Zoomable diagram window with mouse-wheel zoom and click-drag pan
-- Auto-quoting of mermaid node labels with special characters
+- Mermaid diagram rendering with adaptive contrast and zoomable window
 
 ### 3.5.1 - 2026-03-08
 - Common Ground assumptions tracking for project alignment
@@ -239,9 +240,6 @@ Full history: [CHANGELOG.md](./CHANGELOG.md)
 
 ### 3.4.2 - 2026-02-27
 - IPC response standardization with `IPCResult<T>` pattern
-
-### 3.4.0 - 2026-02-04
-- IPC validation and security hardening across all handlers
 
 ## Contributing
 
