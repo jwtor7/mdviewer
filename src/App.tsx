@@ -316,7 +316,8 @@ const App: React.FC = () => {
                         aria-label={`${doc.name}${doc.dirty ? ' (unsaved changes)' : ''}`}
                         aria-controls="content-area"
                         tabIndex={activeTabId === doc.id ? 0 : -1}
-                        title={doc.filePath ? doc.filePath : doc.name}
+                        data-tooltip={doc.filePath ?? undefined}
+                        title={doc.filePath ? undefined : doc.name}
                     >
                         {doc.dirty && <span className="tab-dirty-indicator" aria-hidden="true" />}
                         <span className="tab-label">{doc.name}</span>
