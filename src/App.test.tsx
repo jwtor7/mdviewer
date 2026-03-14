@@ -135,6 +135,27 @@ describe('App Integration Tests', () => {
       const tabs = screen.getAllByRole('tab');
       expect(tabs.length).toBeGreaterThanOrEqual(1);
     });
+
+    it('should expose the saved file path on document tabs for hover tooltips', async () => {
+      const openedFile = {
+        filePath: '/Users/true/Documents/project/notes/meeting.md',
+        content: '# Meeting notes',
+        name: 'meeting.md',
+      };
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        (callback: (value: typeof openedFile) => void) => {
+          callback(openedFile);
+          return vi.fn();
+        }
+      );
+
+      render(<App />);
+
+      await waitFor(() => {
+        expect(screen.getByRole('tab', { name: /meeting\.md/i })).toHaveAttribute('data-tooltip', openedFile.filePath);
+      });
+    });
   });
 
   describe('View Mode Toggle', () => {
