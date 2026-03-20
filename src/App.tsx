@@ -275,6 +275,22 @@ const App: React.FC = () => {
         }
     };
 
+    // Handle copy path to clipboard
+    const handleCopyPath = async (docId: string): Promise<void> => {
+        const doc = documents.find(d => d.id === docId);
+        if (!doc?.filePath) {
+            return;
+        }
+
+        try {
+            await navigator.clipboard.writeText(doc.filePath);
+        } catch {
+            showError('Failed to copy path to clipboard');
+        } finally {
+            setContextMenu(null);
+        }
+    };
+
     // Integrate useIPCListeners hook (after handleCloseTab is declared)
     useIPCListeners({
         documents,
@@ -679,6 +695,14 @@ const App: React.FC = () => {
                         role="menuitem"
                     >
                         Reveal in Finder
+                    </button>
+                    <button
+                        className="context-menu-item"
+                        onClick={() => handleCopyPath(contextMenu.docId)}
+                        disabled={!documents.find(d => d.id === contextMenu.docId)?.filePath}
+                        role="menuitem"
+                    >
+                        Copy Path
                     </button>
                 </div>
             )}

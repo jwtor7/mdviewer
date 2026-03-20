@@ -638,5 +638,156 @@ describe('App Integration Tests', () => {
         expect(screen.getByRole('menuitem', { name: /Reveal in Finder/i })).toBeInTheDocument();
       });
     });
+
+    it('should show Copy Path in context menu', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      const tab = screen.getByRole('tab', { name: /Test Document/i });
+      await user.pointer({ keys: '[MouseRight]', target: tab });
+
+      await waitFor(() => {
+        expect(screen.getByRole('menuitem', { name: /Copy Path/i })).toBeInTheDocument();
+      });
+    });
+
+    it('should disable Copy Path for unsaved documents', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Create a new unsaved document
+      await user.click(screen.getByRole('button', { name: /New document/i }));
+
+      const untitledTab = screen.getByRole('tab', { name: /Untitled/i });
+      await user.pointer({ keys: '[MouseRight]', target: untitledTab });
+
+      await waitFor(() => {
+        expect(screen.getByRole('menuitem', { name: /Copy Path/i })).toBeDisabled();
+      });
+    });
+
+    it('should copy file path to clipboard on Copy Path click', async () => {
+      const openedFile = {
+        filePath: '/Users/true/Documents/test.md',
+        content: '# Test',
+        name: 'test.md',
+      };
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        (callback: (value: typeof openedFile) => void) => {
+          callback(openedFile);
+          return vi.fn();
+        }
+      );
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        writable: true,
+        configurable: true,
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('tab', { name: /test\.md/i })).toBeInTheDocument();
+      });
+
+      const tab = screen.getByRole('tab', { name: /test\.md/i });
+      await user.pointer({ keys: '[MouseRight]', target: tab });
+
+      await waitFor(() => {
+        expect(screen.getByRole('menuitem', { name: /Copy Path/i })).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('menuitem', { name: /Copy Path/i }));
+
+      await waitFor(() => {
+        expect(writeText).toHaveBeenCalledWith('/Users/true/Documents/test.md');
+      });
+    });
+
+    it('should close context menu after Copy Path click', async () => {
+      const openedFile = {
+        filePath: '/Users/true/Documents/test.md',
+        content: '# Test',
+        name: 'test.md',
+      };
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        (callback: (value: typeof openedFile) => void) => {
+          callback(openedFile);
+          return vi.fn();
+        }
+      );
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn().mockResolvedValue(undefined) },
+        writable: true,
+        configurable: true,
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('tab', { name: /test\.md/i })).toBeInTheDocument();
+      });
+
+      const tab = screen.getByRole('tab', { name: /test\.md/i });
+      await user.pointer({ keys: '[MouseRight]', target: tab });
+
+      await waitFor(() => {
+        expect(screen.getByRole('menu')).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('menuitem', { name: /Copy Path/i }));
+
+      await waitFor(() => {
+        expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+      });
+    });
+
+    it('should show error if clipboard write fails', async () => {
+      const openedFile = {
+        filePath: '/Users/true/Documents/test.md',
+        content: '# Test',
+        name: 'test.md',
+      };
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementationOnce(
+        (callback: (value: typeof openedFile) => void) => {
+          callback(openedFile);
+          return vi.fn();
+        }
+      );
+
+      const user = userEvent.setup();
+      render(<App />);
+
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText: vi.fn().mockRejectedValue(new Error('Clipboard denied')) },
+        writable: true,
+        configurable: true,
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('tab', { name: /test\.md/i })).toBeInTheDocument();
+      });
+
+      const tab = screen.getByRole('tab', { name: /test\.md/i });
+      await user.pointer({ keys: '[MouseRight]', target: tab });
+
+      await waitFor(() => {
+        expect(screen.getByRole('menuitem', { name: /Copy Path/i })).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole('menuitem', { name: /Copy Path/i }));
+
+      await waitFor(() => {
+        expect(screen.getByText(/Failed to copy path to clipboard/i)).toBeInTheDocument();
+      });
+    });
   });
 });

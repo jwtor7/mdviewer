@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-4.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-4.1.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -218,7 +218,7 @@ src/
 - Modular main process: security (IPC validation, rate limiting, path validation), storage (preferences, recent files), window management
 - Custom React hooks for state management (12 hooks extracted from App.tsx)
 - Zod-based runtime validation for all IPC handlers
-- 419 tests with Vitest and React Testing Library
+- 425 tests with Vitest and React Testing Library
 
 **Security Model**: Sandboxed renderer with context isolation, Zod IPC validation, rate limiting, path traversal protection, URL allowlisting, strict CSP. See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for details.
 
@@ -226,20 +226,16 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 4.1.3 - 2026-03-20
+- "Copy Path" context menu item on tabs
+
+### 4.1.2 - 2026-03-14
+- Search highlight scroll sync fix in Raw view
+
 ### 4.1.0 - 2026-03-13
 - CSS-driven file path tooltips on tabs with animated fade-in
 
-### 4.0.0 - 2026-03-08
-- Mermaid diagram rendering with adaptive contrast and zoomable window
-
-### 3.5.1 - 2026-03-08
-- Common Ground assumptions tracking for project alignment
-
-### 3.5.0 - 2026-02-27
-- Automatic file watching for external changes with smart reload protection
-
-### 3.4.2 - 2026-02-27
-- IPC response standardization with `IPCResult<T>` pattern
+*For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
 
 ## Contributing
 
