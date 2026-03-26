@@ -5,6 +5,16 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1] - 2026-03-26
+
+#### 19:42
+
+### Fixed
+- Word count goal lost when clicking outside the goal input (blur/click race condition resolved with ref-based guard)
+- Progress bar invisible due to undefined `--accent-color` CSS variable (switched to existing theme variables)
+- Color-coded progress tiers: blue (<90%), green (90–99%), yellow/orange (at goal, up to 120%), red (120%+)
+- Progress bar transitions from 3px bottom indicator to full-height tint when goal is exceeded
+
 ## [4.2.0] - 2026-03-26
 
 ### Added

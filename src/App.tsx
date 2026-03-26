@@ -213,8 +213,14 @@ const App: React.FC = () => {
 
     const goalProgress = useMemo(() => {
         const goal = activeDoc.wordCountGoal;
-        if (!goal || goal <= 0) return 0;
-        return Math.min(textStats.wordCount / goal, 1);
+        if (!goal || goal <= 0) return { ratio: 0, bar: 0, tier: '' as const };
+        const ratio = textStats.wordCount / goal;
+        const bar = Math.min(ratio, 1);
+        const tier = ratio >= 1.2 ? 'goal-way-over'
+            : ratio >= 1.0 ? 'goal-over'
+            : ratio >= 0.9 ? 'goal-near'
+            : '';
+        return { ratio, bar, tier };
     }, [activeDoc.wordCountGoal, textStats.wordCount]);
 
     // Close goal input when switching tabs
@@ -222,16 +228,25 @@ const App: React.FC = () => {
         setShowGoalInput(false);
     }, [activeTabId]);
 
+    const goalBlurRef = useRef(false);
+
     const handleWordCountClick = useCallback(() => {
-        setShowGoalInput(prev => !prev);
+        if (goalBlurRef.current) {
+            goalBlurRef.current = false;
+            return;
+        }
+        if (showGoalInput) return;
+        setShowGoalInput(true);
         setGoalInputValue(activeDoc.wordCountGoal?.toString() ?? '');
-    }, [activeDoc.wordCountGoal]);
+    }, [showGoalInput, activeDoc.wordCountGoal]);
 
     const handleGoalSubmit = useCallback(() => {
+        goalBlurRef.current = true;
         const parsed = parseInt(goalInputValue, 10);
         const goal = parsed > 0 ? parsed : undefined;
         updateExistingDocument(activeDoc.id, { wordCountGoal: goal });
         setShowGoalInput(false);
+        setTimeout(() => { goalBlurRef.current = false; }, 0);
     }, [goalInputValue, activeDoc.id, updateExistingDocument]);
 
     const handleGoalKeyDown = useCallback((e: React.KeyboardEvent) => {
@@ -707,8 +722,8 @@ const App: React.FC = () => {
             </div>
             <div className="status-bar" role="status" aria-live="polite">
                 <div
-                    className={`status-item status-item-wordcount${activeDoc.wordCountGoal && goalProgress >= 1 ? ' goal-reached' : ''}`}
-                    style={activeDoc.wordCountGoal ? { '--goal-progress': goalProgress } as React.CSSProperties : undefined}
+                    className={`status-item status-item-wordcount${goalProgress.tier ? ` ${goalProgress.tier}` : ''}`}
+                    style={activeDoc.wordCountGoal ? { '--goal-progress': goalProgress.bar } as React.CSSProperties : undefined}
                     role="button"
                     tabIndex={0}
                     aria-label={activeDoc.wordCountGoal ? `Word count: ${textStats.wordCount} of ${activeDoc.wordCountGoal} goal. Click to change.` : 'Word count. Click to set goal.'}

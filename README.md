@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-4.2.0-blue.svg)
+![Version](https://img.shields.io/badge/version-4.2.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -226,14 +226,14 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 4.2.1 - 2026-03-26
+- Word count goal bugfixes: blur/click race condition, invisible progress bar, color-coded progress tiers
+
 ### 4.2.0 - 2026-03-26
 - Word Count Goal Indicator — click word count to set a writing target; progress bar fills as you write
 
 ### 4.1.3 - 2026-03-20
 - "Copy Path" context menu item on tabs
-
-### 4.1.2 - 2026-03-14
-- Search highlight scroll sync fix in Raw view
 
 *For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
 
