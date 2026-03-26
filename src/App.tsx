@@ -71,6 +71,8 @@ const App: React.FC = () => {
 
     const [viewMode, setViewMode] = useState<ViewMode>(VIEW_MODES.RENDERED);
     const [showFindReplace, setShowFindReplace] = useState(false);
+    const [showGoalInput, setShowGoalInput] = useState(false);
+    const [goalInputValue, setGoalInputValue] = useState('');
     const [splitDividerPosition, setSplitDividerPosition] = useState(50); // percentage
     const [highlightedContent, setHighlightedContent] = useState<React.ReactNode | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
@@ -208,6 +210,38 @@ const App: React.FC = () => {
         () => calculateTextStats(activeDoc.content),
         [activeDoc.content]
     );
+
+    const goalProgress = useMemo(() => {
+        const goal = activeDoc.wordCountGoal;
+        if (!goal || goal <= 0) return 0;
+        return Math.min(textStats.wordCount / goal, 1);
+    }, [activeDoc.wordCountGoal, textStats.wordCount]);
+
+    // Close goal input when switching tabs
+    useEffect(() => {
+        setShowGoalInput(false);
+    }, [activeTabId]);
+
+    const handleWordCountClick = useCallback(() => {
+        setShowGoalInput(prev => !prev);
+        setGoalInputValue(activeDoc.wordCountGoal?.toString() ?? '');
+    }, [activeDoc.wordCountGoal]);
+
+    const handleGoalSubmit = useCallback(() => {
+        const parsed = parseInt(goalInputValue, 10);
+        const goal = parsed > 0 ? parsed : undefined;
+        updateExistingDocument(activeDoc.id, { wordCountGoal: goal });
+        setShowGoalInput(false);
+    }, [goalInputValue, activeDoc.id, updateExistingDocument]);
+
+    const handleGoalKeyDown = useCallback((e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleGoalSubmit();
+        } else if (e.key === 'Escape') {
+            setShowGoalInput(false);
+        }
+    }, [handleGoalSubmit]);
 
     const handleCloseTab = async (e: React.MouseEvent<HTMLButtonElement>, id: string): Promise<void> => {
         e.stopPropagation();
@@ -672,7 +706,32 @@ const App: React.FC = () => {
                 )}
             </div>
             <div className="status-bar" role="status" aria-live="polite">
-                <div className="status-item" aria-label="Word count">Words: {textStats.wordCount}</div>
+                <div
+                    className={`status-item status-item-wordcount${activeDoc.wordCountGoal && goalProgress >= 1 ? ' goal-reached' : ''}`}
+                    style={activeDoc.wordCountGoal ? { '--goal-progress': goalProgress } as React.CSSProperties : undefined}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={activeDoc.wordCountGoal ? `Word count: ${textStats.wordCount} of ${activeDoc.wordCountGoal} goal. Click to change.` : 'Word count. Click to set goal.'}
+                    onClick={handleWordCountClick}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleWordCountClick(); }}
+                >
+                    Words: {textStats.wordCount}{activeDoc.wordCountGoal ? ` / ${activeDoc.wordCountGoal}` : ''}
+                    {showGoalInput && (
+                        <input
+                            type="number"
+                            className="word-goal-input"
+                            value={goalInputValue}
+                            onChange={(e) => setGoalInputValue(e.target.value)}
+                            onKeyDown={handleGoalKeyDown}
+                            onBlur={handleGoalSubmit}
+                            aria-label="Set word count goal"
+                            min="0"
+                            placeholder="Goal..."
+                            autoFocus
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    )}
+                </div>
                 <div className="status-item" aria-label="Character count">Chars: {textStats.charCount}</div>
                 <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
                 <div className="status-item status-version" aria-label="App version">v{pkg.version}</div>

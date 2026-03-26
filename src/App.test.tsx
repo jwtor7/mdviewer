@@ -790,4 +790,79 @@ describe('App Integration Tests', () => {
       });
     });
   });
+
+  // =========================================================================
+  // Word Count Goal
+  // =========================================================================
+
+  describe('Word Count Goal', () => {
+    it('should show word count as clickable button', () => {
+      render(<App />);
+
+      const wordCount = screen.getByRole('button', { name: /Word count/i });
+      expect(wordCount).toBeInTheDocument();
+      expect(wordCount).toHaveTextContent(/Words:/);
+    });
+
+    it('should open goal input on click', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(screen.getByRole('button', { name: /Word count/i }));
+
+      expect(screen.getByRole('spinbutton', { name: /Set word count goal/i })).toBeInTheDocument();
+    });
+
+    it('should set a goal and display it', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(screen.getByRole('button', { name: /Word count/i }));
+      const input = screen.getByRole('spinbutton', { name: /Set word count goal/i });
+      await user.type(input, '500');
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /goal/i })).toHaveTextContent(/\/ 500/);
+      });
+    });
+
+    it('should close input on Escape without saving', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      await user.click(screen.getByRole('button', { name: /Word count/i }));
+      const input = screen.getByRole('spinbutton', { name: /Set word count goal/i });
+      await user.type(input, '500');
+      await user.keyboard('{Escape}');
+
+      expect(screen.queryByRole('spinbutton')).not.toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Word count/i })).not.toHaveTextContent(/\/ 500/);
+    });
+
+    it('should clear goal when submitting empty value', async () => {
+      const user = userEvent.setup();
+      render(<App />);
+
+      // Set a goal first
+      await user.click(screen.getByRole('button', { name: /Word count/i }));
+      const input = screen.getByRole('spinbutton', { name: /Set word count goal/i });
+      await user.type(input, '500');
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /goal/i })).toHaveTextContent(/\/ 500/);
+      });
+
+      // Clear the goal
+      await user.click(screen.getByRole('button', { name: /goal/i }));
+      const input2 = screen.getByRole('spinbutton', { name: /Set word count goal/i });
+      await user.clear(input2);
+      await user.keyboard('{Enter}');
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /Word count/i })).not.toHaveTextContent(/\/ 500/);
+      });
+    });
+  });
 });

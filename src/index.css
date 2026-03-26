@@ -793,6 +793,54 @@ body {
   opacity: 0.8;
 }
 
+.status-item-wordcount {
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  padding: 2px 6px;
+  border-radius: 3px;
+  z-index: 0;
+  transition: background-color 0.15s ease;
+}
+
+.status-item-wordcount:hover {
+  background-color: color-mix(in srgb, var(--text-color) 10%, transparent);
+}
+
+.status-item-wordcount::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 100%;
+  width: calc(var(--goal-progress, 0) * 100%);
+  background-color: color-mix(in srgb, var(--accent-color) 15%, transparent);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  z-index: -1;
+}
+
+.status-item-wordcount.goal-reached::after {
+  background-color: color-mix(in srgb, var(--accent-color) 25%, transparent);
+}
+
+.word-goal-input {
+  width: 60px;
+  margin-left: 8px;
+  padding: 1px 4px;
+  font-size: 12px;
+  font-family: inherit;
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 3px;
+  outline: none;
+}
+
+.word-goal-input:focus {
+  border-color: var(--accent-color);
+}
+
 .status-version {
   margin-left: auto;
   opacity: 0.6;

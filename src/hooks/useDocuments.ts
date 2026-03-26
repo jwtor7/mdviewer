@@ -19,6 +19,7 @@ export interface DocumentUpdate {
   content?: string;
   filePath?: string | null;
   id?: string;
+  wordCountGoal?: number;
 }
 
 export interface UseDocumentsReturn {

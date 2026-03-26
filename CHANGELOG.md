@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.0] - 2026-03-26
+
+### Added
+- Word Count Goal Indicator — click the word count in the status bar to set a per-document writing target; a subtle progress bar fills as you write toward the goal
+- `wordCountGoal` field on the Document type for per-tab goal persistence
+
 ## [4.1.3] - 2026-03-20
 
 ### Added

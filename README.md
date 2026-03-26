@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-4.1.3-blue.svg)
+![Version](https://img.shields.io/badge/version-4.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -218,7 +218,7 @@ src/
 - Modular main process: security (IPC validation, rate limiting, path validation), storage (preferences, recent files), window management
 - Custom React hooks for state management (12 hooks extracted from App.tsx)
 - Zod-based runtime validation for all IPC handlers
-- 425 tests with Vitest and React Testing Library
+- 430 tests with Vitest and React Testing Library
 
 **Security Model**: Sandboxed renderer with context isolation, Zod IPC validation, rate limiting, path traversal protection, URL allowlisting, strict CSP. See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for details.
 
@@ -226,14 +226,14 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+### 4.2.0 - 2026-03-26
+- Word Count Goal Indicator — click word count to set a writing target; progress bar fills as you write
+
 ### 4.1.3 - 2026-03-20
 - "Copy Path" context menu item on tabs
 
 ### 4.1.2 - 2026-03-14
 - Search highlight scroll sync fix in Raw view
-
-### 4.1.0 - 2026-03-13
-- CSS-driven file path tooltips on tabs with animated fade-in
 
 *For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
 

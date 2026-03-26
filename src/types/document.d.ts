@@ -5,6 +5,7 @@ export interface Document {
   filePath: string | null;
   dirty?: boolean; // Track if document has unsaved changes
   lastSavedContent?: string; // Track last saved content to detect changes
+  wordCountGoal?: number;
 }
 
 export interface DraggableDocument extends Document {
