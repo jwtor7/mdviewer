@@ -5,6 +5,13 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.1] - 2026-03-28
+
+#### 15:24
+
+### Added
+- Reading time estimate in the status bar — shows `~X min read` based on 238 wpm average; minimum display of 1 minute
+
 ## [4.2.1] - 2026-03-26
 
 #### 19:42

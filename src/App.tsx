@@ -749,6 +749,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="status-item" aria-label="Character count">Chars: {textStats.charCount}</div>
                 <div className="status-item" aria-label="Estimated tokens">Tokens: {textStats.tokenCount}</div>
+                <div className="status-item" aria-label="Estimated reading time">~{textStats.readingTime} min read</div>
                 <div className="status-item status-version" aria-label="App version">v{pkg.version}</div>
                 <div className="status-item status-copyright" aria-label="Copyright">© Junior Williams</div>
             </div>

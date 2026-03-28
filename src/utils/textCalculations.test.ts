@@ -14,6 +14,7 @@ describe('calculateTextStats', () => {
       wordCount: 0,
       charCount: 0,
       tokenCount: 0,
+      readingTime: 1,
     });
   });
 
@@ -24,6 +25,7 @@ describe('calculateTextStats', () => {
       wordCount: 0,
       charCount: 7,
       tokenCount: Math.ceil(7 / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      readingTime: 1,
     });
   });
 
@@ -34,6 +36,7 @@ describe('calculateTextStats', () => {
       wordCount: 1,
       charCount: 5,
       tokenCount: Math.ceil(5 / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      readingTime: 1,
     });
   });
 
@@ -45,6 +48,7 @@ describe('calculateTextStats', () => {
       wordCount: 4,
       charCount: text.length,
       tokenCount: Math.ceil(text.length / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      readingTime: 1,
     });
   });
 
@@ -120,5 +124,29 @@ const x = 5;
 
     expect(result.wordCount).toBe(10000);
     expect(result.charCount).toBe(longText.length);
+  });
+
+  describe('readingTime', () => {
+    it('should return 1 min for empty string', () => {
+      const result = calculateTextStats('');
+      expect(result.readingTime).toBe(1);
+    });
+
+    it('should return 1 min for short text', () => {
+      const result = calculateTextStats('hello world');
+      expect(result.readingTime).toBe(1);
+    });
+
+    it('should return 1 min for ~238 words', () => {
+      const text = 'word '.repeat(238).trim();
+      const result = calculateTextStats(text);
+      expect(result.readingTime).toBe(1);
+    });
+
+    it('should return 2 min for ~500 words', () => {
+      const text = 'word '.repeat(500).trim();
+      const result = calculateTextStats(text);
+      expect(result.readingTime).toBe(2);
+    });
   });
 });
