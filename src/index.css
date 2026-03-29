@@ -1323,19 +1323,20 @@ body {
 }
 
 .mermaid-diagram-container svg {
-  max-width: 100%;
   height: auto;
   min-height: 200px;
 }
 
 /* Mermaid text sizing - contrast colors are set per-node in JS */
 .mermaid-diagram-container .nodeLabel,
-.mermaid-diagram-container .label div {
+.mermaid-diagram-container .label div,
+.mermaid-diagram-container .label text {
   font-size: 16px !important;
   font-weight: 500 !important;
 }
 
-.mermaid-diagram-container .edgeLabel {
+.mermaid-diagram-container .edgeLabel,
+.mermaid-diagram-container .edgeLabel text {
   font-size: 14px !important;
   font-weight: 500 !important;
 }

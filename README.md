@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-4.2.2-blue.svg)
+![Version](https://img.shields.io/badge/version-4.2.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -226,14 +226,11 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
-### 4.2.2 - 2026-03-28
-- Reading time estimate in status bar (`~X min read`)
+**2026-03-29 16:18** - Mermaid diagram text truncation and Unicode rendering fixes (`→` mojibake, `\n` literal text)
 
-### 4.2.1 - 2026-03-26
-- Word count goal bugfixes: blur/click race condition, invisible progress bar, color-coded progress tiers
+**2026-03-28 15:24** - Reading time estimate in status bar (`~X min read`)
 
-### 4.2.0 - 2026-03-26
-- Word Count Goal Indicator — click word count to set a writing target; progress bar fills as you write
+**2026-03-26 19:42** - Word count goal bugfixes: blur/click race condition, invisible progress bar, color-coded progress tiers
 
 *For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
 

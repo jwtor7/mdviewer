@@ -5,6 +5,15 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.2.3] - 2026-03-29
+
+#### 16:18
+
+### Fixed
+- Mermaid diagram text truncation — removed `max-width: 100%` from SVG container rule; diagrams now render at natural size with horizontal scrolling via existing `overflow-x: auto`
+- Mermaid Unicode rendering — switched from `htmlLabels: true` to `htmlLabels: false` so Mermaid uses native SVG `<text>` elements instead of `<foreignObject>` HTML, fixing `→` rendering as `â` (UTF-8 mojibake) and `\n` appearing as literal text
+- Adaptive contrast color selectors updated to target SVG `text` elements alongside HTML label elements, preserving WCAG-based contrast logic in SVG text mode
+
 ## [4.2.2] - 2026-03-28
 
 #### 15:24

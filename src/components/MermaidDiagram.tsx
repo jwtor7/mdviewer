@@ -157,7 +157,7 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
         rankSpacing: 60,
         padding: 20,
         useMaxWidth: false,
-        htmlLabels: true,
+        htmlLabels: false,
       },
     });
 
@@ -173,17 +173,18 @@ const MermaidDiagram = memo(({ chart, theme }: MermaidDiagramProps) => {
           // Adaptive contrast: pick text color based on each node's actual fill
           const svgEl = containerRef.current.querySelector('svg');
           if (svgEl) {
-            svgEl.querySelectorAll('.nodeLabel, .label').forEach((el) => {
+            // SVG text mode: target text elements inside node labels
+            svgEl.querySelectorAll('.nodeLabel text, .label text, .nodeLabel, .label').forEach((el) => {
               const fill = findNodeFill(el);
               const textCol = fill ? contrastTextColor(fill) : (dark ? '#eceff4' : '#1a1a1a');
-              (el as HTMLElement).style.color = textCol;
-              (el as HTMLElement).style.fill = textCol;
+              (el as SVGElement).style.fill = textCol;
+              el.setAttribute('fill', textCol);
             });
             // Edge labels: use theme-appropriate color
-            svgEl.querySelectorAll('.edgeLabel').forEach((el) => {
+            svgEl.querySelectorAll('.edgeLabel text, .edgeLabel').forEach((el) => {
               const col = dark ? '#d8dee9' : '#334155';
-              (el as HTMLElement).style.color = col;
-              (el as HTMLElement).style.fill = col;
+              (el as SVGElement).style.fill = col;
+              el.setAttribute('fill', col);
             });
           }
 
