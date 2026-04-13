@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.0.3-blue.svg)
+![Version](https://img.shields.io/badge/version-5.1.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -14,13 +14,26 @@
 
 </div>
 
-mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
+mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
 
 Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 430 automated tests.
 
+## Drop-in Transcription for Audio and Video
+
+Drag a WAV, MP3, M4A, or MP4 file onto the window and mdviewer returns a Markdown transcript. No separate tool, no web upload, no conversion pipeline — it's the same workflow as opening a PDF.
+
+Use it to:
+
+- Turn a voice memo into notes you can edit and save
+- Pull quotes and action items out of a recorded meeting
+- Capture audio diaries or podcast segments as searchable text
+- Extract dialogue from an MP4 screen recording without ever leaving the app
+
+Transcription uses Google's Web Speech API under the hood (the one browsers use for dictation). It's free, requires internet, and is the only outbound request mdviewer ever makes — everything else runs locally.
+
 ## Why mdviewer
 
-**One window for every document you open.** Drag a vendor RFP onto the app and read the PDF as Markdown. Paste a URL's downloaded HTML and get structured content without the ads. Dump a quarterly XLSX and walk through the tables in your own typography. Drop an MP3 voice memo and get back a transcript.
+**One window for every document you open.** Drag a vendor RFP onto the app and read the PDF as Markdown. Paste a URL's downloaded HTML and get structured content without the ads. Dump a quarterly XLSX and walk through the tables in your own typography. Drop an MP3 voice memo or MP4 screen capture and get back a transcript.
 
 **Five view modes, one file.** Rendered for reading, Raw for editing, Split for live preview, Text for grep-friendly plain text, and a dedicated Mermaid diagram window for architecture sketches.
 
@@ -35,7 +48,7 @@ Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-val
 | **Web & Data** | `.html`, `.htm`, `.csv`, `.json`, `.xml` |
 | **Plain Text** | `.txt`, `.rst` |
 | **Images** (OCR + metadata) | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.tiff`, `.bmp` |
-| **Audio** (transcription via Google Speech API) | `.wav`, `.mp3`, `.m4a` |
+| **Audio & Video** (transcription via Google Speech API) | `.wav`, `.mp3`, `.m4a`, `.mp4` |
 | **Archives** | `.zip` |
 
 ## Features
@@ -167,9 +180,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.1.0** — Video transcription: `.mp4` support added; audio/video category unified in file dialog and macOS associations
 - **v5.0.3** — Audio conversion fix: extended PATH passed to markitdown so pydub finds ffmpeg/ffprobe
 - **v5.0.2** — Packaged app resolves `markitdown` from `~/.local/bin` (uv tool install / pipx)
-- **v5.0.1** — File dialog allows audio and image selection; macOS associations extended to images and audio
 - **v5.0.0** — Universal document conversion via markitdown (PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, EPUB, images, audio, archives)
 
 ## Contributing

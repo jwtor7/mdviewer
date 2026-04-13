@@ -26,10 +26,10 @@ module.exports = {
           CFBundleTypeExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'],
         },
         {
-          CFBundleTypeName: 'Audio',
+          CFBundleTypeName: 'Audio or Video',
           CFBundleTypeRole: 'Viewer',
           LSHandlerRank: 'Alternate',
-          CFBundleTypeExtensions: ['wav', 'mp3', 'm4a'],
+          CFBundleTypeExtensions: ['wav', 'mp3', 'm4a', 'mp4'],
         },
       ],
     },

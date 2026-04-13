@@ -16,7 +16,7 @@ const CONVERTIBLE_EXTENSIONS = [
   '.csv', '.json', '.xml',
   '.epub',
   '.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.bmp',
-  '.wav', '.mp3', '.m4a',
+  '.wav', '.mp3', '.m4a', '.mp4',
   '.zip',
   '.txt', '.rst', '.rtf',
 ] as const;
@@ -129,11 +129,11 @@ export const convertToMarkdown = (filePath: string): Promise<string> => {
 };
 
 export const getFileDialogFilters = (): Electron.FileFilter[] => [
-  { name: 'All Supported', extensions: ['md', 'markdown', 'pdf', 'docx', 'pptx', 'xlsx', 'html', 'htm', 'csv', 'json', 'xml', 'epub', 'txt', 'rst', 'rtf', 'zip', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp', 'wav', 'mp3', 'm4a'] },
+  { name: 'All Supported', extensions: ['md', 'markdown', 'pdf', 'docx', 'pptx', 'xlsx', 'html', 'htm', 'csv', 'json', 'xml', 'epub', 'txt', 'rst', 'rtf', 'zip', 'jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp', 'wav', 'mp3', 'm4a', 'mp4'] },
   { name: 'Markdown', extensions: ['md', 'markdown'] },
   { name: 'Documents', extensions: ['pdf', 'docx', 'pptx', 'xlsx', 'epub', 'rtf'] },
   { name: 'Web & Data', extensions: ['html', 'htm', 'csv', 'json', 'xml'] },
   { name: 'Images', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'] },
-  { name: 'Audio', extensions: ['wav', 'mp3', 'm4a'] },
+  { name: 'Audio & Video', extensions: ['wav', 'mp3', 'm4a', 'mp4'] },
   { name: 'All Files', extensions: ['*'] },
 ];

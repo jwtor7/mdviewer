@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.0] - 2026-04-12
+
+#### 23:20
+
+### Added
+- **Video transcription**: `.mp4` files now open and convert via markitdown's built-in AudioConverter (extracts audio track with ffmpeg, transcribes via Google Web Speech API)
+- Unified "Audio & Video" file dialog category and macOS file association (renamed from "Audio")
+
+### Changed
+- README now leads with transcription as a marquee feature and documents audio/video workflow explicitly
+
 ## [5.0.3] - 2026-04-12
 
 #### 22:43
