@@ -45,10 +45,20 @@ export const ALL_SUPPORTED_EXTENSIONS = [
 ] as const;
 
 const resolveOnPath = (): string | null => {
+  const home = process.env.HOME ?? '';
+  const extraDirs = [
+    `${home}/.local/bin`,
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+  ];
+  for (const dir of extraDirs) {
+    const candidate = path.join(dir, 'markitdown');
+    if (fs.existsSync(candidate)) return candidate;
+  }
   try {
     const found = execFileSync('/usr/bin/which', ['markitdown'], {
       encoding: 'utf8',
-      env: { ...process.env, PATH: `${process.env.PATH ?? ''}:/usr/local/bin:/opt/homebrew/bin` },
+      env: { ...process.env, PATH: `${process.env.PATH ?? ''}:${extraDirs.join(':')}` },
     }).trim();
     return found && fs.existsSync(found) ? found : null;
   } catch {
