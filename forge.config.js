@@ -19,6 +19,18 @@ module.exports = {
           LSHandlerRank: 'Alternate',
           CFBundleTypeExtensions: ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'htm', 'csv', 'json', 'xml', 'epub', 'txt', 'rst', 'rtf'],
         },
+        {
+          CFBundleTypeName: 'Image',
+          CFBundleTypeRole: 'Viewer',
+          LSHandlerRank: 'Alternate',
+          CFBundleTypeExtensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'tiff', 'bmp'],
+        },
+        {
+          CFBundleTypeName: 'Audio',
+          CFBundleTypeRole: 'Viewer',
+          LSHandlerRank: 'Alternate',
+          CFBundleTypeExtensions: ['wav', 'mp3', 'm4a'],
+        },
       ],
     },
   },

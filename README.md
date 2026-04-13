@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.0.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -235,11 +235,11 @@ src/
 
 Full history: [CHANGELOG.md](./CHANGELOG.md)
 
+**2026-04-12 22:40** — v5.0.1 File dialog now allows audio and image selection; macOS associations extended to images and audio
+
 **2026-04-12 22:25** — v5.0.0 Universal document conversion via markitdown: open PDF/DOCX/PPTX/XLSX/HTML/CSV/JSON/EPUB/images/audio; converted to Markdown on open
 
 **2026-03-29 16:18** - Mermaid diagram text truncation and Unicode rendering fixes (`→` mojibake, `\n` literal text)
-
-**2026-03-28 15:24** - Reading time estimate in status bar (`~X min read`)
 
 *For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
 

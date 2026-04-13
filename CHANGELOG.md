@@ -5,6 +5,15 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.1] - 2026-04-12
+
+#### 22:40
+
+### Fixed
+- File → Open dialog now allows selecting audio (WAV/MP3/M4A) and image (JPG/JPEG/PNG/GIF/WebP/TIFF/BMP) files — previously grayed out despite being supported by markitdown
+- macOS file associations extended to image and audio extensions (separate `Image` and `Audio` Viewer entries in `CFBundleDocumentTypes`)
+- Dialog filter list now exposes grouped **Images** and **Audio** categories alongside Markdown / Documents / Web & Data
+
 ## [5.0.0] - 2026-04-12
 
 #### 22:25
