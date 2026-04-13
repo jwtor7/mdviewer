@@ -5,6 +5,13 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.3] - 2026-04-12
+
+#### 22:43
+
+### Fixed
+- Audio conversion: packaged app now passes an extended `PATH` (`~/.local/bin`, `/opt/homebrew/bin`, `/usr/local/bin`, `/usr/bin`, `/bin`) to the markitdown child process so pydub can locate `ffmpeg` and `ffprobe`. Previously audio conversion failed with `[Errno 2] No such file or directory: 'ffprobe'` even when ffmpeg was installed via Homebrew
+
 ## [5.0.2] - 2026-04-12
 
 #### 22:41

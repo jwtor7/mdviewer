@@ -84,6 +84,19 @@ const getMarkitdownPath = (): string | null => {
   return resolveOnPath();
 };
 
+const buildChildPath = (): string => {
+  const home = process.env.HOME ?? '';
+  const extras = [
+    `${home}/.local/bin`,
+    '/opt/homebrew/bin',
+    '/usr/local/bin',
+    '/usr/bin',
+    '/bin',
+  ];
+  const existing = process.env.PATH ?? '';
+  return existing ? `${existing}:${extras.join(':')}` : extras.join(':');
+};
+
 export const convertToMarkdown = (filePath: string): Promise<string> => {
   return new Promise((resolve, reject) => {
     const markitdownBin = getMarkitdownPath();
@@ -93,16 +106,25 @@ export const convertToMarkdown = (filePath: string): Promise<string> => {
     }
     const resolvedPath = path.resolve(filePath);
 
-    execFile(markitdownBin, [resolvedPath], { timeout: 30000, maxBuffer: 50 * 1024 * 1024 }, (error, stdout, stderr) => {
-      if (error) {
-        reject(new Error(`markitdown conversion failed: ${error.message}`));
-        return;
+    execFile(
+      markitdownBin,
+      [resolvedPath],
+      {
+        timeout: 30000,
+        maxBuffer: 50 * 1024 * 1024,
+        env: { ...process.env, PATH: buildChildPath() },
+      },
+      (error, stdout, stderr) => {
+        if (error) {
+          reject(new Error(`markitdown conversion failed: ${error.message}`));
+          return;
+        }
+        if (stderr) {
+          console.warn('[markitdown] stderr:', stderr);
+        }
+        resolve(stdout);
       }
-      if (stderr) {
-        console.warn('[markitdown] stderr:', stderr);
-      }
-      resolve(stdout);
-    });
+    );
   });
 };
 

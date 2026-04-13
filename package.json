@@ -1,7 +1,7 @@
 {
   "name": "mdviewer",
   "productName": "mdviewer",
-  "version": "5.0.2",
+  "version": "5.0.3",
   "description": "A feature-rich, accessible Markdown Viewer for macOS",
   "main": ".vite/build/main.js",
   "build": {
