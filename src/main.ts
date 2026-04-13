@@ -25,6 +25,7 @@ import {
   SaveImageFromDataSchema,
   OpenExternalUrlDataSchema,
   OpenMermaidWindowDataSchema,
+  OpenFilePathDataSchema,
   type SaveFileDataInput,
   type ReadFileDataInput,
   type ExportPdfDataInput,
@@ -307,6 +308,16 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
       content = validation.content;
     }
 
+    if (content.length > SECURITY_CONFIG.MAX_CONTENT_SIZE) {
+      const maxSizeMB = SECURITY_CONFIG.MAX_CONTENT_SIZE / (1024 * 1024);
+      console.warn(`[SECURITY] Converted content exceeds ${maxSizeMB}MB for ${path.basename(filepath)}`);
+      dialog.showErrorBox(
+        'Content Too Large',
+        `Converted content exceeds the maximum size of ${maxSizeMB}MB.`
+      );
+      return;
+    }
+
     if (targetWindow && !targetWindow.isDestroyed()) {
       const fileData: FileOpenData = {
         filePath: filepath,
@@ -329,13 +340,16 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
 // Tab drag and drop status tracking
 
 
-ipcMain.on('open-file-path', (event, data: unknown) => {
-  if (!data || typeof data !== 'object' || !('filePath' in data)) return;
-  const { filePath } = data as { filePath: string };
-  if (typeof filePath !== 'string') return;
-  const win = BrowserWindow.fromWebContents(event.sender);
-  openFile(filePath, win);
-});
+ipcMain.handle(
+  'open-file-path',
+  withValidatedIPCHandler(
+    { schema: OpenFilePathDataSchema, handlerName: 'open-file-path' },
+    async ({ filePath }, event): Promise<void> => {
+      const win = BrowserWindow.fromWebContents(event.sender);
+      await openFile(filePath, win);
+    }
+  )
+);
 
 if (!app.isPackaged) {
   ipcMain.on('log-debug', (_event, { message, data }) => {

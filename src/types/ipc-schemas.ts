@@ -107,6 +107,16 @@ export const RevealInFinderDataSchema = z.object({
 
 export type RevealInFinderDataInput = z.infer<typeof RevealInFinderDataSchema>;
 
+/**
+ * Schema for open-file-path IPC handler.
+ * Validates file path for opening convertible/markdown files via drag-drop.
+ */
+export const OpenFilePathDataSchema = z.object({
+  filePath: z.string().min(1, 'File path cannot be empty'),
+});
+
+export type OpenFilePathDataInput = z.infer<typeof OpenFilePathDataSchema>;
+
 // ============================================================================
 // Image Operation Schemas
 // ============================================================================
@@ -191,6 +201,7 @@ export const IPCSchemaRegistry = {
   'save-image-from-data': SaveImageFromDataSchema,
   'open-external-url': OpenExternalUrlDataSchema,
   'open-mermaid-window': OpenMermaidWindowDataSchema,
+  'open-file-path': OpenFilePathDataSchema,
 } as const;
 
 export type IPCChannel = keyof typeof IPCSchemaRegistry;

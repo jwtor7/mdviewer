@@ -180,10 +180,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.1.1** — `.mp4` path-validation fix, `open-file-path` IPC hardened with Zod schema + rate limiting, 10MB cap on converted content before IPC send
 - **v5.1.0** — Video transcription: `.mp4` support added; audio/video category unified in file dialog and macOS associations
 - **v5.0.3** — Audio conversion fix: extended PATH passed to markitdown so pydub finds ffmpeg/ffprobe
-- **v5.0.2** — Packaged app resolves `markitdown` from `~/.local/bin` (uv tool install / pipx)
-- **v5.0.0** — Universal document conversion via markitdown (PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, EPUB, images, audio, archives)
 
 ## Contributing
 

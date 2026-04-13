@@ -59,7 +59,7 @@ export const SECURITY_CONFIG = {
     '.csv', '.json', '.xml',
     '.epub',
     '.jpg', '.jpeg', '.png', '.gif', '.webp', '.tiff', '.bmp',
-    '.wav', '.mp3', '.m4a',
+    '.wav', '.mp3', '.m4a', '.mp4',
     '.zip',
     '.txt', '.rst', '.rtf',
   ] as const,

@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.1] - 2026-04-13
+
+#### 00:35
+
+### Fixed
+- `.mp4` files dropped or chosen via File → Open no longer fail path validation. The file-dialog allowlist and the security path validator now agree on the full set of supported extensions
+
+### Security
+- `open-file-path` IPC channel hardened: replaced raw `ipcMain.on` handler with `ipcMain.handle` + Zod schema validation, IPC origin check, and per-window rate limiting (matches the rest of the IPC surface). Drag-drop failures now surface structured errors in the UI
+- Converted content size capped at 10MB before `file-open` is sent to the renderer, preventing oversized payloads from bypassing the `MAX_CONTENT_SIZE` guard that protects the other IPC paths
+
 ## [5.1.0] - 2026-04-12
 
 #### 23:20

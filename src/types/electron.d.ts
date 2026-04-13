@@ -96,7 +96,7 @@ export interface ElectronAPI {
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   openMermaidWindow: (data: { svg: string; theme: string }) => Promise<IPCResult<void>>;
-  openFilePath: (filePath: string) => void;
+  openFilePath: (filePath: string) => Promise<IPCResult<void>>;
   logDebug: (message: string, data?: unknown) => void;
 }
 

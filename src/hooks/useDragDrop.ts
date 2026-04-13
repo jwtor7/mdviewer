@@ -320,7 +320,14 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
         }
       }
       if (filePath && window.electronAPI?.openFilePath) {
-        window.electronAPI.openFilePath(filePath);
+        window.electronAPI.openFilePath(filePath).then((result) => {
+          if (!result.success) {
+            showError(`Cannot open file: ${result.error}`);
+          }
+        }).catch((error: unknown) => {
+          const message = error instanceof Error ? error.message : 'Unknown error';
+          showError(`Cannot open file: ${message}`);
+        });
       } else {
         showError('Cannot open convertible file');
       }
