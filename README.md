@@ -10,62 +10,62 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
-**A feature-rich, accessible, and performant Markdown Viewer for macOS built with Electron, React, and TypeScript.**
-
-![mdviewer Screenshot](https://github.com/jwtor7/mdviewer/raw/main/docs/screenshot.png)
+**The Markdown viewer that opens everything else too.**
 
 </div>
 
-## Table of Contents
+mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
 
-- [Features](#features)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Development & Testing](#development--testing)
-- [Architecture](#architecture)
-- [Changelog](#changelog)
-- [Contributing](#contributing)
-- [License](#license)
-- [Author](#author)
-- [Acknowledgments](#acknowledgments)
+Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 430 automated tests.
+
+## Why mdviewer
+
+**One window for every document you open.** Drag a vendor RFP onto the app and read the PDF as Markdown. Paste a URL's downloaded HTML and get structured content without the ads. Dump a quarterly XLSX and walk through the tables in your own typography. Drop an MP3 voice memo and get back a transcript.
+
+**Five view modes, one file.** Rendered for reading, Raw for editing, Split for live preview, Text for grep-friendly plain text, and a dedicated Mermaid diagram window for architecture sketches.
+
+**Markdown-first, everything else is gravy.** `.md` files open instantly and work entirely offline. Non-Markdown conversion runs through [microsoft/markitdown](https://github.com/microsoft/markitdown); if it's not installed, you get a helpful install dialog instead of a silent failure.
+
+## Supported Formats
+
+| Category | Extensions |
+|----------|-----------|
+| **Markdown** (native, zero dependencies) | `.md`, `.markdown` |
+| **Documents** | `.pdf`, `.docx`, `.pptx`, `.xlsx`, `.epub`, `.rtf` |
+| **Web & Data** | `.html`, `.htm`, `.csv`, `.json`, `.xml` |
+| **Plain Text** | `.txt`, `.rst` |
+| **Images** (OCR + metadata) | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.tiff`, `.bmp` |
+| **Audio** (transcription via Google Speech API) | `.wav`, `.mp3`, `.m4a` |
+| **Archives** | `.zip` |
 
 ## Features
 
-### Core
-- Multi-tab support with drag-to-spawn new windows
+### Reading & Editing
+- Multi-tab with drag-to-spawn new windows
 - Four view modes: Rendered, Raw, Split (side-by-side), Text (plain)
-- GitHub Flavored Markdown (tables, task lists, strikethrough)
-- Syntax highlighting for code blocks
-- Mermaid diagram rendering with adaptive contrast and zoomable window
+- GitHub Flavored Markdown: tables, task lists, strikethrough
+- Syntax highlighting across 180+ languages
+- Mermaid diagrams with adaptive-contrast nodes and a zoomable window
 - Synchronized selection highlighting in Split mode
-
-### Editing
-- Find & Replace with case-sensitive search, match navigation, bulk replace
+- Find & Replace with case-sensitive search and bulk replace
 - Formatting toolbar: headings, bold, italic, lists, code, quotes, links
-- Custom undo/redo history (Cmd+Z, Cmd+Shift+Z)
-- Unsaved changes indicators in tabs and window title
-- Word wrap toggle for code-heavy content
-- Rich text copy (HTML + plain text)
+- Custom undo/redo history, unsaved-change indicators, word count goals, reading-time estimate
 
 ### Themes
-- Five themes: System, Light, Dark, Solarized Light, Solarized Dark
-- Respects OS preferences in System mode
+- System, Light, Dark, Solarized Light, Solarized Dark
+- System mode follows macOS appearance in real time
 
 ### Files & Images
-- Save as Markdown (.md), PDF (.pdf), or Text (.txt)
-- Drag-drop images to embed (auto-copies to `./images/`)
-- Relative image paths supported in preview
-- Recent files menu (last 50 with full paths)
-- Unsaved changes prompts on close/quit
-- macOS file associations ("Open With", drag-drop)
-
-### Stats & Accessibility
-- Real-time word, character, and token counts
-- WCAG 2.1 with full ARIA support and keyboard navigation
+- Save as Markdown, PDF, or Text
+- Drag-drop images to embed (auto-copied to `./images/` with relative paths)
+- Recent files menu (last 50, full paths)
+- macOS file associations across every supported extension
 
 ### Privacy & Security
-- No telemetry; no external requests unless you open a link or use web search actions
-- Sandboxed environment, CSP, input validation
+- No telemetry, no analytics, no background network calls
+- Audio transcription is the only outbound request and only runs when you open an audio file
+- Sandboxed renderer, context isolation, strict CSP, Zod-validated IPC
+- See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for the full threat model
 
 ### Keyboard Shortcuts
 
@@ -76,8 +76,8 @@
 | `Cmd+S` | Save As |
 | `Cmd+W` | Close tab |
 | `Cmd+F` | Find & Replace |
-| `Cmd+B` | Bold formatting |
-| `Cmd+I` | Italic formatting |
+| `Cmd+B` | Bold |
+| `Cmd+I` | Italic |
 | `Cmd+E` | Cycle view modes (Rendered → Raw → Split → Text) |
 | `Cmd+T` | Cycle themes |
 | `Cmd+Alt+W` | Toggle word wrap |
@@ -87,173 +87,102 @@
 ## Installation
 
 ### From Source
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/jwtor7/mdviewer.git
-   cd mdviewer
-   ```
 
-2. Install dependencies (runs `scripts/setup-venv.sh` via `postinstall` to create `.venv/` with `markitdown[all]` for PDF/DOCX/XLSX/etc. conversion):
-   ```bash
-   npm install
-   ```
-   Requires `uv` or `python3` (3.10+) on PATH. Re-run with `npm run setup:venv` if the venv needs to be recreated.
-
-3. Start in development mode:
-   ```bash
-   npm start
-   ```
-
-### Build for Production
 ```bash
-# Package the app (creates app bundle)
-npm run package
-
-# Create distributable installer
-npm run make
+git clone https://github.com/jwtor7/mdviewer.git
+cd mdviewer
+npm install
+npm start
 ```
 
-**Production runtime note:** the packaged `.app` does not bundle Python. For non-Markdown conversion (PDF/DOCX/XLSX/etc.) to work on an end-user's machine, `markitdown` must be on their `PATH`. Install with:
+`npm install` runs `scripts/setup-venv.sh` via `postinstall` to create a Python venv at `.venv/` and install `markitdown[all]`. It uses `uv` if available, otherwise falls back to `python -m venv` + pip. Recreate with `npm run setup:venv` if the venv gets stale.
+
+**Requirements**: macOS, Node 20+, and either [`uv`](https://docs.astral.sh/uv/) (recommended) or Python 3.10+.
+
+### Build & Install the Production App
+
+```bash
+./scripts/Install\ mdviewer.command
+```
+
+This script builds a release, copies `mdviewer.app` into `/Applications`, and registers macOS file associations for every supported format. Markdown files become the default; documents, images, and audio register as alternate viewers so they don't steal ownership from Preview, Word, or your existing tools.
+
+**End-user runtime note**: the packaged `.app` does not bundle Python. For non-Markdown conversion to work outside your dev environment, end users need `markitdown` on their `PATH`:
 
 ```bash
 uv tool install 'markitdown[all]'   # or: pipx install 'markitdown[all]'
 ```
 
-If `markitdown` is missing, mdviewer shows an install-instructions dialog on first conversion attempt. Markdown (`.md`) files always work without this dependency.
-
-### Installing / Upgrading
-
-To install (or upgrade to) the latest version:
-
-**Option 1: Double-click** (easiest)
-- Open `scripts/Install mdviewer.command` in Finder and double-click it
-
-**Option 2: Terminal**
-```bash
-./scripts/Install\ mdviewer.command
-```
-
-This will:
-1. Remove any existing installation and app data
-2. Build the latest version from source
-3. Install to `/Applications/mdviewer.app`
+For audio conversion specifically, `ffmpeg` also needs to be reachable (`brew install ffmpeg`). If anything is missing, mdviewer surfaces a targeted install dialog — Markdown files always work with zero runtime dependencies.
 
 ### Uninstalling
 
-To completely remove mdviewer and all its data:
-
-**Option 1: Double-click** (easiest)
-- Open `scripts/Uninstall mdviewer.command` in Finder and double-click it
-
-**Option 2: Terminal**
 ```bash
 ./scripts/Uninstall\ mdviewer.command
 ```
 
-This removes:
-- `/Applications/mdviewer.app`
-- `~/Library/Application Support/mdviewer` (preferences, recent files)
-- `~/Library/Preferences/com.electron.mdviewer.plist`
-- `~/Library/Caches/com.electron.mdviewer`
-- `~/Library/Saved Application State/com.electron.mdviewer.savedState`
+Removes `/Applications/mdviewer.app`, preferences, caches, saved state, and Application Support data.
 
-## Usage
+## Development
 
-### Opening Files
-- **Drag & Drop**: Drag `.md` files onto the app icon or window
-- **File Association**: Right-click `.md` files → "Open With" → mdviewer
-- **Within App**: Use tabs to manage multiple open documents
-
-### Working with Content
-- **View Modes**: Cycle between Rendered, Raw, Split, and Text modes using toolbar buttons or `Cmd+E` (see [Features](#features) for details)
-- **Themes**: Cycle through 5 themes with toolbar button or `Cmd+T`
-- **Formatting**: Select text in Raw mode, then use toolbar buttons or keyboard shortcuts
-- **Find & Replace**: Press `Cmd+F` to open the search panel
-
-## Development & Testing
-
-### Quick Start
 ```bash
-# Development server (hot reload enabled)
-npm start
-
-# Build production app
-npm run make
+npm start            # Dev server with hot reload
+npm test             # Run the test suite
+npm run test:watch   # Watch mode
+npm run test:coverage
+npm run typecheck    # tsc across all three processes
+npm run lint
 ```
 
-### Running Tests
-```bash
-npm test              # Run all tests once
-npm run test:watch    # Watch mode (re-runs on file changes)
-npm run test:coverage # Generate coverage report
-npm run test:ui       # Launch interactive Vitest UI
-```
+**Tech stack**: Electron 39, React 19, TypeScript 5, Vite, react-markdown, remark-gfm, rehype-highlight, mermaid.
 
-**Test stack**: Vitest, React Testing Library, jsdom
+**Test stack**: Vitest, React Testing Library, jsdom. Tests are co-located with source files (`Component.test.tsx`). 430 tests at time of writing.
 
-**Test structure**: Tests are co-located with source files (`*.test.ts`, `*.test.tsx`)
-
-### Testing File Opening
-**Development mode**: Use File → Open (Cmd+O) or drag-and-drop onto app window
-**Production mode**: Build with `npm run make`, then double-click .md files in Finder
-
-### Cleanup
-```bash
-# Remove production builds
-rm -rf out/
-
-# Full clean
-rm -rf out/ node_modules/ && npm install
-```
-
+**Testing file opening in dev**: the dev server doesn't register macOS file associations. Use `Cmd+O` or drag-and-drop. For real Launch Services testing, build a production `.app` via `npm run make` and install it.
 
 ## Architecture
 
-**Tech Stack**: Electron 39.2.3, React 19.2.0, TypeScript 5.9.3, Vite, react-markdown, remark-gfm, rehype-highlight, mermaid
-
-**Project Structure**:
 ```
 src/
-├── main.ts, preload.ts, renderer.tsx, App.tsx
-├── main/           # Modular main process (security/, storage/, windowManager)
-├── components/     # MarkdownPreview, CodeEditor, MermaidDiagram, ErrorNotification, FindReplace
-├── hooks/          # useDocuments, useTheme, useTextFormatting, useFileHandler, etc.
-├── types/          # TypeScript definitions + Zod IPC schemas
-├── utils/          # Utility functions
-└── constants/      # Configuration values
+├── main.ts           Main process entry
+├── preload.ts        Context-isolated IPC bridge
+├── renderer.tsx      React entry
+├── App.tsx           Application shell
+├── main/             Modular main-process code
+│   ├── security/     IPC validation, rate limiting, path validation
+│   ├── storage/      Preferences, recent files
+│   ├── markitdown.ts Conversion module + PATH resolution
+│   ├── windowManager.ts
+│   └── fileWatcher.ts
+├── components/       MarkdownPreview, CodeEditor, MermaidDiagram, FindReplace, ...
+├── hooks/            12 custom hooks (useDocuments, useTheme, useFileHandler, ...)
+├── types/            Type definitions + Zod IPC schemas
+├── utils/            Text stats, PDF rendering
+└── constants/        Configuration values
 ```
 
-**Key Patterns**:
-- Modular main process: security (IPC validation, rate limiting, path validation), storage (preferences, recent files), window management
-- Custom React hooks for state management (12 hooks extracted from App.tsx)
-- Zod-based runtime validation for all IPC handlers
-- 430 tests with Vitest and React Testing Library
-
-**Security Model**: Sandboxed renderer with context isolation, Zod IPC validation, rate limiting, path traversal protection, URL allowlisting, strict CSP. See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for details.
+**Security model**: sandboxed renderer with context isolation, all IPC handlers wrapped in Zod runtime validation, per-window rate limiting, path-traversal protection, URL allowlisting, and a strict Content Security Policy. Every inbound channel has a schema; every outbound URL runs through `validateExternalUrl`.
 
 ## Changelog
 
-Full history: [CHANGELOG.md](./CHANGELOG.md)
+Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
-**2026-04-12 22:43** — v5.0.3 Audio conversion fix: child process PATH now includes `/opt/homebrew/bin` so pydub finds ffmpeg/ffprobe
-
-**2026-04-12 22:41** — v5.0.2 Packaged app now finds `markitdown` installed via `uv tool install` / `pipx` in `~/.local/bin`
-
-**2026-04-12 22:40** — v5.0.1 File dialog now allows audio and image selection; macOS associations extended to images and audio
-
-*For complete history, see [CHANGELOG.md](./CHANGELOG.md)*
+- **v5.0.3** — Audio conversion fix: extended PATH passed to markitdown so pydub finds ffmpeg/ffprobe
+- **v5.0.2** — Packaged app resolves `markitdown` from `~/.local/bin` (uv tool install / pipx)
+- **v5.0.1** — File dialog allows audio and image selection; macOS associations extended to images and audio
+- **v5.0.0** — Universal document conversion via markitdown (PDF, DOCX, PPTX, XLSX, HTML, CSV, JSON, EPUB, images, audio, archives)
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit issues or pull requests.
+Issues and pull requests are welcome.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details
+MIT — see [LICENSE](LICENSE).
 
 ## Author
 
-**Junior**
+**Junior Williams**
 
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0077B5?style=for-the-badge&logo=linkedin&logoColor=white)](https://ca.linkedin.com/in/juniorw)
 [![YouTube](https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white)](https://www.youtube.com/@jr.trustcyber)
@@ -262,7 +191,9 @@ MIT License - see [LICENSE](LICENSE) for details
 
 ## Acknowledgments
 
-- Built with [Electron](https://www.electronjs.org/)
-- UI powered by [React](https://react.dev/)
-- Markdown rendering by [react-markdown](https://github.com/remarkjs/react-markdown)
-- Syntax highlighting by [react-syntax-highlighter](https://github.com/react-syntax-highlighter/react-syntax-highlighter)
+- [Electron](https://www.electronjs.org/) for the runtime
+- [React](https://react.dev/) for the UI
+- [react-markdown](https://github.com/remarkjs/react-markdown) for rendering
+- [react-syntax-highlighter](https://github.com/react-syntax-highlighter/react-syntax-highlighter) for code blocks
+- [microsoft/markitdown](https://github.com/microsoft/markitdown) for universal document conversion
+- [mermaid](https://mermaid.js.org/) for diagrams
