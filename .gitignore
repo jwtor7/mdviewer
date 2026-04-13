@@ -97,5 +97,11 @@ SECURITY.md
 .vite/
 dist/
 
+# Python venv (markitdown)
+.venv/
+
+# Claude Code local state
+.claude/
+
 # Electron-Forge
 out/

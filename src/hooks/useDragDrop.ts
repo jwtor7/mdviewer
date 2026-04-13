@@ -1,6 +1,9 @@
 import { useCallback, useRef } from 'react';
-import { RENDERER_SECURITY, IMAGE_CONFIG } from '../constants/index.js';
+import { RENDERER_SECURITY, IMAGE_CONFIG, SECURITY_CONFIG } from '../constants/index.js';
 import type { Document, DraggableDocument } from '../types/document.js';
+
+const CONVERTIBLE_EXTENSIONS: readonly string[] = SECURITY_CONFIG.CONVERTIBLE_EXTENSIONS as unknown as readonly string[];
+const ALL_OPENABLE_EXTENSIONS = ['.md', '.markdown', ...CONVERTIBLE_EXTENSIONS];
 
 /**
  * Configuration for the drag-drop hook
@@ -238,14 +241,19 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
 
     const files = Array.from(e.dataTransfer.files);
 
-    // Separate markdown files and image files
     const markdownFiles = files.filter((file: File) =>
       file.name.endsWith('.md') || file.name.endsWith('.markdown')
     );
 
+    const convertibleFiles = files.filter((file: File) => {
+      const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+      return CONVERTIBLE_EXTENSIONS.includes(ext);
+    });
+
     const imageFiles = files.filter((file: File) => {
       const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-      return (IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext);
+      return (IMAGE_CONFIG.ALLOWED_IMAGE_EXTENSIONS as readonly string[]).includes(ext)
+        && !CONVERTIBLE_EXTENSIONS.includes(ext);
     });
 
     // Handle image file drops
@@ -300,6 +308,23 @@ export const useDragDrop = (config: UseDragDropConfig): UseDragDropReturn => {
         }
       })();
     }
+
+    // Handle convertible file drops (PDF, DOCX, etc.) via main process
+    convertibleFiles.forEach((file: File) => {
+      let filePath: string | null = null;
+      if (window.electronAPI?.getPathForFile) {
+        try {
+          filePath = window.electronAPI.getPathForFile(file);
+        } catch (error) {
+          console.error('Failed to get path for file', error);
+        }
+      }
+      if (filePath && window.electronAPI?.openFilePath) {
+        window.electronAPI.openFilePath(filePath);
+      } else {
+        showError('Cannot open convertible file');
+      }
+    });
 
     // Handle markdown file drops
     markdownFiles.forEach(async (file: File) => {

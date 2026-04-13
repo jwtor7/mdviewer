@@ -12,6 +12,7 @@ import { convertMarkdownToText } from './utils/textConverter.js';
 import { validateFileContent } from './utils/fileValidator.js';
 import { withIPCHandlerNoInput, withValidatedIPCHandler } from './main/security/ipcValidation.js';
 import { isPathSafe, sanitizeError, validateExternalUrl } from './main/security/pathValidation.js';
+import { isMarkdownFile, isConvertibleFile, convertToMarkdown, getFileDialogFilters, MarkitdownNotInstalledError } from './main/markitdown.js';
 import {
   SaveFileDataSchema,
   ReadFileDataSchema,
@@ -251,16 +252,14 @@ const clearRecentFiles = (): void => {
  */
 const openFile = async (filepath: string, targetWindow: BrowserWindow | null = mainWindow): Promise<void> => {
   try {
-    // Security: Validate file path to prevent path traversal and enforce allowed extensions
     if (!isPathSafe(filepath)) {
       dialog.showErrorBox(
         'Invalid File',
-        'Only Markdown files (.md, .markdown) can be opened.'
+        'This file type is not supported.'
       );
       return;
     }
 
-    // Security: Check file size to prevent memory exhaustion
     const stats = await fsPromises.stat(filepath);
     if (stats.size > SECURITY_CONFIG.MAX_FILE_SIZE) {
       const maxSizeMB = SECURITY_CONFIG.MAX_FILE_SIZE / (1024 * 1024);
@@ -271,30 +270,53 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
       return;
     }
 
-    // Security: Read file as Buffer first for integrity validation (MEDIUM-2 fix)
-    const buffer = await fsPromises.readFile(filepath);
+    let content: string;
+    let isConverted = false;
+    const ext = path.extname(filepath).toLowerCase();
 
-    // Security: Validate file content integrity (UTF-8, BOM, binary detection)
-    const validation = validateFileContent(buffer);
-    if (!validation.valid || !validation.content) {
-      console.warn(`[SECURITY] File integrity validation failed for: ${path.basename(filepath)}`);
-      dialog.showErrorBox(
-        'Invalid File Content',
-        validation.error || 'File content could not be validated.'
-      );
-      return;
+    if (isConvertibleFile(filepath)) {
+      try {
+        content = await convertToMarkdown(filepath);
+        isConverted = true;
+      } catch (err) {
+        console.error('markitdown conversion error:', err);
+        if (err instanceof MarkitdownNotInstalledError) {
+          dialog.showErrorBox(
+            'markitdown Not Installed',
+            `mdviewer needs the markitdown tool to convert ${path.basename(filepath)}.\n\nInstall it with one of:\n\n  • uv tool install 'markitdown[all]'\n  • pipx install 'markitdown[all]'\n  • pip install 'markitdown[all]'\n\nMake sure the 'markitdown' command is on your PATH, then try again.`
+          );
+        } else {
+          dialog.showErrorBox(
+            'Conversion Failed',
+            `Could not convert ${path.basename(filepath)} to Markdown.\n\n${(err as Error).message}`
+          );
+        }
+        return;
+      }
+    } else {
+      const buffer = await fsPromises.readFile(filepath);
+      const validation = validateFileContent(buffer);
+      if (!validation.valid || !validation.content) {
+        console.warn(`[SECURITY] File integrity validation failed for: ${path.basename(filepath)}`);
+        dialog.showErrorBox(
+          'Invalid File Content',
+          validation.error || 'File content could not be validated.'
+        );
+        return;
+      }
+      content = validation.content;
     }
 
-    // Send validated content to renderer if window is still valid
     if (targetWindow && !targetWindow.isDestroyed()) {
       const fileData: FileOpenData = {
         filePath: filepath,
-        content: validation.content,
-        name: path.basename(filepath)
+        content,
+        name: path.basename(filepath),
+        isConverted,
+        originalFormat: ext,
       };
       targetWindow.webContents.send('file-open', fileData);
 
-      // Add to recent files list
       addRecentFile(filepath);
     }
   } catch (err) {
@@ -306,6 +328,14 @@ const openFile = async (filepath: string, targetWindow: BrowserWindow | null = m
 
 // Tab drag and drop status tracking
 
+
+ipcMain.on('open-file-path', (event, data: unknown) => {
+  if (!data || typeof data !== 'object' || !('filePath' in data)) return;
+  const { filePath } = data as { filePath: string };
+  if (typeof filePath !== 'string') return;
+  const win = BrowserWindow.fromWebContents(event.sender);
+  openFile(filePath, win);
+});
 
 if (!app.isPackaged) {
   ipcMain.on('log-debug', (_event, { message, data }) => {

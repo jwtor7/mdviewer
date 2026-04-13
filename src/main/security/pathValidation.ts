@@ -11,25 +11,22 @@ import path from 'node:path';
 import { app } from 'electron';
 import { SECURITY_CONFIG, URL_SECURITY } from '../../constants/index.js';
 
-/**
- * Security utility: Validates that a file path is safe to open.
- * Prevents path traversal attacks and enforces allowed file extensions.
- *
- * @param filepath - The file path to validate
- * @returns true if the path is safe, false otherwise
- */
-export const isPathSafe = (filepath: string): boolean => {
-  try {
-    // Resolve to absolute path to prevent traversal
-    const resolved = path.resolve(filepath);
+const ALL_ALLOWED_EXTENSIONS: readonly string[] = [
+  ...SECURITY_CONFIG.ALLOWED_EXTENSIONS,
+  ...SECURITY_CONFIG.CONVERTIBLE_EXTENSIONS,
+];
 
-    // Check file extension (only allow markdown files)
+export const isPathSafe = (filepath: string, markdownOnly = false): boolean => {
+  try {
+    const resolved = path.resolve(filepath);
     const ext = path.extname(resolved).toLowerCase();
-    if (!SECURITY_CONFIG.ALLOWED_EXTENSIONS.includes(ext as '.md' | '.markdown')) {
+    const allowed = markdownOnly
+      ? (SECURITY_CONFIG.ALLOWED_EXTENSIONS as readonly string[])
+      : ALL_ALLOWED_EXTENSIONS;
+    if (!allowed.includes(ext)) {
       console.warn(`Rejected file with invalid extension: ${ext}`);
       return false;
     }
-
     return true;
   } catch (error) {
     console.error('Path validation error:', error);

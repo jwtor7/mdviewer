@@ -5,6 +5,27 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-04-12
+
+#### 22:25
+
+### Added
+- **Universal document conversion** via [markitdown](https://github.com/microsoft/markitdown) — open PDF, DOCX, PPTX, XLSX, HTML/HTM, CSV, JSON, XML, EPUB, TXT, RST, RTF, images (JPG/PNG/GIF/WebP/TIFF/BMP), audio (WAV/MP3/M4A), and ZIP archives; non-Markdown files are converted to Markdown on open
+- `src/main/markitdown.ts` conversion module with extension whitelist, venv-path resolution, and PATH fallback
+- `FileOpenData.isConverted` and `FileOpenData.originalFormat` surfaced to the renderer for future UI affordances
+- `scripts/setup-venv.sh` — idempotent Python venv bootstrap; uses `uv` when available, falls back to `python3 -m venv` + pip; installs `markitdown[all]`
+- `postinstall` and `setup:venv` npm scripts wire the bootstrap into `npm install`
+- `open-file-path` IPC channel for renderer-initiated file opens
+- macOS file associations extended to all convertible document extensions (Viewer role, Alternate rank; Markdown remains Owner)
+
+### Changed
+- File-dialog filters now present grouped categories (All Supported / Markdown / Documents / Web & Data / All Files)
+- `isPathSafe()` accepts convertible extensions by default; a new `markdownOnly` flag preserves strict validation where needed
+- Conversion failures surface a distinct **"markitdown Not Installed"** dialog with install instructions when the binary cannot be located on PATH or in the bundled venv
+
+### Developer Notes
+- Production `.app` does not bundle Python; end users need `markitdown` on PATH for non-Markdown conversion (documented in README). Markdown files continue to work with zero runtime dependencies.
+
 ## [4.2.3] - 2026-03-29
 
 #### 16:18

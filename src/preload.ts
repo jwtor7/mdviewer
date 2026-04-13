@@ -90,5 +90,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('save-image-from-data', { imageData, markdownFilePath }),
   openMermaidWindow: (data: { svg: string; theme: string }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('open-mermaid-window', data),
+  openFilePath: (filePath: string): void => ipcRenderer.send('open-file-path', { filePath }),
   logDebug: (message: string, data?: any): void => ipcRenderer.send('log-debug', { message, data }),
 } satisfies ElectronAPI);

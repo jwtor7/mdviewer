@@ -13,6 +13,12 @@ module.exports = {
           LSItemContentTypes: ['net.daringfireball.markdown'],
           CFBundleTypeExtensions: ['md', 'markdown'],
         },
+        {
+          CFBundleTypeName: 'Document',
+          CFBundleTypeRole: 'Viewer',
+          LSHandlerRank: 'Alternate',
+          CFBundleTypeExtensions: ['pdf', 'docx', 'pptx', 'xlsx', 'html', 'htm', 'csv', 'json', 'xml', 'epub', 'txt', 'rst', 'rtf'],
+        },
       ],
     },
   },

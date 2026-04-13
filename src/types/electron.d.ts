@@ -2,6 +2,8 @@ export interface FileOpenData {
   filePath: string | null;
   content: string;
   name: string;
+  isConverted?: boolean;
+  originalFormat?: string;
 }
 
 export interface PDFExportData {
@@ -65,7 +67,9 @@ export type IPCMessage =
   /** Copy an image file to the document's images directory */
   | { channel: 'copy-image-to-document'; data: { imagePath: string; markdownFilePath: string } }
   /** Open a mermaid diagram in a dedicated zoomable window */
-  | { channel: 'open-mermaid-window'; data: { svg: string; theme: string } };
+  | { channel: 'open-mermaid-window'; data: { svg: string; theme: string } }
+  /** Request main process to open a file (handles conversion for non-markdown) */
+  | { channel: 'open-file-path'; data: { filePath: string } };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -92,6 +96,7 @@ export interface ElectronAPI {
   copyImageToDocument: (imagePath: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   openMermaidWindow: (data: { svg: string; theme: string }) => Promise<IPCResult<void>>;
+  openFilePath: (filePath: string) => void;
   logDebug: (message: string, data?: unknown) => void;
 }
 

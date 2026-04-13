@@ -1,7 +1,7 @@
 {
   "name": "mdviewer",
   "productName": "mdviewer",
-  "version": "4.2.3",
+  "version": "5.0.0",
   "description": "A feature-rich, accessible Markdown Viewer for macOS",
   "main": ".vite/build/main.js",
   "build": {
@@ -10,10 +10,17 @@
         "ext": "md",
         "name": "Markdown File",
         "role": "Editor"
+      },
+      {
+        "ext": ["pdf", "docx", "pptx", "xlsx", "html", "csv", "json", "xml", "epub", "txt"],
+        "name": "Document",
+        "role": "Viewer"
       }
     ]
   },
   "scripts": {
+    "postinstall": "bash scripts/setup-venv.sh",
+    "setup:venv": "bash scripts/setup-venv.sh",
     "start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",

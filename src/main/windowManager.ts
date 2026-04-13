@@ -10,6 +10,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import { WINDOW_CONFIG } from '../constants/index.js';
 import { unwatchAllForWindow } from './fileWatcher.js';
+import { getFileDialogFilters } from './markitdown.js';
 
 /**
  * Vite-injected global variables for dev/prod environments
@@ -78,10 +79,7 @@ export const createMenu = (
             if (!mainWindow) return;
             const result = await dialog.showOpenDialog(mainWindow, {
               properties: ['openFile'],
-              filters: [
-                { name: 'Markdown Files', extensions: ['md', 'markdown'] },
-                { name: 'All Files', extensions: ['*'] }
-              ]
+              filters: getFileDialogFilters(),
             });
             if (!result.canceled && result.filePaths.length > 0) {
               onOpenFile(result.filePaths[0]);
