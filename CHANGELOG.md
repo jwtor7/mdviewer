@@ -5,6 +5,16 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.1.2] - 2026-04-15
+
+#### 01:32
+
+### Changed
+- README now includes a collapsible architecture diagram (`docs/architecture-diagram.png`) under the Architecture section
+
+### Fixed
+- README accuracy drift: version badge, test count updated to 434, hook count updated to 14
+
 ## [5.1.1] - 2026-04-13
 
 #### 00:35

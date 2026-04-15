@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.1.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -16,7 +16,7 @@
 
 mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
 
-Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 430 automated tests.
+Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 434 automated tests.
 
 ## Drop-in Transcription for Audio and Video
 
@@ -149,7 +149,7 @@ npm run lint
 
 **Tech stack**: Electron 39, React 19, TypeScript 5, Vite, react-markdown, remark-gfm, rehype-highlight, mermaid.
 
-**Test stack**: Vitest, React Testing Library, jsdom. Tests are co-located with source files (`Component.test.tsx`). 430 tests at time of writing.
+**Test stack**: Vitest, React Testing Library, jsdom. Tests are co-located with source files (`Component.test.tsx`). 434 tests at time of writing.
 
 **Testing file opening in dev**: the dev server doesn't register macOS file associations. Use `Cmd+O` or drag-and-drop. For real Launch Services testing, build a production `.app` via `npm run make` and install it.
 
@@ -168,7 +168,7 @@ src/
 │   ├── windowManager.ts
 │   └── fileWatcher.ts
 ├── components/       MarkdownPreview, CodeEditor, MermaidDiagram, FindReplace, ...
-├── hooks/            12 custom hooks (useDocuments, useTheme, useFileHandler, ...)
+├── hooks/            14 custom hooks (useDocuments, useTheme, useFileHandler, ...)
 ├── types/            Type definitions + Zod IPC schemas
 ├── utils/            Text stats, PDF rendering
 └── constants/        Configuration values
@@ -187,9 +187,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.1.2** — Collapsible architecture diagram added to README; version badge, test count (434), and hook count (14) corrected
 - **v5.1.1** — `.mp4` path-validation fix, `open-file-path` IPC hardened with Zod schema + rate limiting, 10MB cap on converted content before IPC send
 - **v5.1.0** — Video transcription: `.mp4` support added; audio/video category unified in file dialog and macOS associations
-- **v5.0.3** — Audio conversion fix: extended PATH passed to markitdown so pydub finds ffmpeg/ffprobe
 
 ## Contributing
 
