@@ -176,6 +176,13 @@ src/
 
 **Security model**: sandboxed renderer with context isolation, all IPC handlers wrapped in Zod runtime validation, per-window rate limiting, path-traversal protection, URL allowlisting, and a strict Content Security Policy. Every inbound channel has a schema; every outbound URL runs through `validateExternalUrl`.
 
+<details>
+<summary>Architecture diagram</summary>
+
+![Architecture diagram](./docs/architecture-diagram.png)
+
+</details>
+
 ## Changelog
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
