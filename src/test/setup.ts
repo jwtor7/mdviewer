@@ -86,6 +86,12 @@ const mockElectronAPI = {
   copyImageToDocument: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/test.png' } })),
   saveImageFromData: vi.fn(() => Promise.resolve({ success: true, data: { relativePath: './images/pasted.png' } })),
   openMermaidWindow: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  startSpeech: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  stopSpeech: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  pauseSpeech: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  resumeSpeech: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
+  listVoices: vi.fn(() => Promise.resolve({ success: true, data: [] as Array<{ name: string; language: string; sampleText: string }> })),
+  onSpeechEnd: vi.fn(() => vi.fn()),
   logDebug: vi.fn(),
 };
 

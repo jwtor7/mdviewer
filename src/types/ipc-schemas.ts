@@ -182,6 +182,22 @@ export const OpenMermaidWindowDataSchema = z.object({
 export type OpenMermaidWindowDataInput = z.infer<typeof OpenMermaidWindowDataSchema>;
 
 // ============================================================================
+// Text-to-Speech Schemas
+// ============================================================================
+
+/**
+ * Schema for tts:speak IPC handler.
+ * Validates text, optional voice, and optional rate for narrating markdown.
+ */
+export const SpeakTextDataSchema = z.object({
+  text: z.string().min(1, 'Text cannot be empty').max(100_000, 'Text exceeds 100,000 character limit'),
+  voice: z.string().max(64).optional(),
+  rate: z.number().int().min(50).max(500).optional(),
+});
+
+export type SpeakTextDataInput = z.infer<typeof SpeakTextDataSchema>;
+
+// ============================================================================
 // Schema Registry
 // ============================================================================
 
@@ -202,6 +218,7 @@ export const IPCSchemaRegistry = {
   'open-external-url': OpenExternalUrlDataSchema,
   'open-mermaid-window': OpenMermaidWindowDataSchema,
   'open-file-path': OpenFilePathDataSchema,
+  'tts:speak': SpeakTextDataSchema,
 } as const;
 
 export type IPCChannel = keyof typeof IPCSchemaRegistry;

@@ -69,7 +69,19 @@ export type IPCMessage =
   /** Open a mermaid diagram in a dedicated zoomable window */
   | { channel: 'open-mermaid-window'; data: { svg: string; theme: string } }
   /** Request main process to open a file (handles conversion for non-markdown) */
-  | { channel: 'open-file-path'; data: { filePath: string } };
+  | { channel: 'open-file-path'; data: { filePath: string } }
+  /** Start narrating text via the macOS `say` command */
+  | { channel: 'tts:speak'; data: { text: string; voice?: string; rate?: number } }
+  /** Stop any active narration */
+  | { channel: 'tts:stop'; data: void }
+  /** Notification that narration finished (naturally or via stop) */
+  | { channel: 'tts:ended'; data: void }
+  /** List installed macOS `say` voices */
+  | { channel: 'tts:list-voices'; data: void }
+  /** Pause active narration via SIGSTOP */
+  | { channel: 'tts:pause'; data: void }
+  /** Resume paused narration via SIGCONT */
+  | { channel: 'tts:resume'; data: void };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -97,6 +109,12 @@ export interface ElectronAPI {
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   openMermaidWindow: (data: { svg: string; theme: string }) => Promise<IPCResult<void>>;
   openFilePath: (filePath: string) => Promise<IPCResult<void>>;
+  startSpeech: (data: { text: string; voice?: string; rate?: number }) => Promise<IPCResult<void>>;
+  stopSpeech: () => Promise<IPCResult<void>>;
+  pauseSpeech: () => Promise<IPCResult<void>>;
+  resumeSpeech: () => Promise<IPCResult<void>>;
+  listVoices: () => Promise<IPCResult<Array<{ name: string; language: string; sampleText: string }>>>;
+  onSpeechEnd: (callback: () => void) => () => void;
   logDebug: (message: string, data?: unknown) => void;
 }
 

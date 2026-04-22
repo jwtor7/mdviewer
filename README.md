@@ -62,6 +62,7 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 - Synchronized selection highlighting in Split mode
 - Find & Replace with case-sensitive search and bulk replace
 - Formatting toolbar: headings, bold, italic, lists, code, quotes, links
+- Read Aloud: native macOS narration that skips URLs, code blocks, and ASCII tables. Voice/rate picker, pause/resume, per-tab scoping, sentence and chapter navigation, and synchronized paragraph highlighting in Rendered view
 - Custom undo/redo history, unsaved-change indicators, word count goals, reading-time estimate
 
 ### Themes
@@ -96,6 +97,11 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 | `Cmd+Alt+W` | Toggle word wrap |
 | `Cmd+Z` | Undo |
 | `Cmd+Shift+Z` / `Cmd+Y` | Redo |
+| `Cmd+Shift+R` | Start / pause / resume reading |
+| `Cmd+Shift+.` | Stop reading |
+| `Cmd+Shift+→` / `Cmd+Shift+←` | Next / previous sentence while reading |
+| `Cmd+Shift+]` / `Cmd+Shift+[` | Next / previous chapter while reading |
+| `Cmd+Alt+Shift+R` | Read from cursor (Raw or Split view) |
 
 ## Installation
 
