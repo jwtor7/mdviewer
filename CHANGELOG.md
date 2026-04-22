@@ -5,6 +5,25 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.0] - 2026-04-21
+
+#### 23:48
+
+### Added
+- Read-aloud narration backed by the macOS `say` command. New 🔊 toolbar button starts TTS for the active document; pause (⏸), resume (▶), and stop (⏹) controls are available once narration is active
+- Visible transport cluster appears while reading: ⏮ previous chapter, ⏪ previous sentence, ⏩ next sentence, ⏭ next chapter. Chapter buttons disable gracefully when the document has no headings
+- Settings dropdown (▾) exposes voice picker (grouped by language), rate slider (50–500 wpm), voice test, Read-from-cursor, and a live chapter list populated from H1 or H2 headings
+- Keyboard shortcuts: `Cmd+Shift+R` play/pause, `Cmd+Shift+.` stop, `Cmd+Shift+←/→` previous/next sentence, `Cmd+Shift+[/]` previous/next chapter, `Cmd+Alt+Shift+R` read from cursor
+- Live rate and voice updates: sliding the rate or picking a new voice mid-utterance restarts the current sentence so the change is audible within ~1 sentence instead of waiting for a full stop-and-restart
+- Per-tab narration ownership: switching tabs stops narration tied to the previous tab; the speaking tab is tracked separately from the active tab
+- Paragraph-level highlighting in the rendered view follows the speaking chunk via a new `rehypeSpeakingHighlight` plugin
+
+### Fixed
+- Pause no longer produces a "play-fragment / pause" loop when the `say` process exits naturally at the moment the user hits pause. A pause-gate parks the playback loop between sentences regardless of SIGSTOP timing
+- Next-chapter on the last chapter no longer stops narration entirely; it now stays on the current chapter
+- Previous-chapter now follows standard media-player semantics: rewinds to the start of the current chapter when inside it, jumps to the previous chapter only when already at a boundary
+- `showError` reference stabilized with `useCallback`, preventing cascading re-renders through the TTS callback graph
+
 ## [5.1.2] - 2026-04-15
 
 #### 01:32
