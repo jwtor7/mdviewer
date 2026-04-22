@@ -11,6 +11,13 @@ export interface UseKeyboardShortcutsProps {
   onUndo?: () => void;
   onRedo?: () => void;
   onNew?: () => void;
+  onReadAloud?: () => void;
+  onStopReading?: () => void;
+  onNextSentence?: () => void;
+  onPrevSentence?: () => void;
+  onNextChapter?: () => void;
+  onPrevChapter?: () => void;
+  onReadFromCursor?: () => void;
 }
 
 export const useKeyboardShortcuts = ({
@@ -24,6 +31,13 @@ export const useKeyboardShortcuts = ({
   onUndo,
   onRedo,
   onNew,
+  onReadAloud,
+  onStopReading,
+  onNextSentence,
+  onPrevSentence,
+  onNextChapter,
+  onPrevChapter,
+  onReadFromCursor,
 }: UseKeyboardShortcutsProps): void => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
@@ -84,9 +98,44 @@ export const useKeyboardShortcuts = ({
         e.preventDefault();
         onNew();
       }
+      // Cmd/Ctrl + Shift + R: Read aloud (but NOT when Alt is held — that's Read from cursor)
+      if (isMod && e.shiftKey && !e.altKey && e.key.toLowerCase() === 'r' && onReadAloud) {
+        e.preventDefault();
+        onReadAloud();
+      }
+      // Cmd/Ctrl + Shift + .: Stop reading (macOS cancel convention)
+      if (isMod && e.shiftKey && e.key === '.' && onStopReading) {
+        e.preventDefault();
+        onStopReading();
+      }
+      // Cmd/Ctrl + Shift + ArrowRight: Next sentence
+      if (isMod && e.shiftKey && e.key === 'ArrowRight' && onNextSentence) {
+        e.preventDefault();
+        onNextSentence();
+      }
+      // Cmd/Ctrl + Shift + ArrowLeft: Previous sentence
+      if (isMod && e.shiftKey && e.key === 'ArrowLeft' && onPrevSentence) {
+        e.preventDefault();
+        onPrevSentence();
+      }
+      // Cmd/Ctrl + Shift + ]: Next chapter
+      if (isMod && e.shiftKey && e.key === ']' && onNextChapter) {
+        e.preventDefault();
+        onNextChapter();
+      }
+      // Cmd/Ctrl + Shift + [: Previous chapter
+      if (isMod && e.shiftKey && e.key === '[' && onPrevChapter) {
+        e.preventDefault();
+        onPrevChapter();
+      }
+      // Cmd/Ctrl + Alt + Shift + R: Read from cursor
+      if (isMod && e.altKey && e.shiftKey && e.key.toLowerCase() === 'r' && onReadFromCursor) {
+        e.preventDefault();
+        onReadFromCursor();
+      }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onBold, onItalic, onToggleView, onToggleTheme, onToggleWordWrap, onSave, onFind, onUndo, onRedo, onNew]);
+  }, [onBold, onItalic, onToggleView, onToggleTheme, onToggleWordWrap, onSave, onFind, onUndo, onRedo, onNew, onReadAloud, onStopReading, onNextSentence, onPrevSentence, onNextChapter, onPrevChapter, onReadFromCursor]);
 };

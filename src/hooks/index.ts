@@ -12,6 +12,7 @@ export { useIPCListeners } from './useIPCListeners.js';
 export { useSplitPaneDivider } from './useSplitPaneDivider.js';
 export { useOutsideClickHandler } from './useOutsideClickHandler.js';
 export { useFileWatcher } from './useFileWatcher.js';
+export { useTextToSpeech } from './useTextToSpeech.js';
 
 // Re-export types
 export type { UseDocumentsReturn, DocumentUpdate } from './useDocuments.js';
@@ -27,3 +28,6 @@ export type { UseIPCListenersProps } from './useIPCListeners.js';
 export type { UseSplitPaneDividerProps, UseSplitPaneDividerReturn } from './useSplitPaneDivider.js';
 export type { UseOutsideClickHandlerProps } from './useOutsideClickHandler.js';
 export type { UseFileWatcherProps } from './useFileWatcher.js';
+export type { UseTextToSpeechResult, UseTextToSpeechOptions, SpeakOptions } from './useTextToSpeech.js';
+export { useTTSPreferences, TTS_RATE_BOUNDS } from './useTTSPreferences.js';
+export type { UseTTSPreferencesReturn } from './useTTSPreferences.js';

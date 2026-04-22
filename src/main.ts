@@ -26,10 +26,13 @@ import {
   OpenExternalUrlDataSchema,
   OpenMermaidWindowDataSchema,
   OpenFilePathDataSchema,
+  SpeakTextDataSchema,
   type SaveFileDataInput,
   type ReadFileDataInput,
   type ExportPdfDataInput,
+  type SpeakTextDataInput,
 } from './types/ipc-schemas.js';
+import { startSpeech, stopSpeech, pauseSpeech, resumeSpeech, cleanupSpeech, setSpeechEndCallback, listVoices } from './main/tts.js';
 import {
   createMenu,
   createWindow,
@@ -1234,6 +1237,67 @@ ipcMain.handle(
   )
 );
 
+// tts:speak — narrate text via macOS `say`
+ipcMain.handle(
+  'tts:speak',
+  withValidatedIPCHandler(
+    { schema: SpeakTextDataSchema, handlerName: 'tts:speak' },
+    async (data: SpeakTextDataInput, event): Promise<void> => {
+      const sender = event.sender;
+      setSpeechEndCallback((reason) => {
+        if (reason === 'stopped') return;
+        if (sender.isDestroyed()) return;
+        sender.send('tts:ended');
+      });
+      startSpeech({ text: data.text, voice: data.voice, rate: data.rate });
+    }
+  )
+);
+
+// tts:stop — cancel any active narration
+ipcMain.handle(
+  'tts:stop',
+  withIPCHandlerNoInput(
+    { handlerName: 'tts:stop' },
+    async (): Promise<void> => {
+      stopSpeech();
+    }
+  )
+);
+
+// tts:list-voices — enumerate installed macOS voices
+ipcMain.handle(
+  'tts:list-voices',
+  withIPCHandlerNoInput(
+    { handlerName: 'tts:list-voices' },
+    async () => {
+      return listVoices();
+    }
+  )
+);
+
+// tts:pause — pause the active say process via SIGSTOP
+ipcMain.handle(
+  'tts:pause',
+  withIPCHandlerNoInput(
+    { handlerName: 'tts:pause' },
+    async (): Promise<void> => {
+      pauseSpeech();
+    }
+  )
+);
+
+// tts:resume — resume a paused say process via SIGCONT
+ipcMain.handle(
+  'tts:resume',
+  withIPCHandlerNoInput(
+    { handlerName: 'tts:resume' },
+    async (): Promise<void> => {
+      resumeSpeech();
+    }
+  )
+);
+
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
 // This catches files opened via "Open With" or drag-and-drop onto app icon
 app.on('open-file', (event: Electron.Event, filePath: string) => {
@@ -1306,7 +1370,19 @@ app.whenReady().then(async () => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', () => {
+  cleanupSpeech();
   if (process.platform !== 'darwin') {
     app.quit();
   }
+});
+
+app.on('before-quit', () => {
+  cleanupSpeech();
+});
+
+// Stop narration if the window that initiated it is closing.
+app.on('browser-window-created', (_event, win) => {
+  win.on('close', () => {
+    cleanupSpeech();
+  });
 });

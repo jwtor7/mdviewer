@@ -1544,6 +1544,149 @@ body {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Read Aloud dropdown */
+.read-aloud-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.read-aloud-caret {
+  padding: 0 6px;
+  min-width: 0;
+  font-size: 12px;
+}
+
+.read-aloud-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  background-color: var(--toolbar-bg);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  min-width: 260px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-in;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.read-aloud-menu-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.read-aloud-menu-row label {
+  font-size: 12px;
+  color: var(--text-color);
+  opacity: 0.85;
+}
+
+.read-aloud-menu-row select,
+.read-aloud-menu-row input[type='range'] {
+  width: 100%;
+  background-color: var(--btn-bg, transparent);
+  color: var(--text-color);
+  border: 1px solid var(--toolbar-border);
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.read-aloud-menu-row input[type='range'] {
+  padding: 0;
+}
+
+.read-aloud-rate-value {
+  font-weight: bold;
+}
+
+.read-aloud-rate-unit {
+  opacity: 0.7;
+}
+
+.read-aloud-menu-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+}
+
+.read-aloud-test-btn {
+  background-color: var(--btn-bg, transparent);
+  border: 1px solid var(--toolbar-border);
+  color: var(--text-color);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.read-aloud-test-btn:hover {
+  background-color: var(--btn-hover);
+}
+
+.read-aloud-menu-error {
+  font-size: 11px;
+  color: #d06060;
+}
+
+.read-aloud-chapters label {
+  margin-bottom: 4px;
+}
+
+.read-aloud-chapter-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  border-top: 1px solid var(--toolbar-border);
+  padding-top: 6px;
+}
+
+.read-aloud-chapter-item {
+  background: none;
+  border: none;
+  color: var(--text-color);
+  text-align: left;
+  font-family: inherit;
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.read-aloud-chapter-item:hover {
+  background-color: var(--btn-hover);
+}
+
+/* Speaking-paragraph highlight in Rendered view */
+.markdown-preview .tts-speaking {
+  background-color: var(--tts-highlight-bg, rgba(120, 180, 255, 0.22));
+  border-radius: 4px;
+  padding-left: 6px;
+  padding-right: 6px;
+  transition: background-color 220ms ease-in-out;
+}
+
+[data-theme='light'] .markdown-preview .tts-speaking,
+[data-theme='solarized-light'] .markdown-preview .tts-speaking {
+  --tts-highlight-bg: rgba(255, 210, 120, 0.4);
+}
+
+[data-theme='light'] .read-aloud-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='solarized-light'] .read-aloud-menu {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
 /* Tab Context Menu Styles */
 .tab-context-menu {
   position: fixed;

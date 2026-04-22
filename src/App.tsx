@@ -4,6 +4,7 @@ import CodeEditor from './components/CodeEditor';
 import ErrorNotification from './components/ErrorNotification';
 import FindReplace from './components/FindReplace';
 import TextPreview from './components/TextPreview';
+import ReadAloudMenu from './components/ReadAloudMenu';
 import {
     useDocuments,
     useTheme,
@@ -19,6 +20,8 @@ import {
     useIPCListeners,
     useSplitPaneDivider,
     useOutsideClickHandler,
+    useTextToSpeech,
+    useTTSPreferences,
 } from './hooks/index';
 import { VIEW_MODES, type ViewMode } from './constants/index';
 import type { Document } from './types/document';
@@ -124,6 +127,118 @@ const App: React.FC = () => {
         showError,
     });
 
+    // Text-to-speech narration
+    const {
+        isSpeaking,
+        status: ttsStatus,
+        speak,
+        stop: stopSpeech,
+        pause: pauseSpeech,
+        resume: resumeSpeech,
+        nextSentence: ttsNextSentence,
+        prevSentence: ttsPrevSentence,
+        nextChunk: ttsNextChapter,
+        prevChunk: ttsPrevChapter,
+        setLiveRate: ttsSetLiveRate,
+        setLiveVoice: ttsSetLiveVoice,
+        currentSourceOffset: ttsCurrentOffset,
+        chapters: ttsChapters,
+        speakingTabId,
+    } = useTextToSpeech({ showError, activeTabId });
+    const { voice: ttsVoice, rate: ttsRate, setVoice: setTTSVoice, setRate: setTTSRate } = useTTSPreferences();
+    const [showReadAloudMenu, setShowReadAloudMenu] = useState(false);
+    const readAloudMenuRef = useRef<HTMLDivElement>(null);
+
+    // Push rate/voice changes into the active narration so the user hears
+    // them within one sentence instead of having to stop and restart.
+    useEffect(() => {
+        void ttsSetLiveRate(ttsRate);
+    }, [ttsRate, ttsSetLiveRate]);
+
+    useEffect(() => {
+        void ttsSetLiveVoice(ttsVoice);
+    }, [ttsVoice, ttsSetLiveVoice]);
+
+    useOutsideClickHandler({
+        ref: readAloudMenuRef,
+        isOpen: showReadAloudMenu,
+        onClose: () => setShowReadAloudMenu(false)
+    });
+
+    const handleReadAloud = useCallback((): void => {
+        if (ttsStatus === 'speaking') {
+            pauseSpeech();
+            return;
+        }
+        if (ttsStatus === 'paused') {
+            resumeSpeech();
+            return;
+        }
+        if (!activeDoc.content || activeDoc.content.trim().length === 0) {
+            showError('Nothing to read');
+            return;
+        }
+        speak(activeDoc.content, { voice: ttsVoice, rate: ttsRate, tabId: activeDoc.id });
+    }, [ttsStatus, pauseSpeech, resumeSpeech, activeDoc.content, activeDoc.id, speak, showError, ttsVoice, ttsRate]);
+
+    const handleStopSpeech = useCallback((): void => {
+        if (ttsStatus === 'idle') return;
+        stopSpeech();
+    }, [ttsStatus, stopSpeech]);
+
+    const handleTestVoice = useCallback((): void => {
+        speak('The quick brown fox jumps over the lazy dog.', { voice: ttsVoice, rate: ttsRate, tabId: activeDoc.id });
+    }, [speak, ttsVoice, ttsRate, activeDoc.id]);
+
+    const handleNextSentence = useCallback((): void => {
+        if (ttsStatus === 'idle') return;
+        void ttsNextSentence();
+    }, [ttsStatus, ttsNextSentence]);
+
+    const handlePrevSentence = useCallback((): void => {
+        if (ttsStatus === 'idle') return;
+        void ttsPrevSentence();
+    }, [ttsStatus, ttsPrevSentence]);
+
+    const handleNextChapter = useCallback((): void => {
+        if (ttsStatus === 'idle') return;
+        void ttsNextChapter();
+    }, [ttsStatus, ttsNextChapter]);
+
+    const handlePrevChapter = useCallback((): void => {
+        if (ttsStatus === 'idle') return;
+        void ttsPrevChapter();
+    }, [ttsStatus, ttsPrevChapter]);
+
+    const canReadFromCursor = viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT;
+
+    const handleReadFromCursor = useCallback((): void => {
+        if (!canReadFromCursor) {
+            showError('Read from cursor only works in Raw or Split view');
+            return;
+        }
+        if (!activeDoc.content || activeDoc.content.trim().length === 0) {
+            showError('Nothing to read');
+            return;
+        }
+        const offset = textareaRef.current?.selectionStart ?? 0;
+        console.log('[tts] handleReadFromCursor offset=', offset, 'rate=', ttsRate, 'voice=', ttsVoice, 'textareaRef?', !!textareaRef.current);
+        speak(activeDoc.content, { voice: ttsVoice, rate: ttsRate, tabId: activeDoc.id, fromOffset: offset });
+    }, [canReadFromCursor, activeDoc.content, activeDoc.id, speak, ttsVoice, ttsRate, showError]);
+
+    const handleChapterSelect = useCallback((chapterIndex: number): void => {
+        if (!activeDoc.content || activeDoc.content.trim().length === 0) {
+            showError('Nothing to read');
+            return;
+        }
+        speak(activeDoc.content, { voice: ttsVoice, rate: ttsRate, tabId: activeDoc.id, chapterIndex });
+        setShowReadAloudMenu(false);
+    }, [activeDoc.content, activeDoc.id, speak, ttsVoice, ttsRate, showError]);
+
+    // Source offsets for the speaking paragraph, passed to MarkdownPreview for highlighting.
+    const speakingOffsetStart = ttsCurrentOffset?.start ?? null;
+    const speakingOffsetEnd = ttsCurrentOffset?.end ?? null;
+
     // Handle heading format with menu close
     const handleHeadingFormat = useCallback((level: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'): void => {
         handleFormat(level);
@@ -203,6 +318,16 @@ const App: React.FC = () => {
         onUndo: undo,
         onRedo: redo,
         onNew: handleNewDocument,
+        onReadAloud: handleReadAloud,
+        // Sentence/chapter/stop bindings only register while TTS is active so
+        // that Cmd+Shift+←/→ and Cmd+Shift+. don't steal text-selection or
+        // other keys during normal editing.
+        onStopReading: ttsStatus !== 'idle' ? handleStopSpeech : undefined,
+        onNextSentence: ttsStatus !== 'idle' ? handleNextSentence : undefined,
+        onPrevSentence: ttsStatus !== 'idle' ? handlePrevSentence : undefined,
+        onNextChapter: ttsStatus !== 'idle' ? handleNextChapter : undefined,
+        onPrevChapter: ttsStatus !== 'idle' ? handlePrevChapter : undefined,
+        onReadFromCursor: handleReadFromCursor,
     });
 
     // Performance: Memoize text statistics
@@ -260,6 +385,11 @@ const App: React.FC = () => {
 
     const handleCloseTab = async (e: React.MouseEvent<HTMLButtonElement>, id: string): Promise<void> => {
         e.stopPropagation();
+
+        // Stop narration if we're closing the tab that owns it.
+        if (speakingTabId === id) {
+            stopSpeech();
+        }
 
         // Check if document has unsaved changes
         const doc = documents.find(d => d.id === id);
@@ -572,6 +702,96 @@ const App: React.FC = () => {
                         🔍
                     </button>
 
+                    <div className="read-aloud-wrapper" ref={readAloudMenuRef}>
+                        <button
+                            className="icon-btn"
+                            onClick={handleReadAloud}
+                            title={
+                                ttsStatus === 'speaking' ? 'Pause Reading (Cmd+Shift+R)' :
+                                ttsStatus === 'paused' ? 'Resume Reading (Cmd+Shift+R)' :
+                                'Read Aloud (Cmd+Shift+R)'
+                            }
+                            aria-label={
+                                ttsStatus === 'speaking' ? 'Pause reading aloud' :
+                                ttsStatus === 'paused' ? 'Resume reading aloud' :
+                                'Read document aloud'
+                            }
+                            disabled={ttsStatus === 'idle' && (!activeDoc.content || activeDoc.content.trim().length === 0)}
+                        >
+                            {ttsStatus === 'speaking' ? '⏸' : ttsStatus === 'paused' ? '▶' : '🔊'}
+                        </button>
+                        {ttsStatus !== 'idle' && (
+                            <>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handlePrevChapter}
+                                    title="Previous Chapter (Cmd+Shift+[)"
+                                    aria-label="Jump to previous chapter"
+                                    disabled={ttsChapters.length === 0}
+                                >
+                                    ⏮
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handlePrevSentence}
+                                    title="Previous Sentence (Cmd+Shift+←)"
+                                    aria-label="Jump to previous sentence"
+                                >
+                                    ⏪
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleNextSentence}
+                                    title="Next Sentence (Cmd+Shift+→)"
+                                    aria-label="Jump to next sentence"
+                                >
+                                    ⏩
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleNextChapter}
+                                    title="Next Chapter (Cmd+Shift+])"
+                                    aria-label="Jump to next chapter"
+                                    disabled={ttsChapters.length === 0}
+                                >
+                                    ⏭
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleStopSpeech}
+                                    title="Stop Reading (Cmd+Shift+.)"
+                                    aria-label="Stop reading aloud"
+                                >
+                                    ⏹
+                                </button>
+                            </>
+                        )}
+                        <button
+                            className="icon-btn read-aloud-caret"
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => setShowReadAloudMenu(prev => !prev)}
+                            title="Read Aloud settings"
+                            aria-label="Open text-to-speech settings"
+                            aria-expanded={showReadAloudMenu}
+                            aria-haspopup="true"
+                        >
+                            ▾
+                        </button>
+                        {showReadAloudMenu && (
+                            <ReadAloudMenu
+                                voice={ttsVoice}
+                                rate={ttsRate}
+                                onVoiceChange={setTTSVoice}
+                                onRateChange={setTTSRate}
+                                onTestVoice={handleTestVoice}
+                                chapters={ttsChapters.map(ch => ({ index: ch.index, title: ch.title }))}
+                                onSelectChapter={handleChapterSelect}
+                                canReadFromCursor={canReadFromCursor}
+                                onReadFromCursor={() => { handleReadFromCursor(); setShowReadAloudMenu(false); }}
+                            />
+                        )}
+                    </div>
+
                     <button
                         className="icon-btn"
                         onClick={toggleWordWrap}
@@ -675,6 +895,8 @@ const App: React.FC = () => {
                         currentMatchIndex={searchCurrentMatch}
                         filePath={activeDoc.filePath || undefined}
                         onContentChange={updateContent}
+                        speakingOffsetStart={speakingOffsetStart}
+                        speakingOffsetEnd={speakingOffsetEnd}
                     />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor
@@ -715,6 +937,8 @@ const App: React.FC = () => {
                                 currentMatchIndex={searchCurrentMatch}
                                 filePath={activeDoc.filePath || undefined}
                                 onContentChange={updateContent}
+                                speakingOffsetStart={speakingOffsetStart}
+                                speakingOffsetEnd={speakingOffsetEnd}
                             />
                         </div>
                     </div>

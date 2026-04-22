@@ -92,5 +92,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('open-mermaid-window', data),
   openFilePath: (filePath: string): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('open-file-path', { filePath }),
+  startSpeech: (data: { text: string; voice?: string; rate?: number }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:speak', data),
+  stopSpeech: (): Promise<{ success: true; data: void } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:stop'),
+  pauseSpeech: (): Promise<{ success: true; data: void } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:pause'),
+  resumeSpeech: (): Promise<{ success: true; data: void } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:resume'),
+  listVoices: (): Promise<{ success: true; data: Array<{ name: string; language: string; sampleText: string }> } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:list-voices'),
+  onSpeechEnd: (callback: () => void): (() => void) => {
+    const handler = (): void => callback();
+    ipcRenderer.on('tts:ended', handler);
+    return (): void => {
+      ipcRenderer.removeListener('tts:ended', handler);
+    };
+  },
   logDebug: (message: string, data?: any): void => ipcRenderer.send('log-debug', { message, data }),
 } satisfies ElectronAPI);

@@ -8,6 +8,7 @@ import { ThemeMode, IMAGE_CONFIG } from '../constants/index.js';
 import CodeBlock from './CodeBlock';
 import MermaidDiagram from './MermaidDiagram';
 import { replaceTextContent } from '../utils/textEditing';
+import { createRehypeSpeakingHighlight } from '../utils/rehypeSpeakingHighlight';
 
 export interface MarkdownPreviewProps {
   content: string;
@@ -17,6 +18,8 @@ export interface MarkdownPreviewProps {
   currentMatchIndex?: number;
   filePath?: string;
   onContentChange?: (content: string) => void;
+  speakingOffsetStart?: number | null;
+  speakingOffsetEnd?: number | null;
 }
 
 type HastNode = {
@@ -110,7 +113,7 @@ const createRehypeSearchHighlight = ({ searchTerm, caseSensitive, currentMatchIn
   };
 };
 
-const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange }: MarkdownPreviewProps) => {
+const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange, speakingOffsetStart = null, speakingOffsetEnd = null }: MarkdownPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Image cache to avoid reloading the same images
@@ -661,6 +664,23 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     createRehypeSearchHighlight({ searchTerm, caseSensitive, currentMatchIndex })
   ), [searchTerm, caseSensitive, currentMatchIndex]);
 
+  const rehypeSpeakingHighlight = useMemo(() => (
+    createRehypeSpeakingHighlight({ start: speakingOffsetStart, end: speakingOffsetEnd })
+  ), [speakingOffsetStart, speakingOffsetEnd]);
+
+  useEffect(() => {
+    if (speakingOffsetStart == null || speakingOffsetEnd == null) return;
+    const root = previewRef.current;
+    if (!root) return;
+    const id = window.requestAnimationFrame(() => {
+      const target = root.querySelector('.tts-speaking');
+      if (target && typeof (target as HTMLElement).scrollIntoView === 'function') {
+        (target as HTMLElement).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [speakingOffsetStart, speakingOffsetEnd]);
+
   return (
     <div
       ref={previewRef}
@@ -671,7 +691,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeSanitize, customSchema], rehypeHighlight, rehypeSearchHighlight]}
+        rehypePlugins={[[rehypeSanitize, customSchema], rehypeHighlight, rehypeSearchHighlight, rehypeSpeakingHighlight]}
         components={components}
       >
         {content}
