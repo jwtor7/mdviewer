@@ -139,6 +139,8 @@ const App: React.FC = () => {
         prevSentence: ttsPrevSentence,
         nextChunk: ttsNextChapter,
         prevChunk: ttsPrevChapter,
+        setLiveRate: ttsSetLiveRate,
+        setLiveVoice: ttsSetLiveVoice,
         currentSourceOffset: ttsCurrentOffset,
         chapters: ttsChapters,
         speakingTabId,
@@ -146,6 +148,16 @@ const App: React.FC = () => {
     const { voice: ttsVoice, rate: ttsRate, setVoice: setTTSVoice, setRate: setTTSRate } = useTTSPreferences();
     const [showReadAloudMenu, setShowReadAloudMenu] = useState(false);
     const readAloudMenuRef = useRef<HTMLDivElement>(null);
+
+    // Push rate/voice changes into the active narration so the user hears
+    // them within one sentence instead of having to stop and restart.
+    useEffect(() => {
+        void ttsSetLiveRate(ttsRate);
+    }, [ttsRate, ttsSetLiveRate]);
+
+    useEffect(() => {
+        void ttsSetLiveVoice(ttsVoice);
+    }, [ttsVoice, ttsSetLiveVoice]);
 
     useOutsideClickHandler({
         ref: readAloudMenuRef,
@@ -709,14 +721,50 @@ const App: React.FC = () => {
                             {ttsStatus === 'speaking' ? '⏸' : ttsStatus === 'paused' ? '▶' : '🔊'}
                         </button>
                         {ttsStatus !== 'idle' && (
-                            <button
-                                className="icon-btn"
-                                onClick={handleStopSpeech}
-                                title="Stop Reading (Cmd+Shift+.)"
-                                aria-label="Stop reading aloud"
-                            >
-                                ⏹
-                            </button>
+                            <>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handlePrevChapter}
+                                    title="Previous Chapter (Cmd+Shift+[)"
+                                    aria-label="Jump to previous chapter"
+                                    disabled={ttsChapters.length === 0}
+                                >
+                                    ⏮
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handlePrevSentence}
+                                    title="Previous Sentence (Cmd+Shift+←)"
+                                    aria-label="Jump to previous sentence"
+                                >
+                                    ⏪
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleNextSentence}
+                                    title="Next Sentence (Cmd+Shift+→)"
+                                    aria-label="Jump to next sentence"
+                                >
+                                    ⏩
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleNextChapter}
+                                    title="Next Chapter (Cmd+Shift+])"
+                                    aria-label="Jump to next chapter"
+                                    disabled={ttsChapters.length === 0}
+                                >
+                                    ⏭
+                                </button>
+                                <button
+                                    className="icon-btn"
+                                    onClick={handleStopSpeech}
+                                    title="Stop Reading (Cmd+Shift+.)"
+                                    aria-label="Stop reading aloud"
+                                >
+                                    ⏹
+                                </button>
+                            </>
                         )}
                         <button
                             className="icon-btn read-aloud-caret"
