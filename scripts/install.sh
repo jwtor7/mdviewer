@@ -5,7 +5,8 @@
 set -e
 
 APP_NAME="mdviewer"
-BUILD_PATH="/Users/true/dev/mdviewer/out/mdviewer-darwin-arm64/mdviewer.app"
+REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+BUILD_PATH="$REPO_ROOT/out/mdviewer-darwin-arm64/mdviewer.app"
 INSTALL_PATH="/Applications/mdviewer.app"
 
 echo "=== mdviewer Install Script ==="
@@ -37,7 +38,7 @@ VERSION=$(defaults read "$INSTALL_PATH/Contents/Info" CFBundleShortVersionString
 echo "=== Installed mdviewer v$VERSION ==="
 
 # Clean up build artifacts to prevent disk bloat
-BUILD_DIR="/Users/true/dev/mdviewer/out"
+BUILD_DIR="$REPO_ROOT/out"
 if [ -d "$BUILD_DIR" ]; then
     SIZE=$(du -sh "$BUILD_DIR" 2>/dev/null | cut -f1)
     echo "Cleaning up build artifacts..."

@@ -2429,6 +2429,6 @@ interface ElectronAPI {
 **End of Product Requirements Document**
 
 This PRD provides complete specifications to rebuild mdviewer. For questions or clarifications, refer to:
-- Source code in `/Users/true/dev/mdviewer/src/`
+- Source code in `src/`
 - CLAUDE.md for development guidelines
 - CHANGELOG.md for feature evolution history

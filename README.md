@@ -199,7 +199,7 @@ Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
 ## Contributing
 
-Issues and pull requests are welcome.
+Issues and pull requests are welcome. Before opening a PR, read [docs/REPO-HYGIENE.md](docs/REPO-HYGIENE.md) for the rules on what doesn't belong in commits (absolute home paths, local agent state, secrets) and how the pre-commit hook and CI workflow enforce them.
 
 ## License
 

@@ -30,6 +30,7 @@
     ]
   },
   "scripts": {
+    "prepare": "husky",
     "postinstall": "bash scripts/setup-venv.sh",
     "setup:venv": "bash scripts/setup-venv.sh",
     "start": "electron-forge start",
@@ -79,6 +80,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-no-secrets": "^2.2.1",
     "eslint-plugin-security": "^3.0.1",
+    "husky": "^9.1.7",
     "jsdom": "^25.0.1",
     "typescript": "^5.9.3",
     "vite": "^6.4.1",
