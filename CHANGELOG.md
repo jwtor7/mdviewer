@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.2.1] - 2026-04-24
 
+#### 22:13
+
+### Fixed
+- `.github/workflows/repo-hygiene.yml` pins `actions/checkout@v6` and `actions/setup-node@v6` to clear GitHub's June 2026 Node.js 20 deprecation warning
+- Test runner upgraded from Node.js 20 to Node.js 22 (current LTS) to match Electron 39's bundled Node version
+
 #### 21:41
 
 ### Fixed
