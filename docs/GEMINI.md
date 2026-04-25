@@ -1,16 +1,5 @@
 # Project Context: Security Remediation
 
-**Current Focus:** Security Remediation (Phase 1 - Data Leakage Prevention)
-**Status Tracker:** [SECURITY_REMEDIATION_STATE.md](file:///Users/true/dev/mdviewer/SECURITY_REMEDIATION_STATE.md)
-
-## **Active Task**
-**SECURITY: PDF CSP Data Leakage (H-3)**
-- **Goal:** Prevent data leakage via CSS background-image URLs in PDF export (Remove 'unsafe-inline').
-- **Status:** Pending.
-- **Note:** Priorities updated based on Security Report v2.0 (2025-11-24). Focus is on Data Leakage Prevention.
-
----
-
 # Git Workflow
 
 ## Critical Rules

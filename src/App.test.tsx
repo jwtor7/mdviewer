@@ -138,7 +138,7 @@ describe('App Integration Tests', () => {
 
     it('should show file path tooltip on tab hover', async () => {
       const openedFile = {
-        filePath: '/Users/true/Documents/project/notes/meeting.md',
+        filePath: '/Users/john/Documents/project/notes/meeting.md',
         content: '# Meeting notes',
         name: 'meeting.md',
       };
@@ -668,7 +668,7 @@ describe('App Integration Tests', () => {
 
     it('should copy file path to clipboard on Copy Path click', async () => {
       const openedFile = {
-        filePath: '/Users/true/Documents/test.md',
+        filePath: '/Users/john/Documents/test.md',
         content: '# Test',
         name: 'test.md',
       };
@@ -704,13 +704,13 @@ describe('App Integration Tests', () => {
       await user.click(screen.getByRole('menuitem', { name: /Copy Path/i }));
 
       await waitFor(() => {
-        expect(writeText).toHaveBeenCalledWith('/Users/true/Documents/test.md');
+        expect(writeText).toHaveBeenCalledWith('/Users/john/Documents/test.md');
       });
     });
 
     it('should close context menu after Copy Path click', async () => {
       const openedFile = {
-        filePath: '/Users/true/Documents/test.md',
+        filePath: '/Users/john/Documents/test.md',
         content: '# Test',
         name: 'test.md',
       };
@@ -751,7 +751,7 @@ describe('App Integration Tests', () => {
 
     it('should show error if clipboard write fails', async () => {
       const openedFile = {
-        filePath: '/Users/true/Documents/test.md',
+        filePath: '/Users/john/Documents/test.md',
         content: '# Test',
         name: 'test.md',
       };
