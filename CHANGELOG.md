@@ -5,6 +5,26 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.1] - 2026-04-24
+
+#### 21:14
+
+### Changed
+- Repo hygiene: scrubbed leaked author username from `scripts/install.sh`, `src/App.test.tsx`, `docs/GEMINI.md`, and `docs/PRD.md`
+- `scripts/install.sh` now derives `REPO_ROOT` from script location; runs on any clone, not just the author's machine
+- `src/App.test.tsx` test fixtures use the same `/Users/john/` placeholder convention as `useFileHandler.test.ts`
+
+### Added
+- `scripts/check-no-pii.sh` — scan script for absolute home paths and credential patterns with allowlist for known placeholders
+- `.husky/pre-commit` — pre-commit hook calling the scan script (auto-wired via `npm install`)
+- `.github/workflows/repo-hygiene.yml` — CI workflow runs the scan and full test suite on every push and pull request
+- `docs/REPO-HYGIENE.md` — contributor doc covering what doesn't belong in commits and how enforcement works; linked from README Contributing section
+- `husky` added to `devDependencies`
+
+### Removed
+- `.claude/agent-memory/external-change-reviewer/MEMORY.md` untracked from git (gitignored, kept on disk)
+- Stale Status Tracker block in `docs/GEMINI.md` referencing deleted `SECURITY_REMEDIATION_STATE.md`
+
 ## [5.2.0] - 2026-04-21
 
 #### 23:48
