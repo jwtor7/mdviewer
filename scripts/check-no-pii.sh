@@ -61,7 +61,7 @@ is_allowlisted_path() {
     */Users/name/*)     return 0 ;;  # generic placeholder used in PRD.md
     */Users/testuser/*) return 0 ;;  # generic test placeholder
     */Users/runner/*)   return 0 ;;  # GitHub Actions default home
-    */home/runner/*)    return 0 ;;  # GitHub Actions default home (linux)
+    */home/runner/*)    return 0 ;;  # GitHub Actions default home (legacy linux runner)
   esac
   return 1
 }

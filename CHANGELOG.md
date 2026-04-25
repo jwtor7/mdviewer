@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [5.2.1] - 2026-04-24
 
+#### 21:41
+
+### Fixed
+- `.github/workflows/repo-hygiene.yml` runs on `macos-latest` instead of `ubuntu-latest`; mdviewer is macOS-only, so a Linux green check would be false confidence
+
 #### 21:14
 
 ### Changed
