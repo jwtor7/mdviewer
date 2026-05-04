@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.2.2-blue.svg)
+![Version](https://img.shields.io/badge/version-5.2.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -16,7 +16,7 @@
 
 mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
 
-Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 434 automated tests.
+Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 544 automated tests.
 
 ## Drop-in Transcription for Audio and Video
 
@@ -193,9 +193,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.2.3** — External `open file.md` commands no longer steal focus when mdviewer is not the active app; new files load silently in a hidden tab (existing window) or an inactive `showInactive()` window (cold launch), and the focused-foreground behavior is preserved when mdviewer is already active
 - **v5.2.2** — External-save auto-reload no longer steals focus or shows a spurious dirty-reload dialog; `app.on('open-file')` short-circuits when the file is already watched, and the confirm prompt is suppressed when on-disk content matches the last saved baseline
 - **v5.2.1** — Public-repo hygiene: scrubbed leaked usernames, derived install paths from script location, added PII/credential scan script with husky pre-commit hook and CI workflow
-- **v5.2.0** — Read-aloud narration via macOS `say` with visible transport controls (prev/next sentence and chapter), live rate/voice updates mid-utterance, per-tab chapter list, and Read-from-cursor
 
 ## Contributing
 

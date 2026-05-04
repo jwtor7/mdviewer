@@ -168,16 +168,22 @@ export const createMenu = (
   Menu.setApplicationMenu(menu);
 };
 
+export interface CreateWindowOptions {
+  inactive?: boolean;
+}
+
 export const createWindow = (
   appPreferences: { alwaysOnTop: boolean },
   onOpenFile: (filePath: string, targetWindow: BrowserWindow) => void,
-  initialFile: string | null = null
+  initialFile: string | null = null,
+  options: CreateWindowOptions = {}
 ): BrowserWindow => {
 
   const win = new BrowserWindow({
     width: WINDOW_CONFIG.DEFAULT_WIDTH,
     height: WINDOW_CONFIG.DEFAULT_HEIGHT,
     alwaysOnTop: appPreferences.alwaysOnTop,
+    show: !options.inactive,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -185,6 +191,12 @@ export const createWindow = (
       sandbox: true,
     },
   });
+
+  if (options.inactive) {
+    win.once('ready-to-show', () => {
+      if (!win.isDestroyed()) win.showInactive();
+    });
+  }
 
   incrementWindowCount();
 

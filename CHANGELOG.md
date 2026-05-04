@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.3] - 2026-05-04
+
+### Added
+- `inactive` option on `createWindow()` (`src/main/windowManager.ts`) — when set, the window is constructed with `show: false` and reveals itself via `showInactive()` on `ready-to-show`, so it never pulls keyboard focus or jumps to the foreground
+- `src/main/openFileRouter.ts` — pure routing logic for the four `app.on('open-file')` branches, extracted from `src/main.ts` so the focus-stealing behavior is unit-testable without an Electron runtime
+- 16 new tests across `src/main/openFileRouter.test.ts` (9) and `src/main/windowManager.test.ts` (7) covering the watched/focused/unfocused-darwin/unfocused-non-darwin/no-window/cold-launch branches and the inactive window-creation path
+
+### Fixed
+- External `open file.md` commands (terminal, agents, AppleScript, Finder double-click) no longer steal focus when mdviewer is not the active app. The open-file router checks `mdviewerHasFocus` (tracked via `browser-window-focus`/`browser-window-blur`): if mdviewer is unfocused, new files load silently — into a hidden tab via `app.hide()` for an existing window, into a `showInactive()` window when no window exists, or into an inactive cold-launch window when the file arrived before the app was ready. When mdviewer already has focus, opening a new file behaves exactly as before
+- Cold launches via Launch Services (double-click a `.md` from Finder while mdviewer is closed) no longer steal focus from the user's previous app — the bootstrap window is created `inactive: true` whenever a `pendingFileToOpen` is present
+
 ## [5.2.2] - 2026-05-04
 
 ### Added

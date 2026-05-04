@@ -40,6 +40,7 @@ import {
   getOpenWindowCount,
 } from './main/windowManager.js';
 import { watchFile, unwatchFile, unwatchAllForWindow, isFileWatched } from './main/fileWatcher.js';
+import { routeOpenFile } from './main/openFileRouter.js';
 
 /**
  * Gets the default directory for save dialogs.
@@ -74,6 +75,23 @@ if (started) {
 
 let mainWindow: BrowserWindow | null = null;
 let pendingFileToOpen: string | null = null;
+
+// Track whether mdviewer has focus. Used to suppress focus-stealing when
+// external `open file.md` commands fire while the user is in another app.
+let mdviewerHasFocus = false;
+
+app.on('browser-window-focus', () => {
+  mdviewerHasFocus = true;
+});
+app.on('browser-window-blur', () => {
+  // Defer one tick so a focus event for another mdviewer window
+  // (e.g., switching between two mdviewer windows) registers first.
+  setImmediate(() => {
+    mdviewerHasFocus = BrowserWindow.getAllWindows().some(
+      (w) => !w.isDestroyed() && w.isFocused()
+    );
+  });
+});
 
 // Recent files management
 const MAX_RECENT_FILES = 50;
@@ -1299,26 +1317,28 @@ ipcMain.handle(
 );
 
 // Handle file opening on macOS (must be registered BEFORE app.whenReady)
-// This catches files opened via "Open With" or drag-and-drop onto app icon
+// This catches files opened via "Open With" or drag-and-drop onto app icon.
+// Routing logic lives in src/main/openFileRouter.ts so it can be unit-tested
+// without an Electron runtime.
 app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
 
-  // If the file is already open in a tab, the file watcher will refresh it
-  // silently. Don't re-route through openFile() — that would steal focus and
-  // can trigger the dirty-reload confirm dialog.
-  if (mainWindow && !mainWindow.isDestroyed() && isFileWatched(filePath)) {
-    return;
-  }
+  const result = routeOpenFile({
+    filePath,
+    mainWindow,
+    isAppReady: app.isReady(),
+    mdviewerHasFocus,
+    platform: process.platform,
+    isFileWatched,
+    openFile: (p) => { void openFile(p); },
+    createWindow: (p, opts) => createWindow(appPreferences, openFile, p, opts),
+    setPendingFile: (p) => { pendingFileToOpen = p; },
+    hideApp: () => { app.hide(); },
+  });
 
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    // Window exists and is ready
-    openFile(filePath);
-  } else if (app.isReady()) {
-    // App is ready but no valid window exists - create a new one
-    mainWindow = createWindow(appPreferences, openFile, filePath);
-  } else {
-    // App not ready yet, queue the file
-    pendingFileToOpen = filePath;
+  if (result.action === 'created-window') {
+    mainWindow = result.window;
+    setMainWindow(mainWindow);
   }
 });
 
@@ -1350,7 +1370,12 @@ app.whenReady().then(async () => {
   await loadRecentFiles();
 
   createMenu(recentFiles, appPreferences, openFile, clearRecentFiles, savePreferences);
-  mainWindow = createWindow(appPreferences, openFile);
+
+  // Cold launch via Launch Services file-open: the user is in another app by
+  // definition (mdviewer didn't exist a moment ago), so create the window
+  // without bringing it to the foreground.
+  const coldLaunchInactive = pendingFileToOpen !== null;
+  mainWindow = createWindow(appPreferences, openFile, null, { inactive: coldLaunchInactive });
   setMainWindow(mainWindow);
 
   // If a file was queued before the window was ready, open it now
