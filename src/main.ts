@@ -39,7 +39,7 @@ import {
   setMainWindow,
   getOpenWindowCount,
 } from './main/windowManager.js';
-import { watchFile, unwatchFile, unwatchAllForWindow } from './main/fileWatcher.js';
+import { watchFile, unwatchFile, unwatchAllForWindow, isFileWatched } from './main/fileWatcher.js';
 
 /**
  * Gets the default directory for save dialogs.
@@ -1302,6 +1302,13 @@ ipcMain.handle(
 // This catches files opened via "Open With" or drag-and-drop onto app icon
 app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
+
+  // If the file is already open in a tab, the file watcher will refresh it
+  // silently. Don't re-route through openFile() — that would steal focus and
+  // can trigger the dirty-reload confirm dialog.
+  if (mainWindow && !mainWindow.isDestroyed() && isFileWatched(filePath)) {
+    return;
+  }
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     // Window exists and is ready

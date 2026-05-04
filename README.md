@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.2.1-blue.svg)
+![Version](https://img.shields.io/badge/version-5.2.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -193,9 +193,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.2.2** — External-save auto-reload no longer steals focus or shows a spurious dirty-reload dialog; `app.on('open-file')` short-circuits when the file is already watched, and the confirm prompt is suppressed when on-disk content matches the last saved baseline
 - **v5.2.1** — Public-repo hygiene: scrubbed leaked usernames, derived install paths from script location, added PII/credential scan script with husky pre-commit hook and CI workflow
 - **v5.2.0** — Read-aloud narration via macOS `say` with visible transport controls (prev/next sentence and chapter), live rate/voice updates mid-utterance, per-tab chapter list, and Read-from-cursor
-- **v5.1.2** — Collapsible architecture diagram added to README; version badge, test count (434), and hook count (14) corrected
 
 ## Contributing
 

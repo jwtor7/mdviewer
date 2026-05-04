@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.2] - 2026-05-04
+
+### Added
+- `isFileWatched(filePath)` helper in `src/main/fileWatcher.ts` lets the open-file handler short-circuit re-opens of already-watched files
+- New test suite `src/main/fileWatcher.test.ts` (5 tests) covering watcher registration, unwatch, relative-path normalization, and disallowed-extension rejection
+- Three new tests in `src/hooks/useFileHandler.test.ts` covering the dirty-reload confirmation guard branches
+
+### Fixed
+- External save no longer steals focus from the foreground app — when an open file is updated by another app, mdviewer's tab silently refreshes via the existing fs.watch path instead of being re-routed through `app.on('open-file')`
+- Spurious "has unsaved changes. Reload from disk and discard changes?" dialog suppressed when the on-disk content matches what was last saved (user's local edits are simply ahead of disk)
+
 ## [5.2.1] - 2026-04-24
 
 #### 22:13

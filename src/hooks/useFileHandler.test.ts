@@ -488,6 +488,163 @@ describe('useFileHandler', () => {
   });
 
   // =============================================================================
+  // Dirty Reload Confirmation Tests
+  // =============================================================================
+
+  describe('dirty reload confirmation', () => {
+    it('should not show confirm when on-disk content matches lastSavedContent', () => {
+      let fileOpenCallback: ((value: any) => void) | null = null;
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementation(
+        (cb: (value: any) => void) => {
+          fileOpenCallback = cb;
+          return vi.fn();
+        }
+      );
+
+      const dirtyDoc: Document = {
+        id: 'existing',
+        name: 'Test.md',
+        content: 'Local edits ahead of disk',
+        filePath: '/path/to/test.md',
+        dirty: true,
+        lastSavedContent: 'Last saved content',
+      };
+
+      mockFindDocumentByPath.mockReturnValue(dirtyDoc);
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      renderHook(() =>
+        useFileHandler(
+          mockAddDocument,
+          mockUpdateExistingDocument,
+          mockFindDocumentByPath,
+          mockSetActiveTabId,
+          testDocuments,
+          mockCloseTab,
+          mockShowError
+        )
+      );
+
+      act(() => {
+        fileOpenCallback?.({
+          filePath: '/path/to/test.md',
+          // Disk content matches what we last saved — user's local edits
+          // are simply ahead of disk. No confirm should fire.
+          content: 'Last saved content',
+          name: 'Test.md',
+        });
+      });
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(mockUpdateExistingDocument).not.toHaveBeenCalled();
+      expect(mockSetActiveTabId).not.toHaveBeenCalled();
+
+      confirmSpy.mockRestore();
+    });
+
+    it('should show confirm when disk content diverges from both content and lastSavedContent', () => {
+      let fileOpenCallback: ((value: any) => void) | null = null;
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementation(
+        (cb: (value: any) => void) => {
+          fileOpenCallback = cb;
+          return vi.fn();
+        }
+      );
+
+      const dirtyDoc: Document = {
+        id: 'existing',
+        name: 'Test.md',
+        content: 'Local edits ahead of disk',
+        filePath: '/path/to/test.md',
+        dirty: true,
+        lastSavedContent: 'Last saved content',
+      };
+
+      mockFindDocumentByPath.mockReturnValue(dirtyDoc);
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      renderHook(() =>
+        useFileHandler(
+          mockAddDocument,
+          mockUpdateExistingDocument,
+          mockFindDocumentByPath,
+          mockSetActiveTabId,
+          testDocuments,
+          mockCloseTab,
+          mockShowError
+        )
+      );
+
+      act(() => {
+        fileOpenCallback?.({
+          filePath: '/path/to/test.md',
+          content: 'Disk diverged from both local and last-saved',
+          name: 'Test.md',
+        });
+      });
+
+      expect(confirmSpy).toHaveBeenCalled();
+
+      confirmSpy.mockRestore();
+    });
+
+    it('should not show confirm when document is not dirty', () => {
+      let fileOpenCallback: ((value: any) => void) | null = null;
+
+      (mockElectronAPI.onFileOpen as ReturnType<typeof vi.fn>).mockImplementation(
+        (cb: (value: any) => void) => {
+          fileOpenCallback = cb;
+          return vi.fn();
+        }
+      );
+
+      const cleanDoc: Document = {
+        id: 'existing',
+        name: 'Test.md',
+        content: 'Old content',
+        filePath: '/path/to/test.md',
+        dirty: false,
+        lastSavedContent: 'Old content',
+      };
+
+      mockFindDocumentByPath.mockReturnValue(cleanDoc);
+
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      renderHook(() =>
+        useFileHandler(
+          mockAddDocument,
+          mockUpdateExistingDocument,
+          mockFindDocumentByPath,
+          mockSetActiveTabId,
+          testDocuments,
+          mockCloseTab,
+          mockShowError
+        )
+      );
+
+      act(() => {
+        fileOpenCallback?.({
+          filePath: '/path/to/test.md',
+          content: 'New disk content',
+          name: 'Test.md',
+        });
+      });
+
+      expect(confirmSpy).not.toHaveBeenCalled();
+      expect(mockUpdateExistingDocument).toHaveBeenCalledWith('existing', {
+        content: 'New disk content',
+      });
+
+      confirmSpy.mockRestore();
+    });
+  });
+
+  // =============================================================================
   // Default Document Replacement Tests
   // =============================================================================
 

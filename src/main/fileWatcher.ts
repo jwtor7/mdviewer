@@ -129,6 +129,15 @@ export function unwatchFile(filePath: string, window: BrowserWindow): void {
 }
 
 /**
+ * Returns true if the given file path is currently being watched
+ * by at least one window. Used by the open-file handler to avoid
+ * re-routing already-open files through the focus-stealing path.
+ */
+export function isFileWatched(filePath: string): boolean {
+  return watchers.has(path.resolve(filePath));
+}
+
+/**
  * Remove all watchers for a specific window (called on window close).
  */
 export function unwatchAllForWindow(window: BrowserWindow): void {

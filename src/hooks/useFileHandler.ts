@@ -40,6 +40,15 @@ export const useFileHandler = (
         if (existing && filePath) {
           // Guard against overwriting unsaved changes
           if (existing.dirty && existing.content !== fileContent) {
+            // If the disk content matches what we last saved, the user's local
+            // edits are simply ahead of disk — no need to ask. useFileWatcher
+            // already skips reloads on dirty docs, so just leave it alone.
+            if (
+              existing.lastSavedContent !== undefined &&
+              fileContent === existing.lastSavedContent
+            ) {
+              return;
+            }
             const confirmReload = window.confirm(
               `"${existing.name}" has unsaved changes. Reload from disk and discard changes?`
             );
