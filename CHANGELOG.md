@@ -5,6 +5,17 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.2.4] - 2026-05-04
+
+### Fixed
+- External `open-file` events no longer steal keyboard focus. The previous focus heuristic was racy: macOS activates mdviewer *before* delivering the open-file event, which flipped `mdviewerHasFocus` to true ahead of the router's check and bypassed the suppression. Since `app.on('open-file')` only fires for OS-level routing (Finder double-click, drag-onto-icon, Open With, `open file.md` from a terminal), every such event is external by definition
+- Existing-window route uses a soft de-activation: `app.hide()` drops the OS-level activation and returns keyboard focus to the previous app, then `app.show()` (darwin-only API that explicitly does not focus) brings all windows back. The hide → show chain is event-driven via the window's `hide` event rather than `setImmediate`, since the timer-based approach was racy and occasionally left the windows hidden when `show()` beat `hide()` to the run loop. Earlier attempts that paired `app.hide()` with `BrowserWindow.showInactive()` left windows hidden because `showInactive` does not unhide an app whose visibility was dropped at the application level
+- Cold-launch windows continue to use `inactive: true` (visible via `showInactive()` on `ready-to-show`) so a file double-clicked from Finder appears without grabbing focus
+
+### Changed
+- `OpenFileRouterDeps` no longer carries `mdviewerHasFocus`; removed the `browser-window-focus`/`browser-window-blur` tracking from `src/main.ts` since it had no remaining consumer
+- `src/main/openFileRouter.test.ts` updated to assert the unconditional soft-defocus behavior across all branches
+
 ## [5.2.3] - 2026-05-04
 
 ### Added

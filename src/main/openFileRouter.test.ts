@@ -1,11 +1,12 @@
 /**
  * Tests for openFileRouter.
  *
- * Covers the four `app.on('open-file')` branches and the focus-state-driven
- * decisions about whether to bring mdviewer to the foreground.
+ * Covers the four `app.on('open-file')` branches. The router always treats
+ * external open-file events as background events: every successful route
+ * either hides mdviewer (existing window) or opens an inactive window.
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import type { BrowserWindow } from 'electron';
 import { routeOpenFile, type OpenFileRouterDeps } from './openFileRouter';
 
@@ -21,7 +22,6 @@ function makeDeps(overrides: Partial<OpenFileRouterDeps> = {}): OpenFileRouterDe
     filePath: '/tmp/file.md',
     mainWindow: fakeWindow,
     isAppReady: true,
-    mdviewerHasFocus: false,
     platform: 'darwin',
     isFileWatched: vi.fn().mockReturnValue(false),
     openFile: vi.fn(),
@@ -57,16 +57,8 @@ describe('routeOpenFile', () => {
   });
 
   describe('branch (B): existing window, new file', () => {
-    it('opens file without hiding app when mdviewer is focused', () => {
-      const deps = makeDeps({ mdviewerHasFocus: true });
-      const result = routeOpenFile(deps);
-      expect(result).toEqual({ action: 'opened-existing-window', hidApp: false });
-      expect(deps.openFile).toHaveBeenCalledWith('/tmp/file.md');
-      expect(deps.hideApp).not.toHaveBeenCalled();
-    });
-
-    it('opens file and hides app on darwin when mdviewer is unfocused', () => {
-      const deps = makeDeps({ mdviewerHasFocus: false, platform: 'darwin' });
+    it('opens file and hides app on darwin', () => {
+      const deps = makeDeps({ platform: 'darwin' });
       const result = routeOpenFile(deps);
       expect(result).toEqual({ action: 'opened-existing-window', hidApp: true });
       expect(deps.openFile).toHaveBeenCalledWith('/tmp/file.md');
@@ -74,7 +66,7 @@ describe('routeOpenFile', () => {
     });
 
     it('opens file but does not hide app on non-darwin platforms', () => {
-      const deps = makeDeps({ mdviewerHasFocus: false, platform: 'linux' });
+      const deps = makeDeps({ platform: 'linux' });
       const result = routeOpenFile(deps);
       expect(result).toEqual({ action: 'opened-existing-window', hidApp: false });
       expect(deps.openFile).toHaveBeenCalledWith('/tmp/file.md');
@@ -83,11 +75,10 @@ describe('routeOpenFile', () => {
   });
 
   describe('branch (C): no window, app ready', () => {
-    it('creates window with inactive=true when mdviewer is unfocused', () => {
+    it('creates window inactive', () => {
       const newWindow = makeFakeWindow();
       const deps = makeDeps({
         mainWindow: null,
-        mdviewerHasFocus: false,
         createWindow: vi.fn().mockReturnValue(newWindow),
       });
       const result = routeOpenFile(deps);
@@ -95,22 +86,9 @@ describe('routeOpenFile', () => {
       expect(result).toEqual({ action: 'created-window', window: newWindow, inactive: true });
     });
 
-    it('creates window with inactive=false when mdviewer is focused', () => {
-      const newWindow = makeFakeWindow();
-      const deps = makeDeps({
-        mainWindow: null,
-        mdviewerHasFocus: true,
-        createWindow: vi.fn().mockReturnValue(newWindow),
-      });
-      const result = routeOpenFile(deps);
-      expect(deps.createWindow).toHaveBeenCalledWith('/tmp/file.md', { inactive: false });
-      expect(result).toEqual({ action: 'created-window', window: newWindow, inactive: false });
-    });
-
     it('treats destroyed window the same as no window', () => {
       const deps = makeDeps({
         mainWindow: makeFakeWindow(true),
-        mdviewerHasFocus: false,
       });
       routeOpenFile(deps);
       expect(deps.createWindow).toHaveBeenCalledWith('/tmp/file.md', { inactive: true });

@@ -76,23 +76,6 @@ if (started) {
 let mainWindow: BrowserWindow | null = null;
 let pendingFileToOpen: string | null = null;
 
-// Track whether mdviewer has focus. Used to suppress focus-stealing when
-// external `open file.md` commands fire while the user is in another app.
-let mdviewerHasFocus = false;
-
-app.on('browser-window-focus', () => {
-  mdviewerHasFocus = true;
-});
-app.on('browser-window-blur', () => {
-  // Defer one tick so a focus event for another mdviewer window
-  // (e.g., switching between two mdviewer windows) registers first.
-  setImmediate(() => {
-    mdviewerHasFocus = BrowserWindow.getAllWindows().some(
-      (w) => !w.isDestroyed() && w.isFocused()
-    );
-  });
-});
-
 // Recent files management
 const MAX_RECENT_FILES = 50;
 let recentFiles: string[] = [];
@@ -1320,6 +1303,11 @@ ipcMain.handle(
 // This catches files opened via "Open With" or drag-and-drop onto app icon.
 // Routing logic lives in src/main/openFileRouter.ts so it can be unit-tested
 // without an Electron runtime.
+//
+// macOS activates mdviewer *before* delivering this event. The hard fix
+// (app.hide) felt too aggressive — windows disappeared entirely. Soft fix:
+// hide briefly to give keyboard focus back to the previous app, then re-show
+// the window inactive so the file is visible without stealing keyboard focus.
 app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
 
@@ -1327,13 +1315,29 @@ app.on('open-file', (event: Electron.Event, filePath: string) => {
     filePath,
     mainWindow,
     isAppReady: app.isReady(),
-    mdviewerHasFocus,
     platform: process.platform,
     isFileWatched,
     openFile: (p) => { void openFile(p); },
     createWindow: (p, opts) => createWindow(appPreferences, openFile, p, opts),
     setPendingFile: (p) => { pendingFileToOpen = p; },
-    hideApp: () => { app.hide(); },
+    hideApp: () => {
+      // Soft de-activation: app.hide() drops the OS-level activation and
+      // returns keyboard focus to the previous app; app.show() brings the
+      // windows back without auto-focusing them (darwin-only API that
+      // explicitly does not focus, per Electron docs).
+      //
+      // Chaining via setImmediate was racy — sometimes show() fired before
+      // macOS finished processing hide(), leaving windows in an inconsistent
+      // state that occasionally appeared as "window disappeared" until the
+      // user manually reactivated. Listen for the window's `hide` event
+      // instead so show() runs deterministically after hide settles.
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.once('hide', () => {
+          app.show();
+        });
+      }
+      app.hide();
+    },
   });
 
   if (result.action === 'created-window') {
@@ -1378,7 +1382,9 @@ app.whenReady().then(async () => {
   mainWindow = createWindow(appPreferences, openFile, null, { inactive: coldLaunchInactive });
   setMainWindow(mainWindow);
 
-  // If a file was queued before the window was ready, open it now
+  // If a file was queued before the window was ready, open it now.
+  // The window was created with `inactive: true`, so showInactive() runs on
+  // ready-to-show — visible without keyboard focus.
   if (pendingFileToOpen) {
     mainWindow.once('ready-to-show', () => {
       if (pendingFileToOpen) {
