@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.2.4-blue.svg)
+![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -16,7 +16,7 @@
 
 mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
 
-Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 544 automated tests.
+Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 548 automated tests.
 
 ## Drop-in Transcription for Audio and Video
 
@@ -193,9 +193,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.3.0** — `Lines:` counter added to the status bar between `Tokens:` and the reading-time indicator. Standard `split('\n')` semantics (empty content → 0, trailing newline counts as a separate line); `TextStats` interface gains a `lineCount` field covered by 6 new unit tests
 - **v5.2.4** — External `open-file` events never steal focus, full stop. The previous focus-state heuristic was racy on macOS (the OS activates mdviewer before the open-file event fires), so the router now unconditionally hides the app on darwin or creates an inactive window
 - **v5.2.3** — External `open file.md` commands no longer steal focus when mdviewer is not the active app; new files load silently in a hidden tab (existing window) or an inactive `showInactive()` window (cold launch), and the focused-foreground behavior is preserved when mdviewer is already active
-- **v5.2.2** — External-save auto-reload no longer steals focus or shows a spurious dirty-reload dialog; `app.on('open-file')` short-circuits when the file is already watched, and the confirm prompt is suppressed when on-disk content matches the last saved baseline
 
 ## Contributing
 

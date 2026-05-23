@@ -14,6 +14,7 @@ describe('calculateTextStats', () => {
       wordCount: 0,
       charCount: 0,
       tokenCount: 0,
+      lineCount: 0,
       readingTime: 1,
     });
   });
@@ -25,6 +26,7 @@ describe('calculateTextStats', () => {
       wordCount: 0,
       charCount: 7,
       tokenCount: Math.ceil(7 / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      lineCount: 2,
       readingTime: 1,
     });
   });
@@ -36,6 +38,7 @@ describe('calculateTextStats', () => {
       wordCount: 1,
       charCount: 5,
       tokenCount: Math.ceil(5 / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      lineCount: 1,
       readingTime: 1,
     });
   });
@@ -48,6 +51,7 @@ describe('calculateTextStats', () => {
       wordCount: 4,
       charCount: text.length,
       tokenCount: Math.ceil(text.length / CALCULATIONS.TOKEN_ESTIMATE_DIVISOR),
+      lineCount: 1,
       readingTime: 1,
     });
   });
@@ -124,6 +128,39 @@ const x = 5;
 
     expect(result.wordCount).toBe(10000);
     expect(result.charCount).toBe(longText.length);
+  });
+
+  describe('lineCount', () => {
+    it('should return 0 for empty string', () => {
+      const result = calculateTextStats('');
+      expect(result.lineCount).toBe(0);
+    });
+
+    it('should return 1 for single line with no newline', () => {
+      const result = calculateTextStats('hello world');
+      expect(result.lineCount).toBe(1);
+    });
+
+    it('should return 2 for "a\\nb"', () => {
+      const result = calculateTextStats('a\nb');
+      expect(result.lineCount).toBe(2);
+    });
+
+    it('should count trailing newline as a line ("a\\n" -> 2)', () => {
+      const result = calculateTextStats('a\n');
+      expect(result.lineCount).toBe(2);
+    });
+
+    it('should count multiple blank lines', () => {
+      const result = calculateTextStats('a\n\n\nb');
+      expect(result.lineCount).toBe(4);
+    });
+
+    it('should count lines in a markdown block', () => {
+      const markdown = '# Heading\n\nParagraph one.\n\n- item 1\n- item 2\n';
+      const result = calculateTextStats(markdown);
+      expect(result.lineCount).toBe(markdown.split('\n').length);
+    });
   });
 
   describe('readingTime', () => {
