@@ -19,7 +19,7 @@ export interface SaveFileData {
 
 export type IPCResult<T> =
   | { success: true; data: T }
-  | { success: false; error: string };
+  | { success: false; error: string; errorCode?: string };
 
 /**
  * Discriminated union representing all IPC message types in the application.

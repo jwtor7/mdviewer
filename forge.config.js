@@ -1,10 +1,40 @@
 const { FusesPlugin } = require('@electron-forge/plugin-fuses');
 const { FuseV1Options, FuseVersion } = require('@electron/fuses');
+const path = require('node:path');
+const fs = require('node:fs');
+const { execFileSync } = require('node:child_process');
 
 module.exports = {
   packagerConfig: {
     asar: true,
+    appBundleId: 'ca.trustcyber.mdviewer',
+    afterComplete: [
+      (buildPath, electronVersion, platform, arch, done) => {
+        if (platform !== 'darwin') return done();
+        try {
+          const appName = fs.readdirSync(buildPath).find((e) => e.endsWith('.app'));
+          if (!appName) return done(new Error(`No .app bundle in ${buildPath}`));
+          const appPath = path.join(buildPath, appName);
+          execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], {
+            stdio: 'inherit',
+          });
+          done();
+        } catch (err) {
+          done(err);
+        }
+      },
+    ],
     extendInfo: {
+      NSDocumentsFolderUsageDescription:
+        'mdviewer needs access to your Documents folder to load images referenced by markdown files you open from there.',
+      NSDesktopFolderUsageDescription:
+        'mdviewer needs access to your Desktop to load images referenced by markdown files you open from there.',
+      NSDownloadsFolderUsageDescription:
+        'mdviewer needs access to your Downloads folder to load images referenced by markdown files you open from there.',
+      NSRemovableVolumesUsageDescription:
+        'mdviewer needs access to removable volumes to load images referenced by markdown files you open from external drives.',
+      NSNetworkVolumesUsageDescription:
+        'mdviewer needs access to network volumes to load images referenced by markdown files you open from network drives.',
       CFBundleDocumentTypes: [
         {
           CFBundleTypeName: 'Markdown File',

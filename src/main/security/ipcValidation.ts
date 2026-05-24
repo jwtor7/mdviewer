@@ -25,7 +25,7 @@ import { createRateLimiter } from './rateLimiter.js';
  */
 export type IPCResult<T> =
   | { success: true; data: T }
-  | { success: false; error: string };
+  | { success: false; error: string; errorCode?: string };
 
 /**
  * Configuration options for the IPC handler wrapper.
@@ -174,8 +174,12 @@ export function withIPCHandler<TInput, TOutput>(
       return { success: true, data: result };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorCode =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: unknown }).code)
+          : undefined;
       console.error(`Error in ${handlerName}:`, errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, ...(errorCode ? { errorCode } : {}) };
     }
   };
 }
@@ -227,8 +231,12 @@ export function withIPCHandlerNoInput<TOutput>(
       return { success: true, data: result };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorCode =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: unknown }).code)
+          : undefined;
       console.error(`Error in ${handlerName}:`, errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, ...(errorCode ? { errorCode } : {}) };
     }
   };
 }
@@ -244,7 +252,9 @@ export function isIPCSuccess<T>(result: IPCResult<T>): result is { success: true
 /**
  * Type guard to check if a result is an error.
  */
-export function isIPCError<T>(result: IPCResult<T>): result is { success: false; error: string } {
+export function isIPCError<T>(
+  result: IPCResult<T>
+): result is { success: false; error: string; errorCode?: string } {
   return result.success === false;
 }
 
@@ -315,8 +325,12 @@ export function withValidatedIPCHandler<TSchema extends ZodSchema, TOutput>(
       return { success: true, data: result };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorCode =
+        error && typeof error === 'object' && 'code' in error
+          ? String((error as { code: unknown }).code)
+          : undefined;
       console.error(`Error in ${handlerName}:`, errorMessage);
-      return { success: false, error: errorMessage };
+      return { success: false, error: errorMessage, ...(errorCode ? { errorCode } : {}) };
     }
   };
 }

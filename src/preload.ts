@@ -82,7 +82,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('show-unsaved-dialog', { filename }),
   revealInFinder: (filePath: string): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('reveal-in-finder', { filePath }),
-  readImageFile: (imagePath: string, markdownFilePath: string): Promise<{ success: true; data: { dataUri: string } } | { success: false; error: string }> =>
+  readImageFile: (imagePath: string, markdownFilePath: string): Promise<{ success: true; data: { dataUri: string } } | { success: false; error: string; errorCode?: string }> =>
     ipcRenderer.invoke('read-image-file', { imagePath, markdownFilePath }),
   copyImageToDocument: (imagePath: string, markdownFilePath: string): Promise<{ success: true; data: { relativePath: string } } | { success: false; error: string }> =>
     ipcRenderer.invoke('copy-image-to-document', { imagePath, markdownFilePath }),

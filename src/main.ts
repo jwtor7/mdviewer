@@ -860,8 +860,18 @@ ipcMain.handle(
         return { dataUri };
       } catch (err) {
         const error = err as NodeJS.ErrnoException;
-        console.error('Read image file error:', sanitizeError(error));
-        throw new Error('Failed to read image file');
+        console.error('Read image file error:', sanitizeError(error), 'code:', error.code);
+        const message =
+          error.code === 'EACCES' || error.code === 'EPERM'
+            ? 'Permission denied'
+            : error.code === 'ENOENT'
+              ? 'Image not found'
+              : 'Failed to read image file';
+        const rethrow = new Error(message) as NodeJS.ErrnoException;
+        if (error.code) {
+          rethrow.code = error.code;
+        }
+        throw rethrow;
       }
     }
   )
