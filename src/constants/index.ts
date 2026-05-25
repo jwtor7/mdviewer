@@ -82,7 +82,9 @@ export const RENDERER_SECURITY = {
 // Controls which URLs can be opened from markdown links
 export const URL_SECURITY = {
   // Only these protocols are allowed for external links
-  ALLOWED_PROTOCOLS: ['https:', 'http:'] as const,
+  // x-apple.systempreferences: deep-links System Settings panes (used by the
+  // image-permission banner to jump to Files & Folders)
+  ALLOWED_PROTOCOLS: ['https:', 'http:', 'x-apple.systempreferences:'] as const,
 
   // Explicitly blocked protocols (for security logging and documentation)
   // These are dangerous protocols that could:

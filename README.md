@@ -3,33 +3,36 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.3.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.4.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
+![Tests](https://img.shields.io/badge/tests-548%20passing-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
 **The Markdown viewer that opens everything else too.**
 
 </div>
 
-mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no more fumbling with format-specific apps just to grab a paragraph.
+mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no fumbling with format-specific apps just to grab a paragraph.
 
-Built on Electron, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 548 automated tests.
+Built on Electron 39, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 548 automated tests.
 
-## Drop-in Transcription for Audio and Video
+---
 
-Drag a WAV, MP3, M4A, or MP4 file onto the window and mdviewer returns a Markdown transcript. No separate tool, no web upload, no conversion pipeline — it's the same workflow as opening a PDF.
+## What's New in v5.4.0
 
-Use it to:
+> **First-class macOS citizenship.** mdviewer now ships under a stable bundle identifier (`ca.trustcyber.mdviewer`), so the permissions you grant it actually belong to *this* app — not to "every ad-hoc-signed Electron build on your system."
 
-- Turn a voice memo into notes you can edit and save
-- Pull quotes and action items out of a recorded meeting
-- Capture audio diaries or podcast segments as searchable text
-- Extract dialogue from an MP4 screen recording without ever leaving the app
+- **Images in protected folders just work** — Documents, Desktop, Downloads, removable, and network volumes all carry proper `NS*UsageDescription` strings. macOS prompts on first use and remembers your answer across rebuilds
+- **Permission-aware error UX** — when macOS denies a sibling-image read, mdviewer shows a dedicated banner with a one-click deep-link to System Settings → Privacy & Security → Files & Folders. No more silent "Image not found" mystery
+- **POSIX error codes plumbed through IPC** — the renderer can finally distinguish `EACCES` (permission denied) from `ENOENT` (genuinely missing) without parsing localized error strings
+- **Hardened release pipeline** — reproducible builds via a Volta-pinned Node 20.19.5 toolchain, and a one-line `afterComplete` re-sign hook so TCC can actually attribute file access to mdviewer instead of silently denying
 
-Transcription uses Google's Web Speech API under the hood (the one browsers use for dictation). It's free, requires internet, and is the only outbound request mdviewer ever makes — everything else runs locally.
+See [CHANGELOG.md](./CHANGELOG.md) for the full release notes.
+
+---
 
 ## Why mdviewer
 
@@ -48,8 +51,21 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 | **Web & Data** | `.html`, `.htm`, `.csv`, `.json`, `.xml` |
 | **Plain Text** | `.txt`, `.rst` |
 | **Images** (OCR + metadata) | `.jpg`, `.jpeg`, `.png`, `.gif`, `.webp`, `.tiff`, `.bmp` |
-| **Audio & Video** (transcription via Google Speech API) | `.wav`, `.mp3`, `.m4a`, `.mp4` |
+| **Audio & Video** (transcription) | `.wav`, `.mp3`, `.m4a`, `.mp4` |
 | **Archives** | `.zip` |
+
+## Drop-in Transcription for Audio and Video
+
+Drag a WAV, MP3, M4A, or MP4 file onto the window and mdviewer returns a Markdown transcript. No separate tool, no web upload, no conversion pipeline — it's the same workflow as opening a PDF.
+
+Use it to:
+
+- Turn a voice memo into notes you can edit and save
+- Pull quotes and action items out of a recorded meeting
+- Capture audio diaries or podcast segments as searchable text
+- Extract dialogue from an MP4 screen recording without ever leaving the app
+
+Transcription uses Google's Web Speech API under the hood (the one browsers use for dictation). It is free, requires internet, and is the only outbound request mdviewer ever makes — everything else runs locally.
 
 ## Features
 
@@ -62,8 +78,8 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 - Synchronized selection highlighting in Split mode
 - Find & Replace with case-sensitive search and bulk replace
 - Formatting toolbar: headings, bold, italic, lists, code, quotes, links
-- Read Aloud: native macOS narration that skips URLs, code blocks, and ASCII tables. Voice/rate picker, pause/resume, per-tab scoping, sentence and chapter navigation, and synchronized paragraph highlighting in Rendered view
-- Custom undo/redo history, unsaved-change indicators, word count goals, reading-time estimate
+- Read Aloud: native macOS narration that skips URLs, code blocks, and ASCII tables. Voice/rate picker, pause/resume, per-tab scoping, sentence and chapter navigation, synchronized paragraph highlighting in Rendered view
+- Custom undo/redo history, unsaved-change indicators, word count goals, reading-time estimate, line/word/character/token counters in the status bar
 
 ### Themes
 - System, Light, Dark, Solarized Light, Solarized Dark
@@ -74,11 +90,13 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 - Drag-drop images to embed (auto-copied to `./images/` with relative paths)
 - Recent files menu (last 50, full paths)
 - macOS file associations across every supported extension
+- Permission-aware image rendering with one-click deep-links into System Settings
 
 ### Privacy & Security
 - No telemetry, no analytics, no background network calls
 - Audio transcription is the only outbound request and only runs when you open an audio file
 - Sandboxed renderer, context isolation, strict CSP, Zod-validated IPC
+- Stable bundle identifier so macOS TCC grants persist across rebuilds
 - See [docs/SECURITY-MODEL.md](./docs/SECURITY-MODEL.md) for the full threat model
 
 ### Keyboard Shortcuts
@@ -116,7 +134,7 @@ npm start
 
 `npm install` runs `scripts/setup-venv.sh` via `postinstall` to create a Python venv at `.venv/` and install `markitdown[all]`. It uses `uv` if available, otherwise falls back to `python -m venv` + pip. Recreate with `npm run setup:venv` if the venv gets stale.
 
-**Requirements**: macOS, Node 20+, and either [`uv`](https://docs.astral.sh/uv/) (recommended) or Python 3.10+.
+**Requirements**: macOS, Node 20+ (the repo is Volta-pinned to 20.19.5), and either [`uv`](https://docs.astral.sh/uv/) (recommended) or Python 3.10+.
 
 ### Build & Install the Production App
 
@@ -124,7 +142,7 @@ npm start
 ./scripts/Install\ mdviewer.command
 ```
 
-This script builds a release, copies `mdviewer.app` into `/Applications`, and registers macOS file associations for every supported format. Markdown files become the default; documents, images, and audio register as alternate viewers so they don't steal ownership from Preview, Word, or your existing tools.
+This script builds a release, copies `mdviewer.app` into `/Applications`, and registers macOS file associations for every supported format. Markdown becomes the default handler; documents, images, and audio register as alternate viewers so they don't displace Preview, Word, or your existing tools.
 
 **End-user runtime note**: the packaged `.app` does not bundle Python. For non-Markdown conversion to work outside your dev environment, end users need `markitdown` on their `PATH`:
 
@@ -132,7 +150,7 @@ This script builds a release, copies `mdviewer.app` into `/Applications`, and re
 uv tool install 'markitdown[all]'   # or: pipx install 'markitdown[all]'
 ```
 
-For audio conversion specifically, `ffmpeg` also needs to be reachable (`brew install ffmpeg`). If anything is missing, mdviewer surfaces a targeted install dialog — Markdown files always work with zero runtime dependencies.
+For audio conversion specifically, `ffmpeg` must also be reachable (`brew install ffmpeg`). If anything is missing, mdviewer surfaces a targeted install dialog — Markdown files always work with zero runtime dependencies.
 
 ### Uninstalling
 
@@ -146,7 +164,7 @@ Removes `/Applications/mdviewer.app`, preferences, caches, saved state, and Appl
 
 ```bash
 npm start            # Dev server with hot reload
-npm test             # Run the test suite
+npm test             # Run the test suite (548 tests)
 npm run test:watch   # Watch mode
 npm run test:coverage
 npm run typecheck    # tsc across all three processes
@@ -155,9 +173,9 @@ npm run lint
 
 **Tech stack**: Electron 39, React 19, TypeScript 5, Vite, react-markdown, remark-gfm, rehype-highlight, mermaid.
 
-**Test stack**: Vitest, React Testing Library, jsdom. Tests are co-located with source files (`Component.test.tsx`). 434 tests at time of writing.
+**Test stack**: Vitest, React Testing Library, jsdom. Tests are co-located with source files (`Component.test.tsx`).
 
-**Testing file opening in dev**: the dev server doesn't register macOS file associations. Use `Cmd+O` or drag-and-drop. For real Launch Services testing, build a production `.app` via `npm run make` and install it.
+**Testing file opening in dev**: the dev server does not register macOS file associations. Use `Cmd+O` or drag-and-drop. For real Launch Services testing, build a production `.app` via `npm run make` and install it.
 
 ## Architecture
 
@@ -172,15 +190,17 @@ src/
 │   ├── storage/      Preferences, recent files
 │   ├── markitdown.ts Conversion module + PATH resolution
 │   ├── windowManager.ts
-│   └── fileWatcher.ts
+│   ├── openFileRouter.ts
+│   ├── fileWatcher.ts
+│   └── tts.ts
 ├── components/       MarkdownPreview, CodeEditor, MermaidDiagram, FindReplace, ...
-├── hooks/            14 custom hooks (useDocuments, useTheme, useFileHandler, ...)
+├── hooks/            16 custom hooks (useDocuments, useTheme, useFileHandler, ...)
 ├── types/            Type definitions + Zod IPC schemas
-├── utils/            Text stats, PDF rendering
+├── utils/            Text stats, PDF rendering, speech chunking, rehype plugins
 └── constants/        Configuration values
 ```
 
-**Security model**: sandboxed renderer with context isolation, all IPC handlers wrapped in Zod runtime validation, per-window rate limiting, path-traversal protection, URL allowlisting, and a strict Content Security Policy. Every inbound channel has a schema; every outbound URL runs through `validateExternalUrl`.
+**Security model**: sandboxed renderer with context isolation, all IPC handlers wrapped in Zod runtime validation, per-window rate limiting, path-traversal protection, URL allowlisting, strict Content Security Policy, and a stable code-signed bundle identifier so macOS TCC grants persist. Every inbound channel has a schema; every outbound URL runs through `validateExternalUrl`.
 
 <details>
 <summary>Architecture diagram</summary>
@@ -193,9 +213,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
-- **v5.3.0** — `Lines:` counter added to the status bar between `Tokens:` and the reading-time indicator. Standard `split('\n')` semantics (empty content → 0, trailing newline counts as a separate line); `TextStats` interface gains a `lineCount` field covered by 6 new unit tests
-- **v5.2.4** — External `open-file` events never steal focus, full stop. The previous focus-state heuristic was racy on macOS (the OS activates mdviewer before the open-file event fires), so the router now unconditionally hides the app on darwin or creates an inactive window
-- **v5.2.3** — External `open file.md` commands no longer steal focus when mdviewer is not the active app; new files load silently in a hidden tab (existing window) or an inactive `showInactive()` window (cold launch), and the focused-foreground behavior is preserved when mdviewer is already active
+- **v5.4.0** — Fixed image loading in TCC-protected folders. Stable `ca.trustcyber.mdviewer` bundle ID so macOS grants survive rebuilds. Permission-aware error banner with a deep-link to System Settings → Privacy & Security → Files & Folders. Volta-pinned Node toolchain. Re-sign hook so packaged builds carry a valid signature
+- **v5.3.0** — `Lines:` counter added to the status bar between `Tokens:` and the reading-time indicator. Standard `split('\n')` semantics; `TextStats` interface gains a `lineCount` field covered by 6 new unit tests
+- **v5.2.4** — External `open file.md` commands no longer steal focus when mdviewer is not the active app. Existing-window route uses a soft de-activation (`app.hide()` + `app.show()`) chained via the window's `hide` event for race-free defocus
 
 ## Contributing
 

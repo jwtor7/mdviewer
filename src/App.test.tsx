@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from './App';
 import { mockElectronAPI } from './test/setup';
@@ -55,10 +55,12 @@ describe('App Integration Tests', () => {
     it('should display status bar with word count', () => {
       render(<App />);
 
-      // Status bar should show word count
-      expect(screen.getByText(/Words:/i)).toBeInTheDocument();
-      expect(screen.getByText(/Chars:/i)).toBeInTheDocument();
-      expect(screen.getByText(/Tokens:/i)).toBeInTheDocument();
+      // Scope assertions to the status bar so we don't match the word "tokens"
+      // (or similar) that may appear in the rendered default document content.
+      const statusBar = screen.getByRole('status');
+      expect(within(statusBar).getByText(/Words:/i)).toBeInTheDocument();
+      expect(within(statusBar).getByText(/Chars:/i)).toBeInTheDocument();
+      expect(within(statusBar).getByText(/Tokens:/i)).toBeInTheDocument();
     });
 
     it('should display version number in status bar', () => {

@@ -304,6 +304,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         const [dataUri, setDataUri] = React.useState<string | null>(null);
         const [loading, setLoading] = React.useState(false);
         const [error, setError] = React.useState(false);
+        const [errorCode, setErrorCode] = React.useState<string | undefined>(undefined);
 
         React.useEffect(() => {
           if (!src || !filePath) {
@@ -328,6 +329,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
           // Load image via IPC
           setLoading(true);
           setError(false);
+          setErrorCode(undefined);
 
           // Use decoded path for file system access
           window.electronAPI?.readImageFile(decodedSrc, filePath)
@@ -336,13 +338,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
                 imageCache.current.set(src, result.data.dataUri);
                 setDataUri(result.data.dataUri);
               } else {
-                console.error('Failed to load image:', result.error);
+                console.error('Failed to load image:', result.error, 'code:', result.errorCode);
                 setError(true);
+                setErrorCode(result.errorCode);
               }
             })
             .catch((err) => {
               console.error('Failed to load image:', err);
               setError(true);
+              setErrorCode(undefined);
             })
             .finally(() => {
               setLoading(false);
@@ -354,7 +358,46 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         }
 
         if (error) {
-          return <span style={{ color: '#f00' }} title={src || 'Unknown image'}>⚠ Image not found: {alt || src}</span>;
+          const filename = alt || src || 'Unknown image';
+          const isPermissionError = errorCode === 'EACCES' || errorCode === 'EPERM';
+
+          if (isPermissionError) {
+            const openSettings = (): void => {
+              window.electronAPI?.openExternalUrl(
+                'x-apple.systempreferences:com.apple.preference.security?Privacy_Files'
+              ).then((result) => {
+                if (!result.success) {
+                  console.error('Failed to open System Settings:', result.error);
+                }
+              }).catch((err) => {
+                console.error('Failed to open System Settings:', err);
+              });
+            };
+
+            return (
+              <span style={{ color: '#f00' }} title={src || 'Unknown image'}>
+                ⚠ Permission denied: {filename}. Open{' '}
+                <button
+                  type="button"
+                  onClick={openSettings}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#f00',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    padding: 0,
+                    font: 'inherit',
+                  }}
+                >
+                  System Settings → Privacy &amp; Security → Files &amp; Folders
+                </button>{' '}
+                and grant mdviewer access to this folder.
+              </span>
+            );
+          }
+
+          return <span style={{ color: '#f00' }} title={src || 'Unknown image'}>⚠ Image not found: {filename}</span>;
         }
 
         return <img src={dataUri || src} alt={alt} {...rest} />;
