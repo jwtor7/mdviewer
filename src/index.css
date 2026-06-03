@@ -594,6 +594,10 @@ body {
   flex-shrink: 0;
 }
 
+.markdown-preview input[type="checkbox"]:not(:disabled) {
+  cursor: pointer;
+}
+
 .markdown-preview input[type="checkbox"]:checked {
   background-color: #268bd2;
   border-color: #268bd2;

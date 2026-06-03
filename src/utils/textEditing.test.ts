@@ -3,7 +3,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { replaceTextContent } from './textEditing';
+import { replaceTextContent, toggleTaskCheckbox } from './textEditing';
 
 describe('replaceTextContent', () => {
   // Bold preservation tests
@@ -357,5 +357,52 @@ describe('replaceTextContent', () => {
       const result = replaceTextContent('# Heading', 'New\nLine');
       expect(result).toBe('# New\nLine');
     });
+  });
+});
+
+describe('toggleTaskCheckbox', () => {
+  it('should toggle an unchecked box to checked', () => {
+    const content = '- [ ] task';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBe('- [x] task');
+  });
+
+  it('should toggle a checked box to unchecked', () => {
+    const content = '- [x] task';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBe('- [ ] task');
+  });
+
+  it('should toggle an uppercase checked box [X] to unchecked', () => {
+    const content = '- [X] task';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBe('- [ ] task');
+  });
+
+  it('should return null when no task marker is present', () => {
+    const content = '- plain list item';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBeNull();
+  });
+
+  it('should preserve surrounding content exactly', () => {
+    const content = '# Heading\n\n- [ ] first\n- [ ] second\n\nFooter';
+    // Offsets of the "second" task item line
+    const start = content.indexOf('- [ ] second');
+    const end = start + '- [ ] second'.length;
+    const result = toggleTaskCheckbox(content, start, end);
+    expect(result).toBe('# Heading\n\n- [ ] first\n- [x] second\n\nFooter');
+  });
+
+  it('should toggle the marker, not a literal [x] in the body', () => {
+    const content = '- [ ] mentions a literal [x] in the text';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBe('- [x] mentions a literal [x] in the text');
+  });
+
+  it('should toggle the marker when unchecking, not a literal [ ] in the body', () => {
+    const content = '- [x] body has [ ] brackets';
+    const result = toggleTaskCheckbox(content, 0, content.length);
+    expect(result).toBe('- [ ] body has [ ] brackets');
   });
 });

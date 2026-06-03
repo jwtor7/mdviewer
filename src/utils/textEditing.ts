@@ -86,3 +86,25 @@ export function replaceTextContent(originalMarkdown: string, newPlainText: strin
   // If no markdown pattern matched, return plain text
   return newPlainText;
 }
+
+/**
+ * Toggles the first GFM task marker ([ ] <-> [x]) within content[start..end].
+ *
+ * Used for clickable task-list checkboxes in the rendered preview. The slice
+ * boundaries should be the source offsets of the enclosing `<li>`, which begin
+ * at the list marker, so the first `[ ]`/`[x]`/`[X]` is always the item's own
+ * checkbox — body text containing `[x]` cannot be matched first.
+ *
+ * @param content - The full markdown source
+ * @param start - Source offset where the task list item begins
+ * @param end - Source offset where the task list item ends
+ * @returns The updated markdown, or null if no task marker was found
+ */
+export function toggleTaskCheckbox(content: string, start: number, end: number): string | null {
+  const slice = content.slice(start, end);
+  const m = slice.match(/\[([ xX])\]/);
+  if (!m || m.index === undefined) return null;
+  const next = m[1] === ' ' ? 'x' : ' ';
+  const newSlice = slice.slice(0, m.index) + '[' + next + ']' + slice.slice(m.index + 3);
+  return content.slice(0, start) + newSlice + content.slice(end);
+}

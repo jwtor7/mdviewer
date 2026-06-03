@@ -3,12 +3,12 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.4.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.5.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
-![Tests](https://img.shields.io/badge/tests-548%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-555%20passing-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
 **The Markdown viewer that opens everything else too.**
@@ -17,18 +17,17 @@
 
 mdviewer is a fast, offline-first Markdown viewer and editor for macOS. Drop in a PDF, a Word doc, a spreadsheet, a web page, an e-book, a voice memo, an MP4 recording — mdviewer reads it back to you as clean Markdown. No round trips to a browser, no copy/paste from a preview pane, no fumbling with format-specific apps just to grab a paragraph.
 
-Built on Electron 39, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 548 automated tests.
+Built on Electron 39, React 19, and TypeScript 5 with a sandboxed renderer, Zod-validated IPC, and 555 automated tests.
 
 ---
 
-## What's New in v5.4.0
+## What's New in v5.5.0
 
-> **First-class macOS citizenship.** mdviewer now ships under a stable bundle identifier (`ca.trustcyber.mdviewer`), so the permissions you grant it actually belong to *this* app — not to "every ad-hoc-signed Electron build on your system."
+> **Check things off without leaving the rendered view.** GFM task-list checkboxes are now interactive — click `- [ ]` in the preview and it toggles, writing the change straight back into your Markdown.
 
-- **Images in protected folders just work** — Documents, Desktop, Downloads, removable, and network volumes all carry proper `NS*UsageDescription` strings. macOS prompts on first use and remembers your answer across rebuilds
-- **Permission-aware error UX** — when macOS denies a sibling-image read, mdviewer shows a dedicated banner with a one-click deep-link to System Settings → Privacy & Security → Files & Folders. No more silent "Image not found" mystery
-- **POSIX error codes plumbed through IPC** — the renderer can finally distinguish `EACCES` (permission denied) from `ENOENT` (genuinely missing) without parsing localized error strings
-- **Hardened release pipeline** — reproducible builds via a Volta-pinned Node 20.19.5 toolchain, and a one-line `afterComplete` re-sign hook so TCC can actually attribute file access to mdviewer instead of silently denying
+- **Clickable task-list checkboxes** — in Rendered and Split view, clicking a checkbox toggles `- [ ]` ⇄ `- [x]` in the source and marks the document dirty so `Cmd+S` saves it. Nested task lists toggle the correct item, and body text containing a literal `[x]` is never mistaken for the marker
+- **Latent marker-stripping bug fixed** — task-list items are no longer inline-editable on blur, which previously could strip a `- [ ]` marker when you edited the item text
+- **Pointer cursor on interactive checkboxes** — checkboxes now signal they're clickable instead of showing the default arrow
 
 See [CHANGELOG.md](./CHANGELOG.md) for the full release notes.
 
@@ -213,9 +212,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.5.0** — Clickable GFM task-list checkboxes in Rendered and Split view: toggling a checkbox writes `- [ ]` ⇄ `- [x]` back into the source and marks the document dirty. Task-list items are no longer inline-editable (fixes a latent marker-stripping bug). New `toggleTaskCheckbox` helper with 7 unit tests
 - **v5.4.0** — Fixed image loading in TCC-protected folders. Stable `ca.trustcyber.mdviewer` bundle ID so macOS grants survive rebuilds. Permission-aware error banner with a deep-link to System Settings → Privacy & Security → Files & Folders. Volta-pinned Node toolchain. Re-sign hook so packaged builds carry a valid signature
 - **v5.3.0** — `Lines:` counter added to the status bar between `Tokens:` and the reading-time indicator. Standard `split('\n')` semantics; `TextStats` interface gains a `lineCount` field covered by 6 new unit tests
-- **v5.2.4** — External `open file.md` commands no longer steal focus when mdviewer is not the active app. Existing-window route uses a soft de-activation (`app.hide()` + `app.show()`) chained via the window's `hide` event for race-free defocus
 
 ## Contributing
 

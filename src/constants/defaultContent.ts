@@ -88,7 +88,7 @@ This is a very long single line of text that should not wrap and should create a
    1. Nested numbered item
    2. Another nested item
 
-**Task List:**
+**Task List:** (click a checkbox in Rendered or Split view to toggle it)
 - [x] Completed task with test word
 - [x] Another completed task
 - [ ] Incomplete task with test word
@@ -180,5 +180,5 @@ npm run test
 
 ---
 
-**mdviewer v5.4.0** - Built with Electron, React, and TypeScript
+**mdviewer v5.5.0** - Built with Electron, React, and TypeScript
 `;

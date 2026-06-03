@@ -5,6 +5,16 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.5.0] - 2026-06-03
+
+### Added
+- Clickable GFM task-list checkboxes in the Rendered (and Split-preview) view. Clicking a `- [ ]` / `- [x]` checkbox now toggles it and persists the change back into the Markdown source, marking the document dirty for save. Previously these checkboxes rendered `disabled` (visible but inert). The toggle is keyed off the enclosing `<li>`'s source offsets (the checkbox `<input>` node carries no source position), so nested task lists toggle the correct item and body text containing a literal `[x]` is never mistaken for the marker
+- `toggleTaskCheckbox(content, start, end)` pure helper in `src/utils/textEditing.ts` — toggles the first `[ ]`/`[x]`/`[X]` marker within a source slice, returning `null` when no marker is present. Covered by 7 new unit tests
+
+### Changed
+- Task-list `<li>` elements are now rendered non-`contentEditable` in the editing-enabled preview. This lands clicks cleanly on the checkbox and fixes a latent bug where blur-editing a task item would strip its `- [ ]` checkbox marker (the inline text-edit path treats `[ ] task` as list body)
+- Interactive checkboxes now show a `pointer` cursor (`:not(:disabled)`) instead of the previous `default`
+
 ## [5.4.0] - 2026-05-25
 
 ### Added

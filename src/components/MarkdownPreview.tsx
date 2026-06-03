@@ -7,7 +7,7 @@ import type { Components } from 'react-markdown';
 import { ThemeMode, IMAGE_CONFIG } from '../constants/index.js';
 import CodeBlock from './CodeBlock';
 import MermaidDiagram from './MermaidDiagram';
-import { replaceTextContent } from '../utils/textEditing';
+import { replaceTextContent, toggleTaskCheckbox } from '../utils/textEditing';
 import { createRehypeSpeakingHighlight } from '../utils/rehypeSpeakingHighlight';
 
 export interface MarkdownPreviewProps {
@@ -141,6 +141,18 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
       const newContent = content.slice(0, start) + updatedMarkdown + content.slice(end);
       onContentChange(newContent);
     }
+  }, [onContentChange, content]);
+
+  // Handler for toggling GFM task-list checkboxes in the rendered view
+  const handleCheckboxToggle = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!onContentChange || !content) return;
+    const li = e.currentTarget.closest('li[data-source-start]') as HTMLElement | null;
+    if (!li) return;
+    const start = parseInt(li.dataset.sourceStart ?? '', 10);
+    const end = parseInt(li.dataset.sourceEnd ?? '', 10);
+    if (Number.isNaN(start) || Number.isNaN(end)) return;
+    const updated = toggleTaskCheckbox(content, start, end);
+    if (updated !== null) onContentChange(updated);
   }, [onContentChange, content]);
 
   // Handler for pasting images
@@ -457,6 +469,21 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
       li(props) {
         const { children, node, ...rest } = props;
 
+        // Task-list items: keep non-editable (so blur-edit can't strip the
+        // checkbox marker) but carry source offsets for handleCheckboxToggle
+        const isTask = typeof rest.className === 'string' && rest.className.includes('task-list-item');
+        if (isTask && onContentChange && node?.position) {
+          return (
+            <li
+              {...rest}
+              data-source-start={node.position.start.offset}
+              data-source-end={node.position.end.offset}
+            >
+              {children}
+            </li>
+          );
+        }
+
         // Make editable if onContentChange is provided
         if (onContentChange && node?.position) {
           return (
@@ -681,8 +708,15 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
         const { children, ...rest } = props;
         return <del {...rest}>{children}</del>;
       },
+      // GFM task-list checkboxes: render interactive when editing is enabled
+      input(props) {
+        if (props.type === 'checkbox' && onContentChange) {
+          return <input {...props} disabled={false} onChange={handleCheckboxToggle} />;
+        }
+        return <input {...props} />;
+      },
     };
-  }, [extractTextContent, filePath, onContentChange, content, handleTextEdit, handlePaste]);
+  }, [extractTextContent, filePath, onContentChange, content, handleTextEdit, handlePaste, handleCheckboxToggle]);
 
   // Scroll to current match after render
   useEffect(() => {
