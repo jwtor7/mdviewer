@@ -251,7 +251,10 @@ describe('kokoroEngine', () => {
     expect(spawnMock).not.toHaveBeenCalledWith('afplay', expect.anything(), expect.anything());
   });
 
-  it('pause/resume while playing uses SIGSTOP/SIGCONT on afplay', async () => {
+  it('pause while playing kills afplay and holds the wav; resume replays the sentence', async () => {
+    const ended: string[] = [];
+    setSpeechEndCallback((reason) => ended.push(reason));
+
     const p = speak({ text: 'Playing.', speed: 1 });
     await flush();
     await becomeReady();
@@ -259,16 +262,26 @@ describe('kokoroEngine', () => {
     await deliverResult(req);
     await p;
 
+    // SIGSTOP would leave CoreAudio looping the last buffer — pause must
+    // terminate playback instead and hold the wav for replay.
     pauseSpeech();
-    expect(fakeAfplay.kill).toHaveBeenCalledWith('SIGSTOP');
+    expect(fakeAfplay.kill).toHaveBeenCalledWith('SIGTERM');
+    expect(fakeAfplay.kill).not.toHaveBeenCalledWith('SIGSTOP');
     expect(__getPlaybackState().paused).toBe(true);
+    expect(__getPlaybackState().heldWav).toBe(req.outPath);
+
+    // The killed process's exit must not fire a callback or unlink the wav.
+    fakeAfplay.emit('exit', null, 'SIGTERM');
+    expect(ended).toEqual([]);
+    expect(fsMock.unlinkSync).not.toHaveBeenCalledWith(req.outPath);
 
     resumeSpeech();
-    expect(fakeAfplay.kill).toHaveBeenCalledWith('SIGCONT');
+    expect(spawnMock.mock.calls.filter((c) => c[0] === 'afplay')).toHaveLength(2);
+    expect(spawnMock).toHaveBeenLastCalledWith('afplay', [req.outPath], expect.anything());
     expect(__getPlaybackState().paused).toBe(false);
   });
 
-  it('stop while paused sends SIGCONT before SIGTERM and fires no callback', async () => {
+  it('stop while paused unlinks the held wav and fires no callback', async () => {
     const ended: string[] = [];
     setSpeechEndCallback((reason) => ended.push(reason));
 
@@ -282,8 +295,8 @@ describe('kokoroEngine', () => {
     pauseSpeech();
     stopSpeech();
 
-    const killCalls = fakeAfplay.kill.mock.calls.map((c) => c[0]);
-    expect(killCalls).toEqual(['SIGSTOP', 'SIGCONT', 'SIGTERM']);
+    expect(__getPlaybackState().heldWav).toBeNull();
+    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req.outPath);
 
     // The untracked exit must not fire a callback.
     fakeAfplay.emit('exit', null, 'SIGTERM');

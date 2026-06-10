@@ -573,24 +573,25 @@ export const stopSpeech = (): void => {
 };
 
 /**
- * Pause: SIGSTOP a playing afplay, or flag an in-flight synthesis so its
- * result is held instead of played.
+ * Pause. SIGSTOP is unusable here: it freezes the afplay process but
+ * CoreAudio keeps cycling the last queued buffer, producing an audible
+ * 3–4× stutter until the audio daemon starves. Instead, pause kills
+ * playback and holds the wav; resume replays the sentence from its start
+ * (sentences are short, so the rewind is barely noticeable).
  */
 export const pauseSpeech = (): void => {
   if (afplayProc) {
-    if (isPaused) return;
+    const proc = afplayProc;
+    const wav = currentWav;
+    afplayProc = null;
+    currentWav = null;
+    isPaused = false;
     try {
-      afplayProc.kill('SIGSTOP');
-      isPaused = true;
+      proc.kill('SIGTERM');
     } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code === 'ESRCH' || code === 'ENOENT') {
-        afplayProc = null;
-        isPaused = false;
-      } else {
-        console.error('[kokoro] failed to pause afplay:', err);
-      }
+      console.error('[kokoro] failed to pause afplay:', err);
     }
+    heldWav = wav; // resume replays this sentence from the start
     return;
   }
   if (heldWav) return; // already paused-pending
@@ -598,25 +599,10 @@ export const pauseSpeech = (): void => {
 };
 
 /**
- * Resume: SIGCONT a paused afplay, or start playback of a wav held by a
- * pause that landed during synthesis.
+ * Resume: replay the held wav (set by a pause during playback or during
+ * synthesis), or clear a between-sentence pause flag.
  */
 export const resumeSpeech = (): void => {
-  if (afplayProc && isPaused) {
-    try {
-      afplayProc.kill('SIGCONT');
-      isPaused = false;
-    } catch (err) {
-      const code = (err as NodeJS.ErrnoException).code;
-      if (code === 'ESRCH' || code === 'ENOENT') {
-        afplayProc = null;
-        isPaused = false;
-      } else {
-        console.error('[kokoro] failed to resume afplay:', err);
-      }
-    }
-    return;
-  }
   if (heldWav) {
     const wav = heldWav;
     heldWav = null;

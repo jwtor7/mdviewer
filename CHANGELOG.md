@@ -5,6 +5,15 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.1] - 2026-06-10
+
+### Fixed
+- **Pause no longer stutters.** Pausing Kokoro playback used SIGSTOP on `afplay`, which freezes the process but leaves CoreAudio cycling the last queued buffer — an audible 3–4× loop of the final syllable until the audio daemon starves. Pause now terminates playback and holds the synthesized WAV; resume replays the current sentence from its start (sentences are short, so the rewind is barely noticeable). The `say` engine keeps true SIGSTOP/SIGCONT pause — it drives the speech API directly and never had this problem
+- **Sentence prefetch actually works now.** The dispatcher was calling `kokoroEngine.stopSpeech()` at the start of every utterance, which cleared the prefetch cache that had just been populated for that exact sentence — re-synthesizing every sentence and keeping the inter-sentence gap the feature was built to remove. The dispatcher now relies on `speak()`'s own utterance replacement on the Kokoro path; the cache is still cleared on a user stop
+
+### Notes
+- Chapter navigation reading "Heading 1, Heading 2, Heading 3…" in the bundled sample document is not a bug: the sample doc's *Headers Test* section contains six literal one-line headings, each of which is its own speech chunk and chapter
+
 ## [5.6.0] - 2026-06-10
 
 ### Added

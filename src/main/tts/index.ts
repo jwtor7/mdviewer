@@ -84,12 +84,15 @@ export const startSpeech = async (opts: StartSpeechOptions): Promise<void> => {
   dispatchGeneration += 1;
   const gen = dispatchGeneration;
 
-  // Stop both engines without firing end callbacks — the caller is starting
-  // a new utterance and doesn't want a spurious "ended" event.
+  // Stop any prior say utterance without firing its end callback — the
+  // caller is starting a new utterance and doesn't want a spurious "ended"
+  // event. Kokoro is NOT stopped here: its speak() replaces the current
+  // utterance itself, and kokoroEngine.stopSpeech() would wipe the prefetch
+  // cache that was just populated for this very sentence.
   sayEngine.stopSpeech();
-  kokoroEngine.stopSpeech();
 
   if (kokoroDisabled) {
+    kokoroEngine.stopSpeech();
     currentEngine = 'say';
     sayEngine.startSpeech(opts);
     return;

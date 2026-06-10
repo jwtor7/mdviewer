@@ -132,6 +132,17 @@ describe('tts dispatcher', () => {
     expect(kokoroMock.speak).toHaveBeenCalledTimes(2);
   });
 
+  it('consecutive sentences never stop the kokoro engine (prefetch survives)', async () => {
+    await startSpeech({ text: 'One.', rate: 200, nextText: 'Two.' });
+    await startSpeech({ text: 'Two.', rate: 200 });
+
+    // kokoroEngine.speak replaces utterances itself; calling its stopSpeech
+    // between sentences would wipe the prefetch cache for the very sentence
+    // about to play.
+    expect(kokoroMock.stopSpeech).not.toHaveBeenCalled();
+    expect(kokoroMock.speak).toHaveBeenCalledTimes(2);
+  });
+
   it('stopSpeech stops both engines', () => {
     stopSpeech();
     expect(sayMock.stopSpeech).toHaveBeenCalled();
