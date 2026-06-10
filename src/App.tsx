@@ -220,21 +220,38 @@ const App: React.FC = () => {
         void ttsPrevChapter();
     }, [ttsStatus, ttsPrevChapter]);
 
-    const canReadFromCursor = viewMode === VIEW_MODES.RAW || viewMode === VIEW_MODES.SPLIT;
+    // Reading anchor for Rendered view: the source offset of the block the
+    // user last clicked in the preview. A ref (not state) — updating it must
+    // not re-render the document.
+    const readingAnchorRef = useRef<number | null>(null);
+    const handleBlockAnchor = useCallback((offset: number): void => {
+        readingAnchorRef.current = offset;
+    }, []);
+
+    // Anchors are per-document positions; drop them when the tab changes.
+    useEffect(() => {
+        readingAnchorRef.current = null;
+    }, [activeTabId]);
+
+    const canReadFromCursor = viewMode !== VIEW_MODES.TEXT;
 
     const handleReadFromCursor = useCallback((): void => {
         if (!canReadFromCursor) {
-            showError('Read from cursor only works in Raw or Split view');
+            showError('Read from cursor is not available in Text view');
             return;
         }
         if (!activeDoc.content || activeDoc.content.trim().length === 0) {
             showError('Nothing to read');
             return;
         }
-        const offset = textareaRef.current?.selectionStart ?? 0;
-        console.log('[tts] handleReadFromCursor offset=', offset, 'rate=', ttsRate, 'voice=', ttsVoice, 'textareaRef?', !!textareaRef.current);
+        // Rendered view anchors on the last-clicked block; Raw/Split use the
+        // text editor's cursor position.
+        const offset = viewMode === VIEW_MODES.RENDERED
+            ? (readingAnchorRef.current ?? 0)
+            : (textareaRef.current?.selectionStart ?? 0);
+        console.log('[tts] handleReadFromCursor offset=', offset, 'viewMode=', viewMode, 'rate=', ttsRate, 'voice=', ttsVoice);
         speak(activeDoc.content, { voice: ttsVoice, rate: ttsRate, tabId: activeDoc.id, fromOffset: offset });
-    }, [canReadFromCursor, activeDoc.content, activeDoc.id, speak, ttsVoice, ttsRate, showError]);
+    }, [canReadFromCursor, viewMode, activeDoc.content, activeDoc.id, speak, ttsVoice, ttsRate, showError]);
 
     const handleChapterSelect = useCallback((chapterIndex: number): void => {
         if (!activeDoc.content || activeDoc.content.trim().length === 0) {
@@ -907,6 +924,7 @@ const App: React.FC = () => {
                         onContentChange={updateContent}
                         speakingOffsetStart={speakingOffsetStart}
                         speakingOffsetEnd={speakingOffsetEnd}
+                        onBlockAnchor={handleBlockAnchor}
                     />
                 ) : viewMode === VIEW_MODES.RAW ? (
                     <CodeEditor

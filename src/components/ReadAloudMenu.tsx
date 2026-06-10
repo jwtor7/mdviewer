@@ -176,7 +176,7 @@ export const ReadAloudMenu: React.FC<ReadAloudMenuProps> = ({
             onMouseDown={(e) => e.preventDefault()}
             onClick={onReadFromCursor}
             disabled={!canReadFromCursor}
-            title={canReadFromCursor ? 'Read from the current cursor position (Cmd+Opt+Shift+R)' : 'Switch to Raw or Split view to read from cursor'}
+            title={canReadFromCursor ? 'Read from the cursor or last-clicked paragraph (Cmd+Opt+Shift+R)' : 'Read from cursor is not available in Text view'}
           >
             Read from cursor
           </button>

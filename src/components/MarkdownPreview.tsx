@@ -20,6 +20,12 @@ export interface MarkdownPreviewProps {
   onContentChange?: (content: string) => void;
   speakingOffsetStart?: number | null;
   speakingOffsetEnd?: number | null;
+  /**
+   * Reports the source offset of the block the user last clicked, so
+   * "Read from cursor" can anchor narration in Rendered view. Observation
+   * only — never interferes with editing, checkboxes, or links.
+   */
+  onBlockAnchor?: (offset: number) => void;
 }
 
 type HastNode = {
@@ -113,7 +119,7 @@ const createRehypeSearchHighlight = ({ searchTerm, caseSensitive, currentMatchIn
   };
 };
 
-const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange, speakingOffsetStart = null, speakingOffsetEnd = null }: MarkdownPreviewProps) => {
+const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = '', caseSensitive = false, currentMatchIndex = 0, filePath, onContentChange, speakingOffsetStart = null, speakingOffsetEnd = null, onBlockAnchor }: MarkdownPreviewProps) => {
   const previewRef = useRef<HTMLDivElement>(null);
 
   // Image cache to avoid reloading the same images
@@ -758,6 +764,18 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
     return () => window.cancelAnimationFrame(id);
   }, [speakingOffsetStart, speakingOffsetEnd]);
 
+  // Delegated click listener: report the source offset of the nearest
+  // enclosing block carrying data-source-start (paragraphs, headings, lists,
+  // quotes, tables — emitted by the editing-enabled component map above).
+  const handleAnchorClick = useCallback((e: React.MouseEvent<HTMLDivElement>): void => {
+    if (!onBlockAnchor) return;
+    const target = e.target as HTMLElement;
+    const block = target.closest('[data-source-start]') as HTMLElement | null;
+    if (!block) return;
+    const start = parseInt(block.dataset.sourceStart ?? '', 10);
+    if (Number.isFinite(start)) onBlockAnchor(start);
+  }, [onBlockAnchor]);
+
   return (
     <div
       ref={previewRef}
@@ -765,6 +783,7 @@ const MarkdownPreview = memo(({ content, theme: _theme = 'dark', searchTerm = ''
       role="document"
       aria-label="Rendered markdown preview"
       onPaste={handlePaste}
+      onClick={handleAnchorClick}
     >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}

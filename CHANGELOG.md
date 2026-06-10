@@ -5,6 +5,15 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.7.0] - 2026-06-10
+
+### Added
+- **Read from cursor now works in Rendered view.** Clicking any rendered block (paragraph, heading, list, quote, table) sets a *reading anchor* at that block's source position — using the `data-source-start` offsets the editing-enabled preview already emits, via one delegated click listener on the preview container. *Read from cursor* (button or `Cmd+Opt+Shift+R`) then starts narration from the anchored block, falling back to the document start if nothing has been clicked. Clicking only sets the anchor; it never auto-starts reading, and it doesn't interfere with inline editing, task checkboxes, or links. The anchor resets on tab switch
+- New optional `onBlockAnchor` prop on `MarkdownPreview`, covered by 3 component tests
+
+### Changed
+- The *Read from cursor* button is now enabled in Rendered, Raw, and Split views (previously Raw/Split only). Raw and Split keep text-cursor semantics; only Text view remains unsupported, and the disabled tooltip says so
+
 ## [5.6.2] - 2026-06-10
 
 ### Fixed
