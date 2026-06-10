@@ -5,6 +5,14 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.2] - 2026-06-10
+
+### Fixed
+- **Restart actions no longer strand narration after one sentence.** `tts:speak` resolves only after synthesis with Kokoro (seconds, vs milliseconds with `say`), which opened a race: when a restart-style action (Read from cursor, rate-slider change, sentence/chapter navigation) superseded a sentence whose `startSpeech` IPC was still pending, the abandoned playback loop would wake up late and re-register the speech-end listener — stealing it from the new run, whose loop then hung forever after its first sentence. `speakTextFragment` now checks its run ID after `startSpeech` resolves and bails out without touching the listener when superseded. Covered by a regression test that fails on the pre-fix code
+
+### Notes
+- The *Read from cursor* button is enabled only in Raw and Split views (unchanged, by design): the cursor it reads from is the text editor's insertion point, which doesn't exist in Rendered view. The button's tooltip says so when disabled
+
 ## [5.6.1] - 2026-06-10
 
 ### Fixed

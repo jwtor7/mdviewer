@@ -166,6 +166,51 @@ describe('useTextToSpeech', () => {
     expect(mockElectronAPI.stopSpeech).toHaveBeenCalled();
   });
 
+  it('a superseded sentence resolving late does not steal the end listener from a new run', async () => {
+    // With Kokoro, startSpeech resolves only after synthesis (seconds). A
+    // restart (read-from-cursor, rate change, sentence nav) while the old
+    // loop is parked on that await must not let the old loop re-register
+    // the end listener when its abandoned call finally resolves.
+    let endCb: () => void = () => undefined;
+    mockElectronAPI.onSpeechEnd.mockImplementation(((cb: () => void) => {
+      endCb = cb;
+      return vi.fn();
+    }) as never);
+    let resolveFirst: (v: { success: true; data: undefined }) => void = () => undefined;
+    mockElectronAPI.startSpeech
+      .mockImplementationOnce(() => new Promise((resolve) => { resolveFirst = resolve; }))
+      .mockImplementation(() => Promise.resolve({ success: true, data: undefined }));
+
+    const showError = setupShowError();
+    const { result } = renderHook(() => useTextToSpeech({ showError }));
+
+    // Old run: its first sentence is "synthesizing" (startSpeech pending).
+    await act(async () => {
+      await result.current.speak('One one one. Two two two.');
+    });
+
+    // Restart while the old run is still awaiting startSpeech.
+    await act(async () => {
+      await result.current.speak('Alpha alpha. Beta beta.');
+    });
+    await waitFor(() => expect(mockElectronAPI.startSpeech.mock.calls.length).toBeGreaterThanOrEqual(2));
+
+    // The abandoned first call resolves late — it must not touch the listener.
+    await act(async () => {
+      resolveFirst({ success: true, data: undefined });
+    });
+
+    // Natural end of the new run's first sentence must advance the NEW loop.
+    await act(async () => {
+      endCb();
+    });
+    await waitFor(() => {
+      const texts = (mockElectronAPI.startSpeech.mock.calls as unknown as Array<[{ text: string }]>).map((c) => c[0].text);
+      expect(texts.some((t) => t.includes('Beta'))).toBe(true);
+    });
+    expect(result.current.isSpeaking).toBe(true);
+  });
+
   it('passes the upcoming sentence as nextText for prefetch', async () => {
     const showError = setupShowError();
     const { result } = renderHook(() => useTextToSpeech({ showError }));

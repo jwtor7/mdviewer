@@ -3,12 +3,12 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.6.1-blue.svg)
+![Version](https://img.shields.io/badge/version-5.6.2-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
-![Tests](https://img.shields.io/badge/tests-592%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-593%20passing-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
 **The Markdown viewer that opens everything else too.**
@@ -221,9 +221,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.6.2** — Fixed a race where restart actions (read from cursor, rate change, sentence navigation) during Kokoro synthesis could strand narration after one sentence: a superseded playback loop resolving late stole the speech-end listener from the new run
 - **v5.6.1** — Fixed Kokoro pause stutter (SIGSTOP left CoreAudio looping the last audio buffer; pause now holds the WAV and resume replays the sentence) and fixed sentence prefetch being wiped by the dispatcher on every utterance
 - **v5.6.0** — Kokoro neural TTS is now the primary Read Aloud engine (voice: Heart), running the local Kokoro-82M ONNX model through a persistent Python worker with sentence prefetch for gapless playback. The macOS `say` voice remains as automatic fallback with a one-time notice — the app works fully without Kokoro installed
-- **v5.5.0** — Clickable GFM task-list checkboxes in Rendered and Split view: toggling a checkbox writes `- [ ]` ⇄ `- [x]` back into the source and marks the document dirty. Task-list items are no longer inline-editable (fixes a latent marker-stripping bug). New `toggleTaskCheckbox` helper with 7 unit tests
 
 ## Contributing
 

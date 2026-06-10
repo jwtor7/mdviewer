@@ -126,7 +126,7 @@ export const useTextToSpeech = ({ showError, activeTabId }: UseTextToSpeechOptio
     });
   }, []);
 
-  const speakTextFragment = useCallback(async (text: string, nextText?: string): Promise<boolean> => {
+  const speakTextFragment = useCallback(async (text: string, runId: number, nextText?: string): Promise<boolean> => {
     const api = window.electronAPI;
     if (!api?.startSpeech) return false;
     const bounded = text.slice(0, MAX_CHUNK_CHARS);
@@ -139,6 +139,13 @@ export const useTextToSpeech = ({ showError, activeTabId }: UseTextToSpeechOptio
       rate: optionsRef.current.rate,
       nextText: boundedNext && boundedNext.trim() ? boundedNext : undefined,
     });
+    if (runId !== runIdRef.current) {
+      // Superseded while the engine was synthesizing (startSpeech can take
+      // seconds with Kokoro). The new run owns the end listener now —
+      // registering waitForChunkEnd here would steal it and strand the new
+      // playback loop after its first sentence.
+      return false;
+    }
     if (!result.success) {
       showError(result.error || 'Failed to start speech');
       return false;
@@ -198,7 +205,7 @@ export const useTextToSpeech = ({ showError, activeTabId }: UseTextToSpeechOptio
           : nextChunkEntry.text;
       }
 
-      const ok = await speakTextFragment(sentences[sentenceIndex].text, upcoming);
+      const ok = await speakTextFragment(sentences[sentenceIndex].text, runId, upcoming);
       if (!ok) {
         if (runId === runIdRef.current) resetState();
         return;
