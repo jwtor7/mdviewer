@@ -92,7 +92,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.invoke('open-mermaid-window', data),
   openFilePath: (filePath: string): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('open-file-path', { filePath }),
-  startSpeech: (data: { text: string; voice?: string; rate?: number }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
+  startSpeech: (data: { text: string; voice?: string; rate?: number; nextText?: string }): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('tts:speak', data),
   stopSpeech: (): Promise<{ success: true; data: void } | { success: false; error: string }> =>
     ipcRenderer.invoke('tts:stop'),
@@ -107,6 +107,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('tts:ended', handler);
     return (): void => {
       ipcRenderer.removeListener('tts:ended', handler);
+    };
+  },
+  getTTSEngineStatus: (): Promise<{ success: true; data: { engine: 'kokoro' | 'say'; voiceLabel: string } } | { success: false; error: string }> =>
+    ipcRenderer.invoke('tts:engine-status'),
+  onTTSEngineChanged: (callback: (status: { engine: 'kokoro' | 'say'; voiceLabel: string }) => void): (() => void) => {
+    const handler = (_: IpcRendererEvent, status: { engine: 'kokoro' | 'say'; voiceLabel: string }): void => callback(status);
+    ipcRenderer.on('tts:engine-changed', handler);
+    return (): void => {
+      ipcRenderer.removeListener('tts:engine-changed', handler);
     };
   },
   logDebug: (message: string, data?: any): void => ipcRenderer.send('log-debug', { message, data }),

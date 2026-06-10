@@ -193,6 +193,7 @@ export const SpeakTextDataSchema = z.object({
   text: z.string().min(1, 'Text cannot be empty').max(100_000, 'Text exceeds 100,000 character limit'),
   voice: z.string().max(64).optional(),
   rate: z.number().int().min(50).max(500).optional(),
+  nextText: z.string().max(10_000).optional(),
 });
 
 export type SpeakTextDataInput = z.infer<typeof SpeakTextDataSchema>;

@@ -21,6 +21,12 @@ export type IPCResult<T> =
   | { success: true; data: T }
   | { success: false; error: string; errorCode?: string };
 
+/** Which TTS engine is narrating and how to label its voice in the UI. */
+export interface TTSEngineStatusData {
+  engine: 'kokoro' | 'say';
+  voiceLabel: string;
+}
+
 /**
  * Discriminated union representing all IPC message types in the application.
  *
@@ -70,8 +76,8 @@ export type IPCMessage =
   | { channel: 'open-mermaid-window'; data: { svg: string; theme: string } }
   /** Request main process to open a file (handles conversion for non-markdown) */
   | { channel: 'open-file-path'; data: { filePath: string } }
-  /** Start narrating text via the macOS `say` command */
-  | { channel: 'tts:speak'; data: { text: string; voice?: string; rate?: number } }
+  /** Start narrating text (Kokoro neural engine with macOS `say` fallback) */
+  | { channel: 'tts:speak'; data: { text: string; voice?: string; rate?: number; nextText?: string } }
   /** Stop any active narration */
   | { channel: 'tts:stop'; data: void }
   /** Notification that narration finished (naturally or via stop) */
@@ -81,7 +87,11 @@ export type IPCMessage =
   /** Pause active narration via SIGSTOP */
   | { channel: 'tts:pause'; data: void }
   /** Resume paused narration via SIGCONT */
-  | { channel: 'tts:resume'; data: void };
+  | { channel: 'tts:resume'; data: void }
+  /** Report which TTS engine will narrate (probes/warms Kokoro) */
+  | { channel: 'tts:engine-status'; data: void }
+  /** Notification that narration fell back from Kokoro to `say` */
+  | { channel: 'tts:engine-changed'; data: TTSEngineStatusData };
 
 export interface ElectronAPI {
   onFileOpen: (callback: (data: FileOpenData) => void) => () => void;
@@ -109,12 +119,14 @@ export interface ElectronAPI {
   saveImageFromData: (imageData: string, markdownFilePath: string) => Promise<IPCResult<{ relativePath: string }>>;
   openMermaidWindow: (data: { svg: string; theme: string }) => Promise<IPCResult<void>>;
   openFilePath: (filePath: string) => Promise<IPCResult<void>>;
-  startSpeech: (data: { text: string; voice?: string; rate?: number }) => Promise<IPCResult<void>>;
+  startSpeech: (data: { text: string; voice?: string; rate?: number; nextText?: string }) => Promise<IPCResult<void>>;
   stopSpeech: () => Promise<IPCResult<void>>;
   pauseSpeech: () => Promise<IPCResult<void>>;
   resumeSpeech: () => Promise<IPCResult<void>>;
   listVoices: () => Promise<IPCResult<Array<{ name: string; language: string; sampleText: string }>>>;
   onSpeechEnd: (callback: () => void) => () => void;
+  getTTSEngineStatus: () => Promise<IPCResult<TTSEngineStatusData>>;
+  onTTSEngineChanged: (callback: (status: TTSEngineStatusData) => void) => () => void;
   logDebug: (message: string, data?: unknown) => void;
 }
 

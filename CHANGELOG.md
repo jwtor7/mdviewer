@@ -5,6 +5,26 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.6.0] - 2026-06-10
+
+### Added
+- **Kokoro neural TTS as the primary Read Aloud engine**, with the macOS `say` command as automatic fallback. Narration now uses the Kokoro-82M ONNX model (voice: `af_heart`, "Heart") through a persistent Python worker (`resources/tts/kokoro_worker.py`) that loads the 325 MB model once per session and synthesizes WAV segments over a JSON-lines stdin/stdout protocol. Playback runs through `afplay` with the same SIGSTOP/SIGCONT pause semantics as `say`. Text travels as a JSON field — never argv, never shell — preserving the injection posture of the `say` engine's stdin piping
+- **Automatic fallback**: any missing piece (python3, `kokoro-onnx`/`soundfile`, worker script, model files) or a mid-session worker crash disables Kokoro for the session and routes every subsequent sentence to `say`, with a one-time "Kokoro voice unavailable — using macOS voice" toast. The app works fully without Kokoro installed
+- **Sentence prefetch**: while one sentence plays, the next is synthesized in the background (one-slot cache keyed by text + speed), eliminating the 0.5–3 s synthesis gap at sentence boundaries. A rate change invalidates the cache implicitly; stop clears it
+- New `tts:engine-status` IPC channel and `tts:engine-changed` event. Opening the Read Aloud menu probes (and warms) the Kokoro worker so the first sentence starts fast
+- Read Aloud menu shows a static `Heart (Kokoro)` voice label when Kokoro is active, with a note that the macOS voice is used as fallback; the macOS voice picker renders only on the `say` path
+- Model resolution order: `$MDVIEWER_KOKORO_DIR` → `~/.cache/hyperframes/tts/` → `<userData>/kokoro/` (expects `models/kokoro-v1.0.onnx` + `voices/voices-v1.0.bin`, flat layout also accepted). Python resolution: `/opt/homebrew/bin/python3` → `/usr/local/bin/python3` → `python3` on an augmented PATH
+- `extraResource: ['./resources/tts']` in `forge.config.js` — the worker script ships at `Contents/Resources/tts/` outside `app.asar` so Python can execute it; the existing `codesign --deep` afterComplete hook covers it
+
+### Changed
+- `src/main/tts.ts` restructured into `src/main/tts/` — `sayEngine.ts` (the previous module, verbatim), `kokoroEngine.ts` (worker client, playback state machine, `wpmToKokoroSpeed` rate mapping: `wpm / 180` clamped to `[0.5, 2.0]`), `types.ts` (shared types), and `index.ts` (dispatcher owning engine selection, fallback, and end-callback forwarding)
+- `tts:speak` is now awaited in the main process — it resolves once playback has started (Kokoro synthesis included), so the renderer's per-sentence loop needed no changes
+- `SpeakTextDataSchema` gains an optional `nextText` field (max 10,000 chars) for prefetch; the renderer passes the upcoming sentence (next in chunk, else first of the next chunk)
+- A stop or restart landing while Kokoro is mid-synthesis abandons the in-flight request (the late result is discarded, its WAV unlinked) and deliberately does **not** fall back to `say` — a user stop is not an engine failure
+- Pause landing during synthesis holds the finished WAV without playing it; resume plays it from the held state
+- Temp WAV segments live in `<temp>/mdviewer-tts/`, are unlinked after playback, wiped at worker start, and removed on app cleanup
+- 36 new tests (591 total): `kokoroEngine.test.ts` (22 — handshake ready/fatal/timeout, stdout noise tolerance, stop/pause races during synthesis, SIGCONT-before-SIGTERM ordering, worker crash, prefetch hit/miss/clear, shutdown), `index.test.ts` (10 — engine routing, fallback, one-time notification, stale-generation guard, end-callback ownership), ReadAloudMenu engine display (3), and a `nextText` prefetch assertion in `useTextToSpeech.test.ts`
+
 ## [5.5.0] - 2026-06-03
 
 ### Added

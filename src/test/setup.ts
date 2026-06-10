@@ -92,6 +92,8 @@ const mockElectronAPI = {
   resumeSpeech: vi.fn(() => Promise.resolve({ success: true, data: undefined })),
   listVoices: vi.fn(() => Promise.resolve({ success: true, data: [] as Array<{ name: string; language: string; sampleText: string }> })),
   onSpeechEnd: vi.fn(() => vi.fn()),
+  getTTSEngineStatus: vi.fn(() => Promise.resolve({ success: true, data: { engine: 'say' as 'say' | 'kokoro', voiceLabel: '' } })),
+  onTTSEngineChanged: vi.fn(() => vi.fn()),
   logDebug: vi.fn(),
 };
 

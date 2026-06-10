@@ -1,5 +1,5 @@
 /**
- * Text-to-Speech Main Process Module
+ * Text-to-Speech `say` Engine
  *
  * Wraps the macOS `say` CLI so the renderer can narrate markdown via IPC.
  * Text is piped through stdin so it never touches argv, eliminating
@@ -8,24 +8,13 @@
 
 import { spawn, type ChildProcessByStdio } from 'node:child_process';
 import type { Readable, Writable } from 'node:stream';
+import type { EndCallback, EndReason, StartSpeechOptions, TTSVoice } from './types.js';
 
 type SayProcess = ChildProcessByStdio<Writable, null, Readable>;
 
-export interface TTSVoice {
-  name: string;
-  language: string;
-  sampleText: string;
-}
+export type { TTSVoice, StartSpeechOptions } from './types.js';
 
 let cachedVoices: TTSVoice[] | null = null;
-
-export interface StartSpeechOptions {
-  text: string;
-  voice?: string;
-  rate?: number;
-}
-
-type EndCallback = (reason: 'natural' | 'stopped' | 'error') => void;
 
 let sayProcess: SayProcess | null = null;
 let endCallback: EndCallback | null = null;
@@ -39,7 +28,7 @@ export const setSpeechEndCallback = (callback: EndCallback | null): void => {
   endCallback = callback;
 };
 
-const teardownProcess = (reason: 'natural' | 'stopped' | 'error'): void => {
+const teardownProcess = (reason: EndReason): void => {
   const cb = endCallback;
   sayProcess = null;
   if (cb) {
@@ -209,6 +198,7 @@ export const isSpeechActive = (): boolean => sayProcess !== null;
 /** Test-only: report whether the tracked process is currently paused. */
 export const isSpeechPaused = (): boolean => isPaused;
 
+// eslint-disable-next-line security/detect-unsafe-regex -- input is `say -v ?` output, line-bounded and local
 const VOICE_LINE = /^(\S.*?)\s{2,}([a-z]{2,3}[-_][A-Z]{2})(?:\s+#\s+(.*))?\s*$/;
 
 /**

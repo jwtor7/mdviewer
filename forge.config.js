@@ -8,6 +8,9 @@ module.exports = {
   packagerConfig: {
     asar: true,
     appBundleId: 'ca.trustcyber.mdviewer',
+    // Kokoro TTS worker must live outside app.asar so python3 can execute it.
+    // Lands at Contents/Resources/tts/; the codesign afterComplete hook covers it.
+    extraResource: ['./resources/tts'],
     afterComplete: [
       (buildPath, electronVersion, platform, arch, done) => {
         if (platform !== 'darwin') return done();

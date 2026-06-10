@@ -126,16 +126,18 @@ export const useTextToSpeech = ({ showError, activeTabId }: UseTextToSpeechOptio
     });
   }, []);
 
-  const speakTextFragment = useCallback(async (text: string): Promise<boolean> => {
+  const speakTextFragment = useCallback(async (text: string, nextText?: string): Promise<boolean> => {
     const api = window.electronAPI;
     if (!api?.startSpeech) return false;
     const bounded = text.slice(0, MAX_CHUNK_CHARS);
     if (!bounded.trim()) return true;
     console.log('[tts] speakTextFragment options:', { voice: optionsRef.current.voice, rate: optionsRef.current.rate, textPreview: bounded.slice(0, 60) });
+    const boundedNext = nextText?.slice(0, MAX_CHUNK_CHARS);
     const result = await api.startSpeech({
       text: bounded,
       voice: optionsRef.current.voice || undefined,
       rate: optionsRef.current.rate,
+      nextText: boundedNext && boundedNext.trim() ? boundedNext : undefined,
     });
     if (!result.success) {
       showError(result.error || 'Failed to start speech');
@@ -183,7 +185,20 @@ export const useTextToSpeech = ({ showError, activeTabId }: UseTextToSpeechOptio
       chunkIndexRef.current = chunkIndex;
       sentenceIndexRef.current = sentenceIndex;
 
-      const ok = await speakTextFragment(sentences[sentenceIndex].text);
+      // Hand the engine the upcoming sentence so it can pre-synthesize while
+      // this one plays (Kokoro prefetch) — next in this chunk, else the
+      // first sentence of the next chunk.
+      let upcoming: string | undefined;
+      if (sentenceIndex + 1 < sentences.length) {
+        upcoming = sentences[sentenceIndex + 1].text;
+      } else if (chunkIndex + 1 < list.length) {
+        const nextChunkEntry = list[chunkIndex + 1];
+        upcoming = nextChunkEntry.sentences.length > 0
+          ? nextChunkEntry.sentences[0].text
+          : nextChunkEntry.text;
+      }
+
+      const ok = await speakTextFragment(sentences[sentenceIndex].text, upcoming);
       if (!ok) {
         if (runId === runIdRef.current) resetState();
         return;

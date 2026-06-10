@@ -1639,6 +1639,17 @@ body {
   color: #d06060;
 }
 
+.read-aloud-voice-name {
+  font-size: 13px;
+  color: var(--text-color);
+}
+
+.read-aloud-voice-note {
+  font-size: 11px;
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
 .read-aloud-chapters label {
   margin-bottom: 4px;
 }

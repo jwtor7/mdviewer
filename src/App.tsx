@@ -149,6 +149,16 @@ const App: React.FC = () => {
     const [showReadAloudMenu, setShowReadAloudMenu] = useState(false);
     const readAloudMenuRef = useRef<HTMLDivElement>(null);
 
+    // One-time toast when narration falls back from Kokoro to the macOS
+    // voice (the main process gates the event to fire once per session).
+    useEffect(() => {
+        const api = window.electronAPI;
+        if (!api?.onTTSEngineChanged) return undefined;
+        return api.onTTSEngineChanged(() => {
+            showError('Kokoro voice unavailable — using macOS voice', 'info');
+        });
+    }, [showError]);
+
     // Push rate/voice changes into the active narration so the user hears
     // them within one sentence instead of having to stop and restart.
     useEffect(() => {

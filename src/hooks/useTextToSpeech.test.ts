@@ -166,6 +166,21 @@ describe('useTextToSpeech', () => {
     expect(mockElectronAPI.stopSpeech).toHaveBeenCalled();
   });
 
+  it('passes the upcoming sentence as nextText for prefetch', async () => {
+    const showError = setupShowError();
+    const { result } = renderHook(() => useTextToSpeech({ showError }));
+
+    await act(async () => {
+      await result.current.speak('First sentence here. Second sentence here.');
+    });
+
+    await waitFor(() => expect(mockElectronAPI.startSpeech).toHaveBeenCalled());
+    const calls = mockElectronAPI.startSpeech.mock.calls as unknown as Array<[{ text: string; nextText?: string }]>;
+    const firstCall = calls[0][0];
+    expect(firstCall.text).toContain('First sentence');
+    expect(firstCall.nextText).toContain('Second sentence');
+  });
+
   it('passes rate through to startSpeech', async () => {
     const showError = setupShowError();
     const { result } = renderHook(() => useTextToSpeech({ showError }));

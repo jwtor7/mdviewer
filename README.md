@@ -3,12 +3,12 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.5.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.6.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
-![Tests](https://img.shields.io/badge/tests-555%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-591%20passing-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
 **The Markdown viewer that opens everything else too.**
@@ -77,7 +77,7 @@ Transcription uses Google's Web Speech API under the hood (the one browsers use 
 - Synchronized selection highlighting in Split mode
 - Find & Replace with case-sensitive search and bulk replace
 - Formatting toolbar: headings, bold, italic, lists, code, quotes, links
-- Read Aloud: native macOS narration that skips URLs, code blocks, and ASCII tables. Voice/rate picker, pause/resume, per-tab scoping, sentence and chapter navigation, synchronized paragraph highlighting in Rendered view
+- Read Aloud: neural narration via the local [Kokoro-82M](https://huggingface.co/hexgrad/Kokoro-82M) model (voice: Heart), with automatic fallback to the native macOS voice when Kokoro isn't installed. Skips URLs, code blocks, and ASCII tables. Sentence prefetch for gapless playback, rate control, pause/resume, per-tab scoping, sentence and chapter navigation, synchronized paragraph highlighting in Rendered view
 - Custom undo/redo history, unsaved-change indicators, word count goals, reading-time estimate, line/word/character/token counters in the status bar
 
 ### Themes
@@ -151,6 +151,15 @@ uv tool install 'markitdown[all]'   # or: pipx install 'markitdown[all]'
 
 For audio conversion specifically, `ffmpeg` must also be reachable (`brew install ffmpeg`). If anything is missing, mdviewer surfaces a targeted install dialog — Markdown files always work with zero runtime dependencies.
 
+### Read Aloud Neural Voice (optional)
+
+Read Aloud uses the local Kokoro-82M neural voice when available, and falls back to the built-in macOS voice otherwise — **the app works fully without any of this installed**. To enable the neural voice:
+
+- A `python3` (Homebrew or system) with `kokoro-onnx` and `soundfile` importable: `pip install kokoro-onnx soundfile`
+- The model files in `~/.cache/hyperframes/tts/` (or a directory pointed to by `$MDVIEWER_KOKORO_DIR`): `models/kokoro-v1.0.onnx` and `voices/voices-v1.0.bin`, downloadable from the [kokoro-onnx releases](https://github.com/thewh1teagle/kokoro-onnx/releases)
+
+If Kokoro is missing or fails mid-session, narration continues with the macOS voice and shows a one-time notice. Everything runs locally — no network requests.
+
 ### Uninstalling
 
 ```bash
@@ -212,9 +221,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.6.0** — Kokoro neural TTS is now the primary Read Aloud engine (voice: Heart), running the local Kokoro-82M ONNX model through a persistent Python worker with sentence prefetch for gapless playback. The macOS `say` voice remains as automatic fallback with a one-time notice — the app works fully without Kokoro installed
 - **v5.5.0** — Clickable GFM task-list checkboxes in Rendered and Split view: toggling a checkbox writes `- [ ]` ⇄ `- [x]` back into the source and marks the document dirty. Task-list items are no longer inline-editable (fixes a latent marker-stripping bug). New `toggleTaskCheckbox` helper with 7 unit tests
 - **v5.4.0** — Fixed image loading in TCC-protected folders. Stable `ca.trustcyber.mdviewer` bundle ID so macOS grants survive rebuilds. Permission-aware error banner with a deep-link to System Settings → Privacy & Security → Files & Folders. Volta-pinned Node toolchain. Re-sign hook so packaged builds carry a valid signature
-- **v5.3.0** — `Lines:` counter added to the status bar between `Tokens:` and the reading-time indicator. Standard `split('\n')` semantics; `TextStats` interface gains a `lineCount` field covered by 6 new unit tests
 
 ## Contributing
 

@@ -32,7 +32,7 @@ import {
   type ExportPdfDataInput,
   type SpeakTextDataInput,
 } from './types/ipc-schemas.js';
-import { startSpeech, stopSpeech, pauseSpeech, resumeSpeech, cleanupSpeech, setSpeechEndCallback, listVoices } from './main/tts.js';
+import { startSpeech, stopSpeech, pauseSpeech, resumeSpeech, cleanupSpeech, setSpeechEndCallback, setEngineNotificationCallback, getEngineStatus, listVoices } from './main/tts/index.js';
 import {
   createMenu,
   createWindow,
@@ -1248,7 +1248,7 @@ ipcMain.handle(
   )
 );
 
-// tts:speak — narrate text via macOS `say`
+// tts:speak — narrate text via Kokoro (neural) with macOS `say` fallback
 ipcMain.handle(
   'tts:speak',
   withValidatedIPCHandler(
@@ -1260,7 +1260,24 @@ ipcMain.handle(
         if (sender.isDestroyed()) return;
         sender.send('tts:ended');
       });
-      startSpeech({ text: data.text, voice: data.voice, rate: data.rate });
+      setEngineNotificationCallback((status) => {
+        if (sender.isDestroyed()) return;
+        sender.send('tts:engine-changed', status);
+      });
+      // Resolves once playback has started — for Kokoro that includes
+      // synthesis time, keeping the renderer's per-sentence loop unchanged.
+      await startSpeech({ text: data.text, voice: data.voice, rate: data.rate, nextText: data.nextText });
+    }
+  )
+);
+
+// tts:engine-status — report which engine will narrate (probes/warms Kokoro)
+ipcMain.handle(
+  'tts:engine-status',
+  withIPCHandlerNoInput(
+    { handlerName: 'tts:engine-status' },
+    async () => {
+      return getEngineStatus();
     }
   )
 );

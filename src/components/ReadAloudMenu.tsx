@@ -12,6 +12,11 @@ export interface ReadAloudChapter {
   title: string;
 }
 
+export interface ReadAloudEngineStatus {
+  engine: 'kokoro' | 'say';
+  voiceLabel: string;
+}
+
 export interface ReadAloudMenuProps {
   voice: string;
   rate: number;
@@ -48,6 +53,26 @@ export const ReadAloudMenu: React.FC<ReadAloudMenuProps> = ({
   const [voices, setVoices] = useState<ReadAloudVoice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [engineStatus, setEngineStatus] = useState<ReadAloudEngineStatus | null>(null);
+
+  // Probe which engine will narrate. This also warms the Kokoro worker —
+  // opening the menu loads the model so the first sentence starts fast.
+  useEffect(() => {
+    let cancelled = false;
+    const api = window.electronAPI;
+    if (!api?.getTTSEngineStatus) return () => { /* nothing to clean up */ };
+    api.getTTSEngineStatus()
+      .then((result) => {
+        if (cancelled || !result.success) return;
+        setEngineStatus(result.data);
+      })
+      .catch(() => {
+        // Status stays unknown — the say picker remains visible.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -92,27 +117,35 @@ export const ReadAloudMenu: React.FC<ReadAloudMenuProps> = ({
 
   return (
     <div className="read-aloud-menu" role="menu" aria-label="Text-to-speech settings">
-      <div className="read-aloud-menu-row">
-        <label htmlFor="read-aloud-voice">Voice</label>
-        <select
-          id="read-aloud-voice"
-          value={voice}
-          onChange={(e) => onVoiceChange(e.target.value)}
-          disabled={loading}
-        >
-          <option value="">System default</option>
-          {grouped.map(([language, groupVoices]) => (
-            <optgroup key={language} label={languageLabel(language)}>
-              {groupVoices.map((v) => (
-                <option key={`${v.language}-${v.name}`} value={v.name}>
-                  {v.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-        {error && <span className="read-aloud-menu-error" role="alert">{error}</span>}
-      </div>
+      {engineStatus?.engine === 'kokoro' ? (
+        <div className="read-aloud-menu-row">
+          <label>Voice</label>
+          <span className="read-aloud-voice-name">{engineStatus.voiceLabel}</span>
+          <span className="read-aloud-voice-note">macOS voice used if Kokoro is unavailable</span>
+        </div>
+      ) : (
+        <div className="read-aloud-menu-row">
+          <label htmlFor="read-aloud-voice">Voice</label>
+          <select
+            id="read-aloud-voice"
+            value={voice}
+            onChange={(e) => onVoiceChange(e.target.value)}
+            disabled={loading}
+          >
+            <option value="">System default</option>
+            {grouped.map(([language, groupVoices]) => (
+              <optgroup key={language} label={languageLabel(language)}>
+                {groupVoices.map((v) => (
+                  <option key={`${v.language}-${v.name}`} value={v.name}>
+                    {v.name}
+                  </option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+          {error && <span className="read-aloud-menu-error" role="alert">{error}</span>}
+        </div>
+      )}
       <div className="read-aloud-menu-row">
         <label htmlFor="read-aloud-rate">
           Rate <span className="read-aloud-rate-value">{rate}</span>
