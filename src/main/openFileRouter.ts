@@ -6,14 +6,13 @@
  *
  * `app.on('open-file')` only fires for OS-level routing — Finder double-click,
  * drag-onto-icon, "Open With", `open file.md` from a terminal. Every such
- * event is by definition external, so we never bring mdviewer to the
- * foreground from this path. The previous focus-state heuristic was racy:
- * macOS activates the app before delivering the open-file event, so the
- * focus flag had already flipped to true by the time we checked it.
+ * event is by definition external. App-level defocus happens in `main.ts`
+ * before routing so every branch, including no-op and cold-launch paths, gets
+ * the same Launch Services activation workaround.
  *
  * Branches:
  *  (A) file already open in a tab        → no-op (file watcher refresh handles it)
- *  (B) main window exists, new file      → open in tab; hide app on darwin
+ *  (B) main window exists, new file      → open in tab
  *  (C) no window, app ready              → create window inactive
  *  (D) app not ready                     → queue as pending file
  */
@@ -29,17 +28,16 @@ export interface OpenFileRouterDeps {
   openFile: (filePath: string) => void;
   createWindow: (filePath: string, options: { inactive: boolean }) => BrowserWindow;
   setPendingFile: (filePath: string) => void;
-  hideApp: () => void;
 }
 
 export type OpenFileRouterResult =
   | { action: 'no-op-already-watched' }
-  | { action: 'opened-existing-window'; hidApp: boolean }
+  | { action: 'opened-existing-window' }
   | { action: 'created-window'; window: BrowserWindow; inactive: boolean }
   | { action: 'pending' };
 
 export function routeOpenFile(deps: OpenFileRouterDeps): OpenFileRouterResult {
-  const { filePath, mainWindow, isAppReady, platform } = deps;
+  const { filePath, mainWindow, isAppReady } = deps;
 
   if (mainWindow && !mainWindow.isDestroyed() && deps.isFileWatched(filePath)) {
     return { action: 'no-op-already-watched' };
@@ -47,11 +45,7 @@ export function routeOpenFile(deps: OpenFileRouterDeps): OpenFileRouterResult {
 
   if (mainWindow && !mainWindow.isDestroyed()) {
     deps.openFile(filePath);
-    if (platform === 'darwin') {
-      deps.hideApp();
-      return { action: 'opened-existing-window', hidApp: true };
-    }
-    return { action: 'opened-existing-window', hidApp: false };
+    return { action: 'opened-existing-window' };
   }
 
   if (isAppReady) {

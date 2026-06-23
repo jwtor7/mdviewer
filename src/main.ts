@@ -40,6 +40,7 @@ import {
   getOpenWindowCount,
 } from './main/windowManager.js';
 import { watchFile, unwatchFile, unwatchAllForWindow, isFileWatched } from './main/fileWatcher.js';
+import { defocusExternalOpen } from './main/externalOpenDefocus.js';
 import { routeOpenFile } from './main/openFileRouter.js';
 
 /**
@@ -1331,12 +1332,19 @@ ipcMain.handle(
 // Routing logic lives in src/main/openFileRouter.ts so it can be unit-tested
 // without an Electron runtime.
 //
-// macOS activates mdviewer *before* delivering this event. The hard fix
-// (app.hide) felt too aggressive — windows disappeared entirely. Soft fix:
-// hide briefly to give keyboard focus back to the previous app, then re-show
-// the window inactive so the file is visible without stealing keyboard focus.
+// macOS activates mdviewer *before* delivering this event. Defocus before
+// routing so every external-open branch returns keyboard focus to the previous
+// app, including already-open files and cold/no-window launches.
 app.on('open-file', (event: Electron.Event, filePath: string) => {
   event.preventDefault();
+  defocusExternalOpen({
+    app: {
+      hide: () => { app.hide(); },
+      show: () => { app.show(); },
+      onceHide: (listener) => { (app as NodeJS.EventEmitter).once('hide', listener); },
+    },
+    platform: process.platform,
+  });
 
   const result = routeOpenFile({
     filePath,
@@ -1347,24 +1355,6 @@ app.on('open-file', (event: Electron.Event, filePath: string) => {
     openFile: (p) => { void openFile(p); },
     createWindow: (p, opts) => createWindow(appPreferences, openFile, p, opts),
     setPendingFile: (p) => { pendingFileToOpen = p; },
-    hideApp: () => {
-      // Soft de-activation: app.hide() drops the OS-level activation and
-      // returns keyboard focus to the previous app; app.show() brings the
-      // windows back without auto-focusing them (darwin-only API that
-      // explicitly does not focus, per Electron docs).
-      //
-      // Chaining via setImmediate was racy — sometimes show() fired before
-      // macOS finished processing hide(), leaving windows in an inconsistent
-      // state that occasionally appeared as "window disappeared" until the
-      // user manually reactivated. Listen for the window's `hide` event
-      // instead so show() runs deterministically after hide settles.
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.once('hide', () => {
-          app.show();
-        });
-      }
-      app.hide();
-    },
   });
 
   if (result.action === 'created-window') {

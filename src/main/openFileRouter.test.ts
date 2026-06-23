@@ -3,7 +3,8 @@
  *
  * Covers the four `app.on('open-file')` branches. The router always treats
  * external open-file events as background events: every successful route
- * either hides mdviewer (existing window) or opens an inactive window.
+ * routes files without owning app activation. External-open defocus is tested
+ * separately in externalOpenDefocus.test.ts.
  */
 
 import { describe, it, expect, vi } from 'vitest';
@@ -27,7 +28,6 @@ function makeDeps(overrides: Partial<OpenFileRouterDeps> = {}): OpenFileRouterDe
     openFile: vi.fn(),
     createWindow: vi.fn().mockReturnValue(fakeWindow),
     setPendingFile: vi.fn(),
-    hideApp: vi.fn(),
     ...overrides,
   };
 }
@@ -39,7 +39,6 @@ describe('routeOpenFile', () => {
       const result = routeOpenFile(deps);
       expect(result).toEqual({ action: 'no-op-already-watched' });
       expect(deps.openFile).not.toHaveBeenCalled();
-      expect(deps.hideApp).not.toHaveBeenCalled();
       expect(deps.createWindow).not.toHaveBeenCalled();
       expect(deps.setPendingFile).not.toHaveBeenCalled();
     });
@@ -57,20 +56,18 @@ describe('routeOpenFile', () => {
   });
 
   describe('branch (B): existing window, new file', () => {
-    it('opens file and hides app on darwin', () => {
+    it('opens file in the existing window on darwin', () => {
       const deps = makeDeps({ platform: 'darwin' });
       const result = routeOpenFile(deps);
-      expect(result).toEqual({ action: 'opened-existing-window', hidApp: true });
+      expect(result).toEqual({ action: 'opened-existing-window' });
       expect(deps.openFile).toHaveBeenCalledWith('/tmp/file.md');
-      expect(deps.hideApp).toHaveBeenCalledTimes(1);
     });
 
-    it('opens file but does not hide app on non-darwin platforms', () => {
+    it('opens file in the existing window on non-darwin platforms', () => {
       const deps = makeDeps({ platform: 'linux' });
       const result = routeOpenFile(deps);
-      expect(result).toEqual({ action: 'opened-existing-window', hidApp: false });
+      expect(result).toEqual({ action: 'opened-existing-window' });
       expect(deps.openFile).toHaveBeenCalledWith('/tmp/file.md');
-      expect(deps.hideApp).not.toHaveBeenCalled();
     });
   });
 

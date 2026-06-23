@@ -3,7 +3,7 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.7.0-blue.svg)
+![Version](https://img.shields.io/badge/version-5.7.1-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
@@ -221,6 +221,7 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.7.1** — External file opens no longer leave mdviewer frontmost on macOS. Launch Services opens now defocus before routing, covering already-open files, existing windows, no-window opens, and cold launches
 - **v5.7.0** — Read from cursor now works in Rendered view: click any paragraph to set a reading anchor, then the button or `Cmd+Opt+Shift+R` starts narration there. Raw/Split keep text-cursor semantics
 - **v5.6.2** — Fixed a race where restart actions (read from cursor, rate change, sentence navigation) during Kokoro synthesis could strand narration after one sentence: a superseded playback loop resolving late stole the speech-end listener from the new run
 - **v5.6.1** — Fixed Kokoro pause stutter (SIGSTOP left CoreAudio looping the last audio buffer; pause now holds the WAV and resume replays the sentence) and fixed sentence prefetch being wiped by the dispatcher on every utterance

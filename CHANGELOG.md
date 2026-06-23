@@ -5,6 +5,12 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.7.1] - 2026-06-11
+
+### Fixed
+- **External file opens no longer leave mdviewer frontmost on macOS.** Every Launch Services `open-file` event now performs the app-level hide/show defocus before routing, so already-open files, existing-window opens, no-window opens, and cold-launch opens all return keyboard focus to the previous app. Routing remains unchanged for user-initiated in-app actions
+- Added focused coverage for the external-open defocus helper, including non-macOS no-op behavior, hide-event recovery, fallback recovery, and repeated-open coalescing
+
 ## [5.7.0] - 2026-06-10
 
 ### Added
