@@ -58,6 +58,7 @@ CRED_PATTERNS=(
 is_allowlisted_path() {
   case "$1" in
     */Users/john/*)     return 0 ;;  # neutral test fixture (matches useFileHandler.test.ts)
+    */Users/yourname/*) return 0 ;;  # generic placeholder used in openwiki docs
     */Users/name/*)     return 0 ;;  # generic placeholder used in PRD.md
     */Users/testuser/*) return 0 ;;  # generic test placeholder
     */Users/runner/*)   return 0 ;;  # GitHub Actions default home
