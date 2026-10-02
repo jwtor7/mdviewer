@@ -269,6 +269,7 @@ npm install
 - **docs/SECURITY-MODEL.md** — threat model (committed)
 - **docs/REPO-HYGIENE.md** — contributor rules and CI enforcement (committed)
 - **SECURITY.md** in repo root — historical CVE-style entries; gitignored
+- **openwiki/** — generated wiki (architecture, IPC/preload, file handling, read-aloud, security, testing/operations); start at `openwiki/quickstart.md`, refresh via `openwiki --update` (see `document` skill)
 
 When adding features or fixes:
 1. Add a detailed dated entry to `CHANGELOG.md`
