@@ -16,7 +16,7 @@ const { spawnMock, fsMock } = vi.hoisted(() => ({
     existsSync: vi.fn(() => true),
     mkdtempSync: vi.fn((prefix: string) => `${prefix}test-session`),
     chmodSync: vi.fn(),
-    statSync: vi.fn(() => ({ dev: 123n, ino: 456n })),
+    lstatSync: vi.fn(() => ({ dev: 123n, ino: 456n, isDirectory: (): boolean => true })),
     unlinkSync: vi.fn(),
     rmSync: vi.fn(),
   },
@@ -107,7 +107,7 @@ describe('kokoroEngine', () => {
     fsMock.existsSync.mockReturnValue(true);
     fsMock.mkdtempSync.mockClear();
     fsMock.chmodSync.mockClear();
-    fsMock.statSync.mockClear();
+    fsMock.lstatSync.mockClear();
     fsMock.unlinkSync.mockClear();
     fsMock.rmSync.mockClear();
     fakeWorker = new FakeProc();
@@ -132,6 +132,19 @@ describe('kokoroEngine', () => {
     await flush();
   };
 
+  const expectRemoval = (wavPath: unknown, expected = true): void => {
+    const removals = parseRequests(stdinChunks).filter((req) => req.type === 'remove');
+    const match = expect.objectContaining({
+      outDir: '/mock/temp/mdviewer-tts-test-session',
+      outDirDev: '123',
+      outDirIno: '456',
+      names: [String(wavPath).split('/').pop()],
+    });
+    if (expected) expect(removals).toContainEqual(match);
+    else expect(removals).not.toContainEqual(match);
+    expect(fsMock.unlinkSync).not.toHaveBeenCalled();
+  };
+
   it('handshake: speaks after ready, plays via afplay, exit 0 fires natural', async () => {
     const ended: string[] = [];
     setSpeechEndCallback((reason) => ended.push(reason));
@@ -150,7 +163,7 @@ describe('kokoroEngine', () => {
     expect(req.outPath).toMatch(/^\/mock\/temp\/mdviewer-tts-test-session\/seg-1-[0-9a-f-]{36}\.wav$/);
     expect(fsMock.mkdtempSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-');
     expect(fsMock.chmodSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-test-session', 0o700);
-    expect(fsMock.statSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-test-session', { bigint: true });
+    expect(fsMock.lstatSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-test-session', { bigint: true });
     expect(req.outDirDev).toBe('123');
     expect(req.outDirIno).toBe('456');
 
@@ -162,7 +175,7 @@ describe('kokoroEngine', () => {
 
     fakeAfplay.emit('exit', 0, null);
     expect(ended).toEqual(['natural']);
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req.outPath);
+    expectRemoval(req.outPath);
   });
 
   it('handshake: fatal message rejects with KokoroUnavailableError', async () => {
@@ -201,6 +214,19 @@ describe('kokoroEngine', () => {
     expect(spawnMock).not.toHaveBeenCalled();
   });
 
+  it('rejects a symlink substituted for the new temp directory', async () => {
+    fsMock.lstatSync.mockReturnValueOnce({ dev: 123n, ino: 456n, isDirectory: () => false });
+    await expect(probeWorker()).rejects.toBeInstanceOf(KokoroUnavailableError);
+    expect(spawnMock).not.toHaveBeenCalled();
+    expect(fsMock.rmSync).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the private temp directory cannot be created', async () => {
+    fsMock.mkdtempSync.mockImplementationOnce(() => { throw new Error('permission denied'); });
+    await expect(probeWorker()).rejects.toBeInstanceOf(KokoroUnavailableError);
+    expect(spawnMock).not.toHaveBeenCalled();
+  });
+
   it('stop during synthesis abandons the request: late result unlinks, no afplay, no callback', async () => {
     const ended: string[] = [];
     setSpeechEndCallback((reason) => ended.push(reason));
@@ -216,7 +242,7 @@ describe('kokoroEngine', () => {
     await p; // resolves silently
 
     expect(spawnMock).not.toHaveBeenCalledWith('afplay', expect.anything(), expect.anything());
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req.outPath);
+    expectRemoval(req.outPath);
     expect(ended).toEqual([]);
   });
 
@@ -257,7 +283,7 @@ describe('kokoroEngine', () => {
 
     stopSpeech();
     expect(__getPlaybackState().heldWav).toBeNull();
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req.outPath);
+    expectRemoval(req.outPath);
     expect(spawnMock).not.toHaveBeenCalledWith('afplay', expect.anything(), expect.anything());
   });
 
@@ -283,7 +309,7 @@ describe('kokoroEngine', () => {
     // The killed process's exit must not fire a callback or unlink the wav.
     fakeAfplay.emit('exit', null, 'SIGTERM');
     expect(ended).toEqual([]);
-    expect(fsMock.unlinkSync).not.toHaveBeenCalledWith(req.outPath);
+    expectRemoval(req.outPath, false);
 
     resumeSpeech();
     expect(spawnMock.mock.calls.filter((c) => c[0] === 'afplay')).toHaveLength(2);
@@ -306,7 +332,7 @@ describe('kokoroEngine', () => {
     stopSpeech();
 
     expect(__getPlaybackState().heldWav).toBeNull();
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req.outPath);
+    expectRemoval(req.outPath);
 
     // The untracked exit must not fire a callback.
     fakeAfplay.emit('exit', null, 'SIGTERM');
@@ -387,7 +413,7 @@ describe('kokoroEngine', () => {
     expect(synths).toHaveLength(3);
     expect(synths[2].speed).toBe(1.5);
     // The stale cached wav was discarded.
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req2.outPath);
+    expectRemoval(req2.outPath);
     await deliverResult(synths[2]);
     await p2;
   });
@@ -404,10 +430,10 @@ describe('kokoroEngine', () => {
     await deliverResult(req2);
 
     stopSpeech();
-    expect(fsMock.unlinkSync).toHaveBeenCalledWith(req2.outPath);
+    expectRemoval(req2.outPath);
   });
 
-  it('cleanup sends shutdown and removes the temp dir', async () => {
+  it('cleanup queues validated directory removal before shutdown', async () => {
     const p = probeWorker();
     await flush();
     await becomeReady();
@@ -418,9 +444,38 @@ describe('kokoroEngine', () => {
 
     const requests = parseRequests(stdinChunks);
     expect(requests).toContainEqual({ type: 'shutdown' });
-    expect(fsMock.rmSync).toHaveBeenCalledWith(
-      expect.stringContaining('mdviewer-tts'),
-      { recursive: true, force: true }
-    );
+    expect(requests).toEqual([
+      { type: 'cleanup', outDir: '/mock/temp/mdviewer-tts-test-session',
+        outDirDev: '123', outDirIno: '456', names: [] },
+      { type: 'shutdown' },
+    ]);
+    expect(fsMock.rmSync).not.toHaveBeenCalled();
+    expect(fsMock.unlinkSync).not.toHaveBeenCalled();
+  });
+
+  it('cleanup includes an in-flight output and queues removal after synthesis', async () => {
+    const p = speak({ text: 'Pending at shutdown.', speed: 1 });
+    const assertion = expect(p).rejects.toBeInstanceOf(KokoroWorkerCrashedError);
+    await flush();
+    await becomeReady();
+    const [req] = parseRequests(stdinChunks);
+
+    cleanupSpeech();
+    await assertion;
+    const requests = parseRequests(stdinChunks);
+    expect(requests.map((request) => request.type)).toEqual(['synth', 'cleanup', 'shutdown']);
+    expect(requests[1]).toMatchObject({
+      outDirDev: '123', outDirIno: '456',
+      names: [String(req.outPath).split('/').pop()],
+    });
+    expect(fsMock.mkdtempSync).toHaveBeenCalledTimes(1);
+    expect(fsMock.rmSync).not.toHaveBeenCalled();
+  });
+
+  it('cleanup does not create a directory when Kokoro was never used', () => {
+    cleanupSpeech();
+    expect(fsMock.mkdtempSync).not.toHaveBeenCalled();
+    expect(fsMock.rmSync).not.toHaveBeenCalled();
+    expect(parseRequests(stdinChunks)).toEqual([]);
   });
 });

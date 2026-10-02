@@ -158,6 +158,7 @@ const pendingRequests = new Map<number, PendingRequest>();
 let stdoutBuffer = '';
 let tempDir: string | null = null;
 let tempDirIdentity: { dev: string; ino: string } | null = null;
+const tempWavs = new Set<string>();
 
 const getTempDir = (): string => {
   if (tempDir) return tempDir;
@@ -167,31 +168,47 @@ const getTempDir = (): string => {
   } catch {
     // Best effort: mkdtemp already created a private, unpredictable directory.
   }
-  const stats = fs.statSync(dir, { bigint: true });
+  const stats = fs.lstatSync(dir, { bigint: true });
+  if (!stats.isDirectory()) throw new Error('Kokoro temp path is not a directory');
   tempDir = dir;
   tempDirIdentity = { dev: stats.dev.toString(), ino: stats.ino.toString() };
   return dir;
 };
 
 const tryUnlink = (filePath: string | null): void => {
-  if (!filePath) return;
+  if (!filePath || !tempDir || !tempDirIdentity || !tempWavs.has(filePath) || !worker?.stdin?.writable) return;
   try {
-    fs.unlinkSync(filePath);
+    // Node has no unlinkat API. Let the worker unlink relative to a validated
+    // directory descriptor, so a replaced parent path cannot redirect cleanup.
+    worker.stdin.write(`${JSON.stringify({
+      type: 'remove',
+      outDir: tempDir,
+      outDirDev: tempDirIdentity.dev,
+      outDirIno: tempDirIdentity.ino,
+      names: [path.basename(filePath)],
+    })}\n`);
+    tempWavs.delete(filePath);
   } catch {
-    // already gone or never written — fine
+    // Shutdown retries a removal that could not be queued.
   }
 };
 
 const removeTempDir = (): void => {
   if (!tempDir) return;
-  const dir = tempDir;
+  try {
+    worker?.stdin?.write(`${JSON.stringify({
+      type: 'cleanup',
+      outDir: tempDir,
+      outDirDev: tempDirIdentity?.dev,
+      outDirIno: tempDirIdentity?.ino,
+      names: [...tempWavs].map((wav) => path.basename(wav)),
+    })}\n`);
+  } catch {
+    // Leave leftovers if the worker is unavailable; never delete via a path.
+  }
   tempDir = null;
   tempDirIdentity = null;
-  try {
-    fs.rmSync(dir, { recursive: true, force: true });
-  } catch {
-    // ignore
-  }
+  tempWavs.clear();
 };
 
 const rejectAllPending = (err: Error): void => {
@@ -374,6 +391,7 @@ const sendSynthRequest = (text: string, speed: number): Promise<string> => {
     const id = nextRequestId++;
     const outDir = getTempDir();
     const outPath = path.join(outDir, `seg-${id}-${randomUUID()}.wav`);
+    tempWavs.add(outPath);
     const dirIdentity = tempDirIdentity;
     const timer = setTimeout(() => {
       pendingRequests.delete(id);
@@ -665,6 +683,8 @@ export const cleanupSpeech = (): void => {
   clearPrefetch();
   stopPlayback();
   rejectAllPending(new KokoroWorkerCrashedError('Kokoro engine shutting down'));
+  // Queue descriptor-based cleanup before shutdown, after any pending synth.
+  removeTempDir();
   if (worker) {
     const proc = worker;
     worker = null;
@@ -679,7 +699,6 @@ export const cleanupSpeech = (): void => {
       }
     }
   }
-  removeTempDir();
 };
 
 // ---------------------------------------------------------------------------
@@ -696,6 +715,7 @@ export const __resetForTests = (): void => {
   stdoutBuffer = '';
   tempDir = null;
   tempDirIdentity = null;
+  tempWavs.clear();
   generation = 0;
   afplayProc = null;
   currentWav = null;

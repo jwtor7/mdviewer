@@ -3,12 +3,12 @@
 <div align="center">
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Version](https://img.shields.io/badge/version-5.7.2-blue.svg)
+![Version](https://img.shields.io/badge/version-5.7.3-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Electron](https://img.shields.io/badge/electron-39.2.3-blueviolet)
 ![React](https://img.shields.io/badge/react-19.2.0-61dafb)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.3-blue)
-![Tests](https://img.shields.io/badge/tests-596%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-604%20passing-brightgreen)
 ![Accessibility](https://img.shields.io/badge/a11y-WCAG%202.1-blue)
 
 **The Markdown viewer that opens everything else too.**
@@ -221,9 +221,9 @@ src/
 
 Recent releases below. Full history in [CHANGELOG.md](./CHANGELOG.md).
 
+- **v5.7.3** — Kokoro temporary audio creation and cleanup now resist symlink and directory replacement attacks, with private session directories and filesystem regression tests
 - **v5.7.2** — Added a generated `openwiki/` reference wiki (architecture, IPC/preload, file handling, read-aloud, security, testing/operations); start at `openwiki/quickstart.md`
 - **v5.7.1** — External file opens no longer leave mdviewer frontmost on macOS. Launch Services opens now defocus before routing, covering already-open files, existing windows, no-window opens, and cold launches
-- **v5.7.0** — Read from cursor now works in Rendered view: click any paragraph to set a reading anchor, then the button or `Cmd+Opt+Shift+R` starts narration there. Raw/Split keep text-cursor semantics
 
 ## Contributing
 
