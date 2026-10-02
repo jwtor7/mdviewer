@@ -5,6 +5,13 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.7.3] - 2026-10-02
+
+### Security
+- **Protect Kokoro temporary audio files from symlink and directory replacement attacks.** Each session uses a private, randomly named directory and randomized WAV filenames. The worker requires the recorded directory identity and creates files without following symlinks or overwriting existing files, with owner-only permissions.
+- **Protect audio cleanup as well as creation.** File removal now runs through the worker using a validated directory descriptor, and shutdown deletes only tracked WAVs before removing the empty directory. If the worker is unavailable or the directory identity has changed, temporary files are left in place rather than deleted through an untrusted path.
+- Added filesystem and shutdown regression tests, including directory replacement during deletion. CI runs the Python safety tests without requiring the Kokoro model or audio dependencies.
+
 ## [5.7.2] - 2026-07-03
 
 ### Added
