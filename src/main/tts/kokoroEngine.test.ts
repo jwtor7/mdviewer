@@ -14,8 +14,9 @@ const { spawnMock, fsMock } = vi.hoisted(() => ({
   spawnMock: vi.fn(),
   fsMock: {
     existsSync: vi.fn(() => true),
-    mkdirSync: vi.fn(),
-    readdirSync: vi.fn(() => [] as string[]),
+    mkdtempSync: vi.fn((prefix: string) => `${prefix}test-session`),
+    chmodSync: vi.fn(),
+    statSync: vi.fn(() => ({ dev: 123n, ino: 456n })),
     unlinkSync: vi.fn(),
     rmSync: vi.fn(),
   },
@@ -104,6 +105,9 @@ describe('kokoroEngine', () => {
     __resetForTests();
     spawnMock.mockReset();
     fsMock.existsSync.mockReturnValue(true);
+    fsMock.mkdtempSync.mockClear();
+    fsMock.chmodSync.mockClear();
+    fsMock.statSync.mockClear();
     fsMock.unlinkSync.mockClear();
     fsMock.rmSync.mockClear();
     fakeWorker = new FakeProc();
@@ -143,6 +147,12 @@ describe('kokoroEngine', () => {
     expect(req.text).toBe('Hello world.');
     expect(req.voice).toBe(KOKORO_VOICE);
     expect(req.speed).toBe(1.11);
+    expect(req.outPath).toMatch(/^\/mock\/temp\/mdviewer-tts-test-session\/seg-1-[0-9a-f-]{36}\.wav$/);
+    expect(fsMock.mkdtempSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-');
+    expect(fsMock.chmodSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-test-session', 0o700);
+    expect(fsMock.statSync).toHaveBeenCalledWith('/mock/temp/mdviewer-tts-test-session', { bigint: true });
+    expect(req.outDirDev).toBe('123');
+    expect(req.outDirIno).toBe('456');
 
     await deliverResult(req);
     await p; // resolves once afplay has spawned

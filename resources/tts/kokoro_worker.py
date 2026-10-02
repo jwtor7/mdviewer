@@ -19,11 +19,37 @@ lines defensively, but we never emit them on purpose).
 
 import argparse
 import json
+import os
 import sys
 
 
 def emit(obj):
     print(json.dumps(obj), flush=True)
+
+
+def write_wav_safely(sf, out_path, samples, sample_rate, expected_dev=None, expected_ino=None):
+    """Write a WAV without following attacker-created output symlinks."""
+    parent = os.path.dirname(out_path)
+    name = os.path.basename(out_path)
+    if not parent or name in {"", ".", ".."} or os.path.sep in name:
+        raise ValueError("invalid output path")
+
+    nofollow = getattr(os, "O_NOFOLLOW", 0)
+    dir_fd = os.open(parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | nofollow)
+    try:
+        dir_stat = os.fstat(dir_fd)
+        if expected_dev is not None and str(dir_stat.st_dev) != str(expected_dev):
+            raise ValueError("output directory device changed")
+        if expected_ino is not None and str(dir_stat.st_ino) != str(expected_ino):
+            raise ValueError("output directory inode changed")
+
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | nofollow
+        fd = os.open(name, flags, 0o600, dir_fd=dir_fd)
+    finally:
+        os.close(dir_fd)
+
+    with os.fdopen(fd, "wb") as wav_file:
+        sf.write(wav_file, samples, sample_rate, format="WAV")
 
 
 def main():
@@ -68,7 +94,14 @@ def main():
                 speed=float(req.get("speed", 1.0)),
             )
             out_path = req["outPath"]
-            sf.write(out_path, samples, sample_rate)
+            write_wav_safely(
+                sf,
+                out_path,
+                samples,
+                sample_rate,
+                expected_dev=req.get("outDirDev"),
+                expected_ino=req.get("outDirIno"),
+            )
             emit({
                 "id": req_id,
                 "type": "result",
