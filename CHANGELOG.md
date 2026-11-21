@@ -5,6 +5,11 @@ All notable changes to mdviewer are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.7.4] - 2026-11-21
+
+### Security
+- Updated Vite to 6.4.6 to fix GHSA-p4f5-76q4-ffq7 (AIKIDO-2026-137384), which could allow code execution and file exposure when a development server was explicitly exposed to the network. The packaged app does not run the Vite development server.
+
 ## [5.7.3] - 2026-10-02
 
 ### Security
